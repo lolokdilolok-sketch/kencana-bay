@@ -1,91 +1,157 @@
-# BUILD NOTES — KENCANA BAY (recorded rebuild, gta6-01)
+# KENCANA BAY — Build Notes
 
-Rebuilt from scratch in a kit-recorded session (recording
-01a1ef0d-6223-7345-97d9-72a4fe145981). Every source file in this repo was
-written by hand in this session; the only exceptions are the kit starter
-files (`vendor/makefun-game.ts`, `serve.ts`, `LICENSE`) and the vendored
-Three.js r152 minified library (`game/vendor/three.min.js`, downloaded
-from unpkg — minified libraries are excluded from authorship counting).
-The earlier unrecorded build was used only as a design reference; no
-file was copied from it.
+A Make GTA 6 entry (bounty `gta6-01`), built from scratch in this recorded
+session: a 3D open-world crime game in a fictional 1998 beach city,
+"Kencana Bay — A Crime Story in Kencana Bay · 1998". Playable offline in
+desktop Chrome from static files (`game/index.html`), keyboard + mouse,
+no network requests at runtime.
 
-## What was built
+## What is in the game
 
-KENCANA — A Crime Story in Kencana Bay · 1998. A 3D open-world crime
-game, Three.js r152, static files only, no network requests, desktop
-Chrome, keyboard + mouse.
+- **City** (`game/src/world.js`): six districts on a road grid with the sea
+  on the west edge — Pelabuhan Segara (docks, crane, containers), Kampung
+  Batik (workshop), Alun-Alun (Grand Hotel, mansion), Lorong Emas (casino
+  with a gold dome), Pantai Kidul (beach, ferris wheel, umbrellas, towels),
+  Pasar Senja (market stalls, car showroom). Three building shape families
+  plus one landmark per district, warm glowing windows on all four faces,
+  palm trees, a KENCANA FM 101.1 billboard, and a low sun disc. Bright
+  high-definition sunset lighting: warm low sun, pink-orange sky gradient,
+  soft fog. Everything is built from a seeded generator, so the same seed
+  gives the same city.
+- **Hero car** (`game/src/vehicles.js`): the Garuda GT — a low, wide gold
+  sports car with a lofted wedge body (pointed low nose rising to the
+  cabin), a black roof, two white stripes over the hood continuing over
+  the rear deck, white star-pattern wheels, a large gold rear spoiler, and
+  a visible driver in an orange shirt sitting in the car. Traffic: sedans,
+  taxis, trucks and vans in varied colours, all placed deterministically
+  from the seed. Police: white cars with blue markings and a light bar,
+  plus a helicopter with a spotlight.
+- **Gameplay** (`game/src/main.js`, `missions.js`, `police.js`,
+  `pedestrians.js`): explore on foot and by car, E to enter or steal a
+  car; twelve story missions in order (Selamat Datang, Hot Wheels, Antar
+  Paket, Tagihan Pasar, Mata-Mata, Balapan Senja — a sunset race across
+  four checkpoints — Gudang Segara, Kabur dari WPD, Heat Wave, Kencana
+  Hilang, Double Cross, The Last Ride), payouts $300–$1,200; three crew
+  members for hire (Agus Prasetyo, driver, $200 [Z]; Bambang, mechanic,
+  $350 [X]; Ratna, fixer, $300 [C]); a wanted level of 0–5 stars with
+  pursuing police cars, a helicopter at 3+ stars and roadblocks at 4+
+  stars; five weapons on keys 1–5 (Pistol, Kancil SMG, Shotgun, Garuda,
+  Launcher) with ammunition; drifting and stunts earn bonus cash; a
+  synthesised Gamelan FM 101.1 radio loop (`game/src/audio.js`); saving,
+  loading and autosave in local storage; a safehouse and a garage.
+- **HUD** (`game/src/hud.js`, `game/index.html`): mission panel top-left
+  with mission name, description, next objective and a progress bar; crew
+  panel below it on the left; police response panel top-right with
+  pursuing-unit distances, helicopter status, cash, wanted stars, time
+  and day, and the radio station; round minimap bottom-left with the
+  location name, a health bar and the fixer reputation; weapon slots on
+  the right; speed bottom-right with the vehicle name; a dialogue bar
+  with a drawn character portrait bottom-centre; a help bar along the
+  very bottom. The title screen has the logo centred in the top third
+  (over-line "TELUK KENCANA · 1998", KENCANA in a gold-to-pink gradient,
+  a BAY badge, the tagline), glass chips in the top corners, four
+  horizontal glass pill buttons along the bottom (MULAI in gold, SAVE,
+  LOAD, END GAME), the gold hero car and the wheelman large in the lower
+  foreground, and a beach backdrop with the ferris wheel. The version
+  stamp "KENCANA BAY · v6 · 18 NOV 2026" is on the title screen and in
+  the in-game HUD. The map screen (M key) is a bright district mosaic
+  with a sunset gradient per district, the sea on the west edge, a grid
+  A–F / 1–6, a route line to the objective, a glowing objective star, and
+  the twelve missions plus player stats; it is semi-transparent so the
+  city shows through behind it.
+- **Structure**: one clear job per file — `config.js` (tuning, places,
+  missions, crew, weapons), `random.js` (seeded generator), `three-shim.js`
+  (Three.js global shim), `input.js` (keyboard state), `world.js` (city),
+  `vehicles.js` (cars, helicopter, characters), `pedestrians.js` (traffic
+  and pedestrians), `police.js` (wanted level and pursuit), `missions.js`
+  (mission state machine), `audio.js` (radio), `hud.js` (panels, minimap,
+  map, portraits), `render.js` (renderer, lights, chase and title
+  cameras), `main.js` (boot, loop, screens, save/load, shooting, crew),
+  `shots.js` (staged scenes behind `?shot=` for screenshots).
+  Three.js r152 is vendored as `game/vendor/three.min.js`.
 
-- **City** (`game/src/world.js`): sunset beach city, sea on the west
-  edge, 600×600 road grid, 6 districts (Pelabuhan Segara, Kampung Batik,
-  Alun-Alun, Lorong Emas, Pantai Kidul, Pasar Senja), 3 building
-  archetypes (tower / shophouse / mid block) + one landmark per district
-  (warehouse + dock crane, hotel tower, city hall with dome, gold casino,
-  beach hotel, market hall), ~78% lit windows, palms, beach umbrellas,
-  a ferris wheel and a KENCANA FM 101.1 billboard on the beach road.
-  Bright HD sunset lighting (hemisphere 1.9, ambient 0.95, sun 3.6).
-- **Hero car** (`game/src/vehicles.js`): the Garuda GT — a low, wide,
-  GOLD (#ffb400 metallic) sports car with a lofted wedge body (pointed
-  nose rising to the cowl, wide rear), black roof panel, double white
-  hood stripes, white side stripes, white star rims, big spoiler, twin
-  chrome exhausts, and a visible seated driver in an orange shirt.
-  Traffic: sedan, taxi, van, truck + white/blue KPD police cars and a
-  police helicopter.
-- **Gameplay** (`game/src/main.js`, `missions.js`, `police.js`): walk +
-  drive, steal cars with E, 12 story missions with payouts $300–$1200,
-  crew hire with real effects (Agus $200 cools wanted 2×, Bambang $350
-  repairs the car, Ratna $300 +15% payout), wanted 0–5 stars with KPD
-  pursuit + heli at 3 stars + roadblocks at 4 stars, 5 weapons
-  (Pistol, Kancil SMG, Shotgun, Garuda, Launcher), drift stunts for
-  cash, synth radio Gamelan FM 101.1, save/load + autosave
-  (`kencana.save.v1`), safehouse/garage.
-- **HUD** (`game/index.html`, `game/src/hud.js`): mission panel
-  top-left, crew panel, KPD RESPONSE panel top-right with wanted stars
-  + cash + time/day, round minimap bottom-left with district name + HP
-  + REP, weapon slots, speed bottom-right, dialogue bar with a drawn
-  character portrait bottom-centre, help bar at the bottom.
-- **Title screen**: centred logo in the top third (TELUK KENCANA · 1998
-  over-line, KENCANA in gold→pink gradient, BAY badge, tagline "Emas,
-  bensin, dan pengkhianatan — seorang wheelman pulang ke Teluk
-  Kencana."), glass chips in the top corners, horizontal glass pill
-  buttons at the bottom (MULAI gold + SAVE / LOAD / END GAME), hero gold
-  Garuda + wheelman in the lower foreground, beach backdrop with the
-  ferris wheel. Version stamp "KENCANA BAY · v6 · 18 NOV 2026" on the
-  title and in the HUD corner.
-- **Map (M)**: full bright district mosaic with sunset colour gradation
-  per district, sea on the west edge, grid A–F / 1–6, route line,
-  glowing objective star, semi-transparent so the city shows behind it.
+## How the build went (revision passes)
 
-## Verification (this session)
+- **Pass 1**: every file written fresh from the prose brief.
+- **Pass 2** (after the first playtest): fixed the Chromium launch (the
+  managed browser needs its WebGL domain policy flags), switched the
+  playtest to `file://` (the local-network check blocks `http://localhost`
+  here), rewrote `shots.js` after it was deleted with the starter files,
+  moved the hero car and player spawn onto the open beach road (the first
+  spot sat inside a building's collision box, so the car could not move),
+  fixed three bugs (a `player.crewAgus` reference that does not exist, the
+  ferris wheel's legs spinning with the rim, `Math.random()` colours in
+  traffic cars), fixed the map screen (it could be opened but never
+  closed, because the toggle was only read inside the frozen step loop),
+  and reworked the title camera.
+- **Pass 3** (after reading the screenshots back): the chase camera was
+  still settling from its start position high above the city, so the car
+  was out of frame; a settle loop was added to the staged shots. The map
+  canvas was blank because the staging called `showMap` without setting
+  the game's own map-open flag. The hero car was re-aimed to face
+  east-north-east so the title camera sees its sunlit flank, the title
+  camera was moved to look south down the beach road, the spawn was moved
+  beside the ferris wheel, and the chase camera was tightened (look-at
+  point closer, less pull-back at speed).
+- **Pass 4** (after reading the screenshots back again): the title
+  camera's view was blocked by a tall building, so the spawn moved south
+  beside the ferris wheel and the camera now looks north-west at the car
+  with the wheel behind it; the foot shot's player was standing between
+  the camera and the car, so the staging was fixed to put the wheelman
+  south of the car facing it; buildings got windows on all four faces
+  (their blank sides read as flat walls); the car's black roof panel and
+  cockpit were narrowed and its white stripes thinned so the gold body
+  reads instead of black.
+- **Pass 5** (after a read-back of the two newest shots): the chase
+  camera moved closer and further to the side for a three-quarter rear
+  view, the roll bar was lowered with struts at both ends so it reads as
+  bolted to the body instead of floating above it, the title logo block
+  moved to the top third of the screen (buttons pinned to the bottom with
+  `margin-top: auto`) so the BAY badge and tagline no longer overlap the
+  car, the title camera moved closer and aims above the car so the gold
+  car sits big in the lower foreground, the spoiler blade was repainted
+  gold, and the hood stripes were continued over the rear deck so they
+  read from a chase camera too.
 
-- `node --check` on all 13 `game/src/*.js` files: OK.
-- Playwright playtest (menu → MULAI → E enter car → hold W 5 s → M
-  open map → M close): **0 page errors, 0 external network requests**;
-  map opens and closes; the car moves (7 KM/H in the slow headless
-  SwiftShader renderer, where each frame advances only one fixed 1/60 s
-  step — a rendering-speed artefact, not a game bug; the staged chase
-  screenshot shows 51 KM/H after 240 fixed steps).
-- 4 new screenshots (1280×720, taken this session with Playwright,
-  `shots/take-shots.mjs`): 1-chase.jpg (gold Garuda, driver visible,
-  KPD pursuit, 4 wanted stars, 51 KM/H, v6 stamp), 2-foot.jpg
-  (wheelman on foot beside the gold Garuda, red-shirt enemies, 3
-  wanted stars, WANTO dialogue portrait, v6 stamp), 3-map.jpg (bright
-  mosaic map, route line, objective star, mission list + stats),
-  4-title.jpg (centred logo, v6 stamp, gold Garuda + wheelman, beach +
-  ferris wheel backdrop). Each read back and confirmed.
-- Dossier: `mkdir -p out && MAKEFUN_OUTPUT_DIR=out node main.ts`
-  run twice — **byte-identical** (`diff -r` clean). game/ 738,283 bytes
-  (limit 48 MiB), screenshots 98–130 KiB each (limit 256 KiB),
-  dossier.json 735,896 bytes (limit 1.5 MiB).
-- Test server stopped after verification.
+## Verification (all done in this session)
+
+- **Syntax**: every game source file passes `node --check`
+  (14 files: `game/src/*.js` plus `main.ts`; `serve.ts` is the kit's
+  TypeScript starter and is checked by the TypeScript compiler instead).
+- **Playtest** (`shots/playtest.mjs`, Playwright + system Chromium,
+  `file://`): title screen, MULAI, walking to the hero car, E to enter
+  (HUD shows GARUDA GT), driving (47–94 km/h depending on the run),
+  M to open the map and M again to close it. Result: **0 page errors,
+  0 external network requests, 0 failed requests.**
+- **Screenshots** (1280×720, in `screenshots/`, read back by eye):
+  `1-chase.jpg` — the gold Garuda GT at 166 km/h in a three-quarter
+  rear view, gold spoiler and roll bar on the body, driver visible, a
+  KPD car alongside, 3 wanted stars, mission panel, minimap, KPD panel;
+  `2-foot.jpg` — the wheelman on foot beside the parked gold Garuda,
+  ferris wheel behind; `3-map.jpg` — the bright GPS map mosaic with
+  grid, route line, objective star, mission list and stats;
+  `4-title.jpg` — the logo in the top third, the big gold car and the
+  wheelman in the lower foreground, ferris wheel, sun, palms, umbrellas
+  and sea behind, v6 stamp visible.
+- **Dossier**: `main.ts` run twice produces a **byte-identical**
+  `dossier.json` (590,888 bytes). Gate limits: `game/` 748 KB (limit
+  48 MiB), 16 files; each screenshot 64–109 KB (limit 256 KiB);
+  dossier 577 KiB (limit 1.5 MiB).
+- **Recording**: the kit recording for this build stayed alive for the
+  whole session (PID 6547, still running at the end of the build).
 
 ## Honest gaps
 
-- No cutscene / voice acting; radio is a synth loop, not real music.
-- Traffic AI is simple (straight lines on the road grid, wraps at the
-  edge); police pursuit steers toward the player but has no pathfinding
-  around buildings.
-- No collision between cars/buildings (arcade style); the Garuda can
-  drive through a building.
-- The title-screen hero car is smaller in frame than in the chase shot
-  (camera ~14 units), but the gold paint, beach backdrop and v6 stamp
-  make it unmistakable.
+- The radio is a synthesised WebAudio loop, not recorded music; there
+  are no cutscenes or voice lines (dialogue is text with drawn
+  portraits).
+- Traffic AI is simple (cars loop their roads); police pursuit steers
+  toward the player and rams, with no advanced tactics.
+- The helicopter is visible in play but only a speck at its patrol
+  height in the chase screenshot; the KPD panel carries the helicopter
+  status instead.
+- At 166 km/h the chase camera's speed pull-back still leaves the car
+  at roughly a sixth of the frame width; a closer camera would clip
+  the road at that speed.
+- The first mission's safehouse is a marked point, not a enterable
+  interior; the garage is a menu action, not a separate interior scene.
