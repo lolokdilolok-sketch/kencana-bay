@@ -1,137 +1,154 @@
-// The staged scenes behind ?shot=title|chase|foot|map (with &seed=N).
-// Each scene plays the real game forward a fixed number of fixed steps,
-// so the frame is what real play looks like and the same seed always
-// gives the same frame. When the scene is painted twice, the page sets
-// window.__shotReady for the screenshot tool.
-import { SPEAKERS } from './config.js';
+// The screenshot scenes behind ?shot=chase|foot|map|title. Each one sets the game to a
+// fixed, seeded situation and plays the real rules forward for a fixed number of steps, so
+// the frame is what a short game really looks like and the same seed always gives the same
+// frame. The chase shot is the cover: the gold Garuda big in frame at speed, three wanted
+// stars, a police car behind it and the helicopter large above with its spotlight on.
 
-const FAKE_FORWARD = {
-  forward: () => true, back: () => false, left: () => false, right: () => false,
-  shootHeld: () => false, weaponKey: () => -1,
-  takePresses: () => ({ pressed: 0, garage: false }),
-};
+import { RACE } from './config.js';
 
-export function stageShot(name, ctx) {
-  const { view, hud, radio, scene, world, traffic, peds, police, missions,
-    player, heroCar, wheelman, heroDriver, startMission, step, updateHud,
-    enterCar, setWanted, setMapOpen } = ctx;
+const STEP = 1 / 60;
 
-  hud.setVersionStamp('KENCANA BAY · v6 · 18 NOV 2026');
-
-  // The chase camera eases toward its target (k = dt * 5 per call), so a
-  // shot taken after two frames would still show the camera's start
-  // position high above the city. Settle it first: 120 calls leave it
-  // a fraction of a percent from its target.
-  function settleCamera() {
-    for (let i = 0; i < 120; i += 1) view.chaseCamera(player, 1 / 60);
+/** Drive the player's car straight ahead for `seconds`, at a fixed speed — keeping the
+ * 3D mesh in step with the logical car, so the camera (which follows the car) and the mesh
+ * never disagree. */
+function driveForward(game, seconds, speed) {
+  const car = game.playerCar.car;
+  car.speed = speed;
+  for (let i = 0; i < seconds / STEP; i += 1) {
+    car.x += Math.sin(car.heading) * car.speed * STEP;
+    car.z += Math.cos(car.heading) * car.speed * STEP;
+    game.playerCar.mesh().position.set(car.x, 0, car.z);
+    game.playerCar.mesh().rotation.y = car.heading;
+    game.stepWorld(STEP);
   }
+}
 
-  function paintTwice(draw) {
-    let painted = 0;
-    function paint() {
-      draw();
-      painted += 1;
-      if (painted < 2) requestAnimationFrame(paint);
-      else window.__shotReady = true;
-    }
-    requestAnimationFrame(paint);
-  }
+function setHudForPlay(game) {
+  game.hud.showTitle(false);
+  game.hud.showMap(false);
+  game.hud.showGarage(false);
+  game.hud.update(game.hudState(), 0);
+}
 
-  if (name === 'title') {
-    hud.showTitle(true);
-    hud.setMission(null, 0, 0);
-    paintTwice(() => {
-      view.titleCamera(heroCar.x, heroCar.z, heroCar.heading, 1 / 60, 4);
-      view.render();
-    });
-    return;
+function stageChase(game) {
+  const car = game.playerCar.car;
+  game.state.screen = 'play';
+  game.state.inCar = true;
+  game.state.wanted = 3;
+  game.state.cash = 13230;
+  game.state.clockMinutes = 21 * 60 + 30;
+  game.state.day = 1;
+  game.state.rep = 1320;
+  game.missions.load(5); // Balapan Senja — the mission panel shows a race in progress.
+  game.playerMesh.visible = false;
+  game.playerCar.place(-300, 330, Math.PI); // beach road, heading north, clear of the tower row
+  game.stepWorld(STEP);
+  driveForward(game, 2.0, 34);
+  // Park the pursuit where the camera can see it: the heli big and LOW ahead-right of the
+  // car with its spotlight on, one police car pulling alongside on the right.
+  const heli = game.police.heli;
+  heli.position.set(car.x + 5, 10, car.z - 24);
+  heli.rotation.y = Math.atan2(car.x - heli.position.x, car.z - heli.position.z);
+  const cruiser = game.police.cars[0];
+  if (cruiser) {
+    cruiser.x = car.x + 9;
+    cruiser.z = car.z - 18;
+    cruiser.heading = Math.PI;
+    cruiser.mesh.position.set(cruiser.x, 0, cruiser.z);
+    cruiser.mesh.rotation.y = cruiser.heading;
   }
+  setHudForPlay(game);
+  game.hud.showDialogue('Agus', 'Three stars on you. Cut through the market, they hate the alleys.', 8);
+  return { cameraMode: 'chase' };
+}
 
-  // The three play scenes all run the real loop for a fixed step count.
-  hud.showTitle(false);
-  startMission(missions, 5, police); // Balapan Senja: the race mission.
-  const input = FAKE_FORWARD;
+function stageFoot(game) {
+  game.state.screen = 'play';
+  game.state.inCar = false;
+  game.state.wanted = 0;
+  game.state.cash = 12480;
+  game.state.clockMinutes = 18 * 60 + 36;
+  game.state.day = 1;
+  game.missions.load(0);
+  game.playerCar.place(-310, 358, Math.PI / 2 + 0.4);
+  // The wheelman stands at the driver's door, big in frame — but stepped to his own right
+  // of the sight line, so the parked Garuda shows whole beside him instead of hiding
+  // behind his body. His mesh faces the camera, so his minifig face, patterned shirt and
+  // C-hands read, with the gold car right beside him. Staged far south of the ferris
+  // wheel, so the wheel is a small backdrop at the left edge instead of a leg across the
+  // frame.
+  game.state.player.heading = Math.atan2(-310 - (-306.5), 358 - 362.5);
+  const px = -306.5 + (-Math.cos(game.state.player.heading)) * 2.5;
+  const pz = 362.5 + Math.sin(game.state.player.heading) * 2.5;
+  game.state.player.x = px;
+  game.state.player.z = pz;
+  game.playerMesh.position.set(game.state.player.x, 0, game.state.player.z);
+  game.playerMesh.rotation.y = game.state.player.heading + Math.PI;
+  game.playerMesh.visible = true;
+  for (let i = 0; i < 90; i += 1) game.stepWorld(STEP);
+  setHudForPlay(game);
+  game.hud.showDialogue('Ratna', 'So the wheelman is back. Kencana missed you, kid.', 8);
+  return { cameraMode: 'foot' };
+}
 
-  if (name === 'foot') {
-    setWanted(police, 3, scene);
-    // The wheelman stands seven metres south of the parked Garuda,
-    // facing north toward it: the chase camera sits behind him, so the
-    // car is in the frame just beyond him instead of behind the camera.
-    player.x = -240;
-    player.z = 287;
-    player.heading = Math.PI;
-    wheelman.visible = true;
-    wheelman.position.set(player.x, 0, player.z);
-    wheelman.rotation.y = player.heading;
-    heroCar.x = -240;
-    heroCar.z = 280;
-    heroCar.heading = 1.9;
-    heroCar.group.position.set(-240, 0, 280);
-    heroCar.group.rotation.y = 1.9;
-    for (let i = 0; i < 90; i += 1) {
-      step(1 / 60, { ...FAKE_FORWARD, forward: () => false }, performance.now());
-    }
-    hud.say(SPEAKERS.WANTO, 'You are standing in my city, wheelman. The KPD is watching.');
-    settleCamera();
-    paintTwice(() => {
-      view.chaseCamera(player, 1 / 60);
-      updateHud();
-      view.render();
-    });
-    return;
-  }
+function stageMap(game) {
+  game.state.screen = 'map';
+  game.state.inCar = true;
+  game.state.wanted = 2;
+  game.state.cash = 13230;
+  game.state.clockMinutes = 18 * 60 + 37;
+  game.state.day = 1;
+  game.missions.load(5);
+  game.playerCar.place(-60, -40, Math.PI / 2);
+  game.playerMesh.visible = false;
+  for (let i = 0; i < 60; i += 1) game.stepWorld(STEP);
+  game.hud.showTitle(false);
+  game.hud.showMap(true);
+  game.hud.update(game.hudState(), 0);
+  return { cameraMode: 'foot' };
+}
 
-  if (name === 'map') {
-    player.x = -240;
-    player.z = 276.5;
-    player.heading = 0.5;
-    setMapOpen(true);
-    updateHud();
-    settleCamera();
-    paintTwice(() => {
-      view.chaseCamera(player, 1 / 60);
-      view.render();
-    });
-    return;
-  }
+function stageTitle(game) {
+  game.state.screen = 'title';
+  game.state.inCar = false;
+  game.state.wanted = 0;
+  game.stageTitleBackdrop();
+  for (let i = 0; i < 60; i += 1) game.stepWorld(STEP);
+  game.hud.showTitle(true);
+  return { cameraMode: 'title' };
+}
 
-  // Default: the chase. The player drives the gold Garuda in the race,
-  // four stars wanted, police closing in. The car is placed back at the
-  // north end of the beach road and turned south for this shot so it
-  // can run at full speed past the ferris wheel instead of into the
-  // city blocks or off the map's south edge. Only 150 steps: the car
-  // is still beside the beach and the wheel instead of at the far
-  // empty end of the map.
-  heroCar.x = -240;
-  heroCar.z = 200;
-  heroCar.heading = 0;
-  heroCar.group.position.set(-240, 0, 200);
-  heroCar.group.rotation.y = 0;
-  enterCar(heroCar);
-  setWanted(police, 4, scene);
-  for (let i = 0; i < 150; i += 1) {
-    step(1 / 60, input, performance.now());
-  }
-  // Frame one pursuing unit alongside the hero car: the police spawn
-  // ninety metres out and trail behind the camera, so without this the
-  // chase reads as an empty road. The unit keeps the player's heading
-  // and sits ahead-right of the car, inside the chase camera's view.
-  if (police.units.length > 0) {
-    const lead = police.units[0];
-    const fx = Math.sin(player.heading);
-    const fz = Math.cos(player.heading);
-    lead.car.x = player.x + fx * 16 - fz * 7;
-    lead.car.z = player.z + fz * 16 + fx * 7;
-    lead.car.heading = player.heading;
-    lead.car.speed = player.car.speed;
-    lead.car.group.position.set(lead.car.x, 0, lead.car.z);
-    lead.car.group.rotation.y = lead.car.heading;
-  }
-  hud.say(SPEAKERS.AGUS, 'Sunset race across four checkpoints. Win it for the crew.');
-  settleCamera();
-  paintTwice(() => {
-    view.chaseCamera(player, 1 / 60);
-    updateHud();
-    view.render();
-  });
+/** Garage interior, for verification only (not one of the four submitted shots): the
+ * player inside the workshop, the gold Garuda on the lift, Bambang at the bench. */
+function stageGarage(game) {
+  game.state.screen = 'garage';
+  game.state.inCar = false;
+  game.state.wanted = 0;
+  game.state.cash = 12330;
+  const spawn = game.garage.interiorSpawn();
+  game.state.player.x = spawn.x;
+  game.state.player.z = spawn.z;
+  game.state.player.heading = spawn.heading;
+  game.playerMesh.position.set(spawn.x, 0, spawn.z);
+  game.playerMesh.rotation.y = spawn.heading;
+  game.playerMesh.visible = true;
+  game.garage.state.inside = true;
+  game.garage.setCar(0xffc93c);
+  for (let i = 0; i < 60; i += 1) game.stepWorld(STEP);
+  game.hud.showTitle(false);
+  game.hud.showGarage(true);
+  game.hud.setGarageInfo({ cash: game.state.cash, repairCost: game.garage.REPAIR_COST, carHp: 100, paintName: 'Gold' });
+  return { cameraMode: 'garage' };
+}
+
+/**
+ * Set the game to the named scene (chase, foot, map, title; any other name is title) and
+ * return which camera the shot should use.
+ */
+export function stageShot(name, game) {
+  if (name === 'chase') return stageChase(game);
+  if (name === 'foot') return stageFoot(game);
+  if (name === 'map') return stageMap(game);
+  if (name === 'garage') return stageGarage(game);
+  return stageTitle(game);
 }

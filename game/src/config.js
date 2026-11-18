@@ -1,96 +1,118 @@
-// Kencana Bay — every tuning number, place, mission, crew member and weapon.
-// These values are my own design for this game.
-export const GAME = {
-  name: 'KENCANA BAY',
-  tagline: 'Emas, bensin, dan pengkhianatan — seorang wheelman pulang ke Teluk Kencana.',
-  version: 'v6 · 18 NOV 2026',
-  year: 1998,
-  saveKey: 'kencana.save.v1',
-  seed: 1,
+// Kencana Bay — shared constants: city, districts, story, crew, weapons, keys.
+// One job: every number the rest of the game agrees on lives here.
+
+export const VERSION_STAMP = 'KENCANA BAY · v7 · 19 NOV 2026';
+export const SAVE_KEY = 'kencana.save.v7';
+
+// World layout: a road grid, avenues and streets every 120 units, roads 14 wide.
+// The sea sits on the west edge (x < -360); the beach road runs along it.
+export const CITY = {
+  minX: -420, maxX: 420, minZ: -420, maxZ: 420,
+  roadGap: 120, roadWidth: 14,
+  seaX: -360, // west of this line is water
+  beachZ: 300, // ferris wheel and umbrellas live near here
 };
 
-// The city: x runs east, z runs south. The sea lies west of x = -300,
-// a strip of sand between the water and the first road.
-export const WORLD = {
-  minX: -360, maxX: 360, minZ: -360, maxZ: 360,
-  seaX: -300, sandX: -260,
-  roadWidth: 14,
-  roadXs: [-240, -120, 0, 120, 240],
-  roadZs: [-240, -120, 0, 120, 240],
-};
-
+// Six districts, each with a map colour and a short label for the HUD.
 export const DISTRICTS = [
-  { id: 'segara', name: 'Pelabuhan Segara', x0: -300, x1: -40, z0: -360, z1: -120, color: 0x3f6fb5, css: '#3f6fb5', landmark: 'Docks & Crane' },
-  { id: 'batik', name: 'Kampung Batik', x0: -40, x1: 360, z0: -360, z1: -120, color: 0xe08a2e, css: '#e08a2e', landmark: 'Batik Workshop' },
-  { id: 'alun', name: 'Alun-Alun', x0: -300, x1: -40, z0: -120, z1: 120, color: 0x7fb069, css: '#7fb069', landmark: 'Grand Hotel' },
-  { id: 'emas', name: 'Lorong Emas', x0: -40, x1: 360, z0: -120, z1: 120, color: 0xd4af37, css: '#d4af37', landmark: 'Casino' },
-  { id: 'kidul', name: 'Pantai Kidul', x0: -300, x1: -40, z0: 120, z1: 360, color: 0x2ec4b6, css: '#2ec4b6', landmark: 'Ferris Wheel' },
-  { id: 'senja', name: 'Pasar Senja', x0: -40, x1: 360, z0: 120, z1: 360, color: 0xef476f, css: '#ef476f', landmark: 'Showroom' },
+  { id: 'segara', name: 'Pelabuhan Segara', color: '#3f7fbf', x0: -360, z0: -360, x1: -120, z1: -120, note: 'Docks · Warehouses' },
+  { id: 'batik', name: 'Kampung Batik', color: '#e06a9a', x0: -120, z0: -360, x1: 140, z1: -120, note: 'Old town · Batik shops' },
+  { id: 'alun', name: 'Alun-Alun', color: '#ffd34d', x0: -120, z0: -120, x1: 140, z1: 140, note: 'Hotel · Mansion' },
+  { id: 'emas', name: 'Lorong Emas', color: '#b06ae0', x0: 140, z0: -120, x1: 360, z1: 140, note: 'Casino · Neon' },
+  { id: 'kidul', name: 'Pantai Kidul', color: '#3fd2c0', x0: -360, z0: 140, x1: -100, z1: 360, note: 'Beach · Ferris wheel' },
+  { id: 'senja', name: 'Pasar Senja', color: '#ff8a3d', x0: 100, z0: 140, x1: 360, z1: 360, note: 'Market · Showroom · Garage' },
 ];
 
 export function districtAt(x, z) {
   for (const d of DISTRICTS) {
     if (x >= d.x0 && x < d.x1 && z >= d.z0 && z < d.z1) return d;
   }
-  return DISTRICTS[0];
+  return null;
 }
 
+// The 12 story missions. target is the checkpoint the player must reach.
 export const MISSIONS = [
-  { id: 1, name: 'Selamat Datang', payout: 300, desc: 'Welcome back to Teluk Kencana. Drive to the safehouse.', type: 'drive', points: [{ x: -180, z: -60, label: 'Safehouse' }] },
-  { id: 2, name: 'Hot Wheels', payout: 450, desc: 'Steal the Garuda GT from the showroom.', type: 'steal', points: [{ x: 180, z: 240, label: 'Showroom' }] },
-  { id: 3, name: 'Antar Paket', payout: 400, desc: 'Deliver the package to Kampung Batik.', type: 'drive', points: [{ x: 200, z: -240, label: 'Batik House' }] },
-  { id: 4, name: 'Tagihan Pasar', payout: 550, desc: 'Collect the debt at Pasar Senja.', type: 'drive', points: [{ x: 120, z: 240, label: 'Market' }, { x: 240, z: 180, label: 'Stall Row' }] },
-  { id: 5, name: 'Mata-Mata', payout: 500, desc: 'Shadow the contact near the casino.', type: 'drive', points: [{ x: 60, z: 0, label: 'Casino' }] },
-  { id: 6, name: 'Balapan Senja', payout: 700, desc: 'Sunset race across four checkpoints. Win it for the crew.', type: 'race', points: [
-    { x: -180, z: 240, label: 'Checkpoint 1: Pantai Kidul' },
-    { x: -240, z: -180, label: 'Checkpoint 2: Gudang Segara' },
-    { x: 240, z: -240, label: 'Checkpoint 3: Kampung Batik' },
-    { x: 60, z: 120, label: 'Checkpoint 4: Alun-Alun' },
-  ] },
-  { id: 7, name: 'Gudang Segara', payout: 650, desc: 'Clear the warehouse at the docks.', type: 'clear', points: [{ x: -240, z: -240, label: 'Gudang Segara' }] },
-  { id: 8, name: 'Kabur dari WPD', payout: 600, desc: 'The KPD is on you. Lose them, then reach the garage.', type: 'escape', points: [{ x: -60, z: 60, label: 'Bengkel Bambang' }], wanted: 4 },
-  { id: 9, name: 'Heat Wave', payout: 750, desc: 'Full heat. Survive the chase to the beach.', type: 'escape', points: [{ x: -240, z: 300, label: 'Pantai Kidul' }], wanted: 5 },
-  { id: 10, name: 'Kencana Hilang', payout: 700, desc: 'Find the missing gold shipment.', type: 'drive', points: [{ x: -180, z: -300, label: 'Docks' }, { x: 0, z: -60, label: 'Alun-Alun' }] },
-  { id: 11, name: 'Double Cross', payout: 900, desc: 'Ratna set a meeting. Trust no one.', type: 'clear', points: [{ x: 180, z: 60, label: 'Lorong Emas' }] },
-  { id: 12, name: 'The Last Ride', payout: 1200, desc: 'One last ride out of Teluk Kencana.', type: 'race', points: [
-    { x: -240, z: 300, label: 'Checkpoint 1: Pantai' },
-    { x: 240, z: 300, label: 'Checkpoint 2: Pasar' },
-    { x: 240, z: -300, label: 'Checkpoint 3: Batik' },
-    { x: -300, z: -60, label: 'Checkpoint 4: Pelabuhan' },
-  ] },
+  { name: 'Selamat Datang', payout: 300, target: { x: -60, z: -60 }, brief: 'Ratna wants to meet you at the Alun-Alun. Walk there and say hello.', contact: 'Ratna', line: 'So the wheelman is back. Kencana missed you, kid.' },
+  { name: 'Hot Wheels', payout: 450, target: { x: -300, z: -300 }, brief: 'A Garuda GT is parked at the docks. Take it — quietly.', contact: 'Ratna', line: 'The gold one. Keys are in it. Try not to scratch her.' },
+  { name: 'Antar Paket', payout: 400, target: { x: 240, z: -60 }, brief: 'Drive the package to the casino in Lorong Emas. No stops.', contact: 'Agus', line: 'Straight roads, no police. I will watch your back from the radio.' },
+  { name: 'Tagihan Pasar', payout: 550, target: { x: 240, z: 240 }, brief: 'Collect the market debt at Pasar Senja. They will not pay nicely.', contact: 'Ratna', line: 'Ask once. Then ask with the shotgun.' },
+  { name: 'Mata-Mata', payout: 500, target: { x: 0, z: -300 }, brief: 'Watch the batik warehouse in Kampung Batik. Report who comes and goes.', contact: 'Wanto', line: 'Eyes open, mouth shut. The commissioner pays for silence.' },
+  { name: 'Balapan Senja', payout: 700, target: { x: -300, z: 300 }, brief: 'Sunset race at Pantai Kidul. Four stages, no brakes, no mercy.', contact: 'Agus', line: 'Four gates. Win it and the whole bay knows your name.' },
+  { name: 'Gudang Segara', payout: 650, target: { x: -300, z: -180 }, brief: 'Clear the dock warehouse of the rival gang. Bring the Garuda.', contact: 'Ratna', line: 'They took our crates. Take them back — all of them.' },
+  { name: 'Kabur dari WPD', payout: 600, target: { x: 60, z: 60 }, brief: 'Lose the KPD tail and reach the Alun-Alun safehouse.', contact: 'Agus', line: 'Three stars on you. Cut through the market, they hate the alleys.' },
+  { name: 'Heat Wave', payout: 750, target: { x: 300, z: 0 }, brief: 'A heat wave of police is coming. Survive it and meet Wanto.', contact: 'Wanto', line: 'The department wants a show. Give them a chase, then vanish.' },
+  { name: 'Kencana Hilang', payout: 700, target: { x: -180, z: 180 }, brief: 'Your Garuda was stolen. Track it to the beach and take it back.', contact: 'Bambang', line: 'I saw them tow it toward Pantai Kidul. My lift is ready when you get it back.' },
+  { name: 'Double Cross', payout: 900, target: { x: 300, z: 300 }, brief: 'The double cross happens at the showroom. Be there first.', contact: 'Ratna', line: 'Trust no one tonight. Especially not me.' },
+  { name: 'The Last Ride', payout: 1200, target: { x: -60, z: -60 }, brief: 'One last ride through Kencana Bay. End it where it started.', contact: 'Ratna', line: 'Drive, kid. The sun is setting and the bay is ours.' },
 ];
 
 export const CREW = [
-  { id: 'agus', key: 'KeyZ', name: 'Agus Prasetyo', role: 'Driver · Getaway', cost: 200, perk: 'Wanted cools down twice as fast.' },
-  { id: 'bambang', key: 'KeyX', name: 'Bambang', role: 'Mechanic · Bengkel', cost: 350, perk: 'Your car slowly repairs itself.' },
-  { id: 'ratna', key: 'KeyC', name: 'Ratna', role: 'Fixer · Contacts', cost: 300, perk: 'Objectives pay a 10% bonus.' },
+  { id: 'agus', name: 'Agus Prasetyo', role: 'Driver · Getaway', price: 200, key: 'Z', line: 'I drive, you shoot. That is the deal.' },
+  { id: 'bambang', name: 'Bambang', role: 'Mechanic · Bengkel', price: 350, key: 'X', line: 'Bring her in dirty, take her out gold.' },
+  { id: 'ratna', name: 'Ratna', role: 'Fixer · Contacts', price: 300, key: 'C', line: 'I know a guy. I always know a guy.' },
 ];
 
 export const WEAPONS = [
-  { id: 0, name: 'PISTOL', ammo: 120, maxAmmo: 120, damage: 34, range: 90, rate: 280 },
-  { id: 1, name: 'KANCIL', ammo: 120, maxAmmo: 120, damage: 18, range: 80, rate: 90 },
-  { id: 2, name: 'SHOTGUN', ammo: 48, maxAmmo: 48, damage: 22, range: 45, rate: 700 },
-  { id: 3, name: 'GARUDA', ammo: 96, maxAmmo: 96, damage: 40, range: 130, rate: 200 },
-  { id: 4, name: 'LAUNCHER', ammo: 6, maxAmmo: 6, damage: 120, range: 160, rate: 1200 },
+  { name: 'Pistol', damage: 25, ammo: 60 },
+  { name: 'Kancil SMG', damage: 12, ammo: 180 },
+  { name: 'Shotgun', damage: 60, ammo: 24 },
+  { name: 'Garuda', damage: 40, ammo: 90 },
+  { name: 'Launcher', damage: 120, ammo: 6 },
 ];
 
-export const SPEAKERS = {
-  RATNA: { name: 'RATNA', role: 'FIXER', shirt: 0x7b2fbe, skin: 0xe8b88a, hair: 0x1a1a1a },
-  AGUS: { name: 'AGUS', role: 'DRIVER', shirt: 0x2e6fb5, skin: 0xd99a6c, hair: 0x111111 },
-  WANTO: { name: 'WANTO', role: 'KOMISARIS', shirt: 0x3a3f4a, skin: 0xe0a878, hair: 0x555555 },
-  BAMBANG: { name: 'BAMBANG', role: 'MECHANIC', shirt: 0x3f7a4a, skin: 0xcf9468, hair: 0x222222 },
+/** Weapon unlocks: the first three guns are owned from the start; the Garuda rifle is
+ * earned after mission 5 (index 4, Tagihan Pasar) and the Launcher after mission 9
+ * (index 8, Kabur dari WPD). Locked weapons show LOCKED in the weapon bar. */
+export function weaponUnlocked(weaponIndex, missionIndex) {
+  if (weaponIndex < 3) return true;
+  if (weaponIndex === 3) return missionIndex >= 4;
+  return missionIndex >= 8;
+}
+
+// Garage repaint colours (persist in save).
+export const PAINTS = [
+  { id: 'gold', name: 'Emas Kencana', hex: 0xffb400 },
+  { id: 'pink', name: 'Pink Senja', hex: 0xff2e63 },
+  { id: 'red', name: 'Merah Garuda', hex: 0xd21f2b },
+  { id: 'black', name: 'Hitam Lorong', hex: 0x1a1a22 },
+];
+
+// Street race: 5 gates across the city, start flag at Pantai Kidul.
+export const RACE = {
+  start: { x: -300, z: 300 },
+  gates: [
+    { x: -300, z: 60 },
+    { x: -60, z: -60 },
+    { x: 180, z: -180 },
+    { x: 300, z: 120 },
+    { x: -180, z: 300 },
+  ],
+  winPayout: 500, losePayout: 150, parTime: 150, // seconds
 };
 
-export const TUNING = {
-  walkSpeed: 9,
-  carAccel: 26,
-  carBrake: 42,
-  carMaxSpeed: 46,
-  carReverse: 14,
-  carTurn: 1.9,
-  driftBonus: 300,
-  wantedDecay: 0.012,
-  policeTopSpeed: 40,
-  heliHeight: 55,
-  checkpointRadius: 16,
+export const GARAGE = {
+  door: { x: 300, z: 300 }, // entrance marker in Pasar Senja
+  room: { x: 1500, z: 0 }, // interior lives far from the city, same scene
+};
+
+export const KEYS = {
+  forward: 'KeyW', back: 'KeyS', left: 'KeyA', right: 'KeyD',
+  enter: 'KeyE', shoot: 'KeyJ', reload: 'KeyR', garage: 'KeyG',
+  map: 'KeyM', pause: 'KeyP', radio: 'KeyT', drift: 'Space',
+  crewAgus: 'KeyZ', crewBambang: 'KeyX', crewRatna: 'KeyC',
+  weapons: ['Digit1', 'Digit2', 'Digit3', 'Digit4', 'Digit5'],
+};
+
+export const PHYSICS = {
+  walkSpeed: 6, runSpeed: 10,
+  carAccel: 26, carBrake: 40, carMaxSpeed: 46, carReverse: 12,
+  carSteer: 1.9, driftGrip: 0.86,
+  trafficSpeed: 9,
+};
+
+export const SUNSET = {
+  sunColor: 0xff8a3d, sunIntensity: 3.4,
+  hemiSky: 0xffd9a0, hemiGround: 0x7a4a6a, hemiIntensity: 1.9,
+  ambient: 0.95, fogColor: 0xf2a56b, fogNear: 260, fogFar: 900,
+  skyTop: 0x7a3fa0, skyMid: 0xff8a5c, skyLow: 0xffc46b,
 };
