@@ -4,57 +4,57 @@
 [![rank](https://make.fun/badge/gta6-01/lolokdilolok-sketch/kencana-bay/rank.svg)](https://make.fun/bounty/gta6-01)
 [![reward](https://make.fun/badge/gta6-01/lolokdilolok-sketch/kencana-bay/reward.svg)](https://make.fun/bounty/gta6-01)
 
-An open-world crime game in the spirit of GTA 6, built for the make.fun
-bounty [gta6-01](https://make.fun/bounty/gta6-01). A wheelman comes home to
-Teluk Kencana in 1998: a sun-soaked beach city with six districts, a gold
-Garuda GT to steal, twelve story missions, a crew to hire, and the KPD
-(Kencana Police Department) to outrun.
-
-## Play
-
-Open `game/index.html` in desktop Chrome (or run `node serve.ts` and open
-http://localhost:8080). Keyboard and mouse, no network needed.
-
-- **WASD** drive / walk · **E** enter or steal a car · **J** shoot ·
-  **R** reload · **1–5** weapons · **Z / X / C** hire crew ·
-  **G** garage · **M** map · **P** pause · **T** radio
+An open-world crime game for the make.fun **Make GTA 6** bounty (`gta6-01`), built with
+Three.js r152 and plain static files — no build step, no network requests, playable
+offline in a desktop browser.
 
 ## The game
 
-- A 3D city: Pelabuhan Segara, Kampung Batik, Alun-Alun, Lorong Emas,
-  Pantai Kidul and Pasar Senja — docks, a batik workshop, a grand hotel,
-  a casino, a ferris wheel on the beach, a market and a car showroom.
-- The Garuda GT: a low, wide, metallic-gold sports car with a lofted
-  wedge body, black roof, double white stripes, white star rims, a big
-  spoiler and a visible driver.
-- Twelve story missions ($300–$1,200 each), three crew members for hire
-  (Agus the driver, Bambang the mechanic, Ratna the fixer), a wanted
-  level from zero to five stars with pursuing KPD cars, a helicopter at
-  three stars and roadblocks at four.
-- Five weapons, drift and stunt bonuses, a synthesised Gamelan FM 101.1
-  radio loop, save / load with autosave, a safehouse and a garage.
-- A HUD with a mission panel, crew panel, KPD response panel, round
-  minimap, weapon slots, speedometer and a dialogue bar with character
-  portraits — plus a transparent GPS map of the whole city.
+You are a wheelman back in **Kencana Bay, 1998** — a sun-soaked sunset beach city with
+six districts: Pelabuhan Segara (docks), Kampung Batik (old town), Alun-Alun (hotel and
+mansion), Lorong Emas (casino), Pantai Kidul (beach, ferris wheel) and Pasar Senja
+(market, showroom, garage). The sea is on the west edge.
 
-## Structure
+- **Drive and walk** — steal cars, drive the gold Garuda GT, drift for stunt cash.
+- **12 story missions** — from Selamat Datang ($300) to The Last Ride ($1200), with
+  checkpoints, contacts who talk (Ratna, Agus, Bambang, Wanto) and payouts.
+- **Wanted level 0–5** — KPD police cars chase and ram; at 3 stars a helicopter hunts
+  you with a spotlight; at 4 stars roadblocks go up.
+- **Crew** — hire Agus (driver), Bambang (mechanic) and Ratna (fixer).
+- **Enterable garage** — walk into Bengkel Bambang, repaint the Garuda in 4 colours,
+  repair her, talk to Bambang.
+- **Street races** — a repeatable 5-gate checkpoint race from Pantai Kidul, $500 for a win.
+- **5 weapons, Gamelan FM synth radio, save/load + autosave, safehouse, transparent map
+  with GPS, minimap, dialogue portraits.**
 
-- `main.ts` — hands the game in: copies `game/` and `screenshots/` to
-  the output and writes `dossier.json` with the vendored make.fun library.
-- `game/index.html` — the page, the HUD and the title and map screens.
-- `game/src/config.js` — tuning, districts, missions, crew, weapons.
-- `game/src/world.js` — the city: roads, buildings, landmarks, beach.
-- `game/src/vehicles.js` — the Garuda GT and every other vehicle.
-- `game/src/pedestrians.js` — traffic cars and walking people.
-- `game/src/police.js` — the wanted level and the KPD.
-- `game/src/missions.js` — the twelve-mission story.
-- `game/src/hud.js` — panels, minimap, portraits and the GPS map.
-- `game/src/audio.js` — the Gamelan FM synth radio.
-- `game/src/render.js` — the sunset renderer and cameras.
-- `game/src/input.js` — keyboard state.
-- `game/src/main.js` — the loop, screens, saving and screenshots.
-- `game/vendor/three.min.js` — vendored Three.js r152.
+## Controls
+
+WASD drive/walk · E enter/exit · J shoot · R reload · 1-5 weapons · Z/X/C crew ·
+G garage · M map · P pause · T radio
+
+## Play it
+
+```sh
+node serve.ts
+# then open http://localhost:8080
+```
+
+Or open `game/index.html` from any static file server (Firefox also opens it straight
+from the file). Screenshots live in `screenshots/` (cover first: chase, foot, map, title).
+
+## Layout
+
+- `main.ts` — the entry program: copies `game/` + `screenshots/` to `/output` and writes `dossier.json`.
+- `game/index.html` — the page: canvas, title screen, HUD, map, garage and pause DOM.
+- `game/src/` — one job per file: `config` (all numbers), `random` (seeded RNG),
+  `three-shim` (the Three.js import point), `input`, `audio` (synth radio + effects),
+  `render` (renderer, sunset, cameras), `world` (the city), `vehicles` (cars + driving),
+  `pedestrians`, `police` (pursuit, helicopter, roadblocks), `missions`, `garage`
+  (the workshop interior), `race` (street races), `hud` (DOM + minimap + portraits),
+  `main` (the loop and screens), `shots` (the four screenshot scenes).
+- `game/vendor/three.module.min.js` — Three.js r152, vendored.
+- `vendor/makefun-game.ts` — the kit's dossier library, unchanged.
 
 ## License
 
-MIT. See `LICENSE`.
+MIT — see `LICENSE`.
