@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>KENCANA — A Crime Story in Kencana Bay · 1998</title>
+<link rel="icon" href="data:,">
+<style>
+  html, body { margin: 0; height: 100%; overflow: hidden; background: #1a0b2e; font-family: system-ui, "Segoe UI", sans-serif; }
+  #game { position: fixed; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; }
+  #hud { position: fixed; inset: 0; pointer-events: none; color: #f5eeda; }
+  .panel { position: absolute; background: rgba(12,10,28,.72); border: 1px solid rgba(255,255,255,.14); border-radius: 10px; padding: 10px 12px; font-size: 13px; line-height: 1.35; }
+  #missionPanel { top: 12px; left: 12px; width: 250px; }
+  #missionPanel h3 { margin: 0 0 4px; color: #ffc44d; font-size: 14px; letter-spacing: 1px; }
+  #missionPanel .sub { color: #cfc6e8; }
+  #missionPanel .bar { height: 5px; background: #333; border-radius: 3px; margin-top: 6px; overflow: hidden; }
+  #missionPanel .bar > div { height: 100%; background: #ffc44d; width: 40%; }
+  #crewPanel { top: 150px; left: 12px; width: 250px; }
+  .crew { display: flex; gap: 8px; align-items: center; margin: 6px 0; }
+  .crew .av { width: 34px; height: 34px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 800; color: #fff; flex: none; }
+  .crew small { color: #b9b0d6; display: block; }
+  .crew b { color: #ffd24d; }
+  #kpdPanel { top: 12px; right: 12px; width: 230px; text-align: right; }
+  #kpdPanel h3 { margin: 0; color: #7ec8ff; font-size: 13px; letter-spacing: 2px; }
+  #cash { font-size: 26px; color: #7dff9a; font-weight: 800; }
+  #stars { color: #ffd24d; font-size: 18px; letter-spacing: 2px; }
+  #radio { color: #ff9ecf; font-size: 12px; }
+  #weaponPanel { position: absolute; top: 268px; right: 12px; display: flex; gap: 6px; }
+  .wslot { width: 46px; padding: 6px 2px; text-align: center; background: rgba(12,10,28,.72); border: 1px solid rgba(255,255,255,.18); border-radius: 8px; font-size: 10px; }
+  .wslot.sel { border-color: #ffc44d; box-shadow: 0 0 0 2px rgba(255,196,77,.5); }
+  .wslot b { display: block; font-size: 16px; }
+  #minimapWrap { position: absolute; left: 12px; bottom: 52px; text-align: left; }
+  #minimap { border-radius: 50%; border: 3px solid #ffd24d; background: #0c0a1c; display: block; }
+  #locName { color: #ffd24d; font-weight: 700; font-size: 13px; }
+  #locStreet { color: #cfc6e8; font-size: 12px; }
+  #hpBar { width: 130px; height: 8px; background: #333; border-radius: 4px; overflow: hidden; margin-top: 4px; }
+  #hpBar > div { height: 100%; background: #4ade80; width: 100%; }
+  #speedPanel { position: absolute; right: 16px; bottom: 52px; text-align: right; }
+  #speed { font-size: 44px; font-weight: 900; line-height: 1; }
+  #speed small { font-size: 13px; color: #cfc6e8; }
+  #vehName { color: #ffd24d; font-weight: 700; }
+  #dialog { position: absolute; left: 50%; bottom: 64px; transform: translateX(-50%); width: 460px; max-width: 60vw; background: rgba(12,10,28,.8); border: 1px solid rgba(255,255,255,.16); border-radius: 10px; padding: 10px 14px; }
+  #dialog b { color: #ffd24d; }
+  #dlgPortrait { float: left; margin-right: 10px; border-radius: 8px; border: 2px solid rgba(255,210,77,.65); background: #2a1a4a; }
+  #dispatch { position: absolute; left: 50%; bottom: 150px; transform: translateX(-50%); color: #9fd8ff; font-size: 13px; text-shadow: 0 1px 4px #000; }
+  #objective { position: absolute; left: 50%; top: 12px; transform: translateX(-50%); text-align: center; }
+  #objective h2 { margin: 0; color: #ffc44d; letter-spacing: 3px; font-size: 22px; text-shadow: 0 2px 8px #000; }
+  #objective .dist { color: #fff; font-weight: 700; }
+  #toast { position: absolute; left: 50%; top: 38%; transform: translateX(-50%); font-size: 26px; font-weight: 900; color: #ffd24d; text-shadow: 0 2px 10px #000; text-align: center; }
+  #helpBar { position: absolute; left: 0; right: 0; bottom: 8px; text-align: center; font-size: 12px; color: #d8d0ee; text-shadow: 0 1px 3px #000; }
+  #verStamp { position: absolute; right: 14px; bottom: 30px; font-size: 11px; letter-spacing: 2px; font-weight: 800; color: #ffd24d; background: rgba(12,8,28,.6); border: 1px solid rgba(255,210,77,.55); border-radius: 999px; padding: 5px 12px; text-shadow: 0 1px 3px #000; }
+  /* Title screen — poster layout, deliberately NOT Wilwatikta's
+     left-aligned title + left vertical buttons. Centered logo lockup
+     over the 3D hero car + wheelman, glass pill buttons in a
+     horizontal row along the bottom: the car and the character ARE the
+     poster, in bright ultra-HD sunset light. */
+  #menu { position: fixed; inset: 0; display: flex; flex-direction: column; justify-content: flex-start; align-items: center; padding: 3.5vh 4vw 4vh; background: linear-gradient(180deg, rgba(10,6,26,.55), transparent 26%, transparent 58%, rgba(10,6,26,.80)); color: #fff; box-sizing: border-box; }
+  #menu .topbar { width: 100%; display: flex; justify-content: space-between; }
+  #menu .topbar span { font-size: 12px; letter-spacing: 3px; font-weight: 700; color: #ffe9a8; background: rgba(12,8,28,.55); border: 1px solid rgba(255,210,77,.45); border-radius: 999px; padding: 8px 16px; backdrop-filter: blur(6px); }
+  #menu .logo { text-align: center; margin-top: 4vh; }
+  #menu .bottom { margin-top: auto; text-align: center; }
+  #menu .over { color: #8ef0ff; letter-spacing: 6px; font-size: 14px; font-weight: 700; }
+  #menu .over::before, #menu .over::after { content: "——"; color: #ffd24d; margin: 0 10px; letter-spacing: 0; }
+  #menu h1 { margin: 2px 0 0; font-size: min(104px, 12vw); line-height: .9; font-weight: 900; background: linear-gradient(180deg, #fff3b0 0%, #ffc44d 35%, #ff5a3c 70%, #ff2e63 100%); -webkit-background-clip: text; background-clip: text; color: transparent; letter-spacing: 8px; text-shadow: 0 6px 24px rgba(0,0,0,.45); filter: drop-shadow(0 4px 0 rgba(20,4,30,.55)); }
+  #menu .bay { display: inline-block; margin-top: 8px; color: #fff; border: 2px solid rgba(255,255,255,.85); border-radius: 999px; padding: 4px 22px; letter-spacing: 12px; font-size: 15px; font-weight: 800; text-indent: 12px; background: rgba(12,8,28,.45); backdrop-filter: blur(6px); }
+  #menu .story { margin-top: 12px; color: #fff; font-size: 17px; font-style: italic; text-shadow: 0 2px 8px #000; }
+  #menu .btns { display: flex; flex-direction: row; gap: 12px; align-items: center; pointer-events: auto; flex-wrap: wrap; justify-content: center; }
+  #menu button { padding: 14px 26px; font-size: 16px; letter-spacing: 3px; font-weight: 800; color: #fff; background: rgba(255,255,255,.12); border: 1px solid rgba(255,255,255,.55); border-radius: 999px; cursor: pointer; backdrop-filter: blur(8px); }
+  #menu button.primary { background: linear-gradient(90deg, #ffc44d, #ff5a3c 60%, #ff2e63); border-color: #ffe9a8; padding: 14px 44px; box-shadow: 0 6px 24px rgba(255,46,99,.45); }
+  #menu button:hover { filter: brightness(1.2); }
+  #menu .foot { margin-top: 12px; color: #d8d0ee; font-size: 12px; text-shadow: 0 1px 3px #000; }
+  #mapScreen { position: fixed; inset: 0; background: linear-gradient(180deg, rgba(42,18,88,.55) 0%, rgba(110,34,104,.5) 45%, rgba(168,58,90,.45) 75%, rgba(224,106,61,.4) 100%); display: none; color: #f5eeda; padding: 18px; box-sizing: border-box; }
+  #mapScreen .cols { display: flex; gap: 16px; height: calc(100% - 40px); }
+  #mapScreen .col { flex: 1; overflow: auto; background: rgba(12,8,28,.55); border: 1px solid rgba(255,255,255,.14); border-radius: 10px; padding: 10px 12px; }
+  #mapScreen .col:nth-child(2) { background: transparent; border: none; padding: 0; }
+  #mapScreen h2 { color: #ffd24d; letter-spacing: 2px; margin: 4px 0 10px; text-align: center; text-shadow: 0 2px 8px rgba(0,0,0,.8); }
+  #mapScreen h3 { text-shadow: 0 2px 6px rgba(0,0,0,.8); }
+  #mapCanvas { width: 100%; border: 1px solid rgba(255,255,255,.2); border-radius: 10px; display: block; }
+  #missionList div { padding: 5px 6px; border-radius: 6px; font-size: 12px; white-space: nowrap; }
+  #missionList .active { background: rgba(255,196,77,.22); border: 1px solid #ffc44d; }
+  #missionList .done { color: #8fe6a0; }
+  .hidden { display: none !important; }
+  #status { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+</style>
+</head>
+<body>
+<canvas id="game" aria-label="KENCANA: open-world crime game in Kencana Bay, 1998"></canvas>
+<div id="hud" class="hidden">
+  <div id="objective"><h2 id="objTitle">MISSION 1/12</h2><div class="dist" id="objDist"></div></div>
+  <div class="panel" id="missionPanel"><h3 id="missionName">MISSION 1/12 — SELAMAT DATANG</h3><div class="sub" id="missionDesc"></div><div class="sub" id="missionNext"></div><div class="bar"><div id="missionBar"></div></div></div>
+  <div class="panel" id="crewPanel"></div>
+  <div class="panel" id="kpdPanel"><h3>KPD RESPONSE</h3><div id="kpdUnits"></div><div id="cash">$0</div><div style="color:#ff5a6a;font-weight:800;font-size:11px;letter-spacing:2px">WANTED</div><div id="stars"></div><div id="clock"></div><div id="radio">GAMELAN FM 101.1<br><span style="color:#d8d0ee">Bonang Malam</span></div></div>
+  <div id="weaponPanel"></div>
+  <div id="minimapWrap"><canvas id="minimap" width="150" height="150"></canvas><div id="locName">Kampung Batik</div><div id="locStreet">Jl. Merdeka</div><div id="hpBar"><div id="hpFill"></div></div><div style="font-size:11px;color:#cfc6e8">REP FIXER · <span id="repVal">1320</span></div></div>
+  <div id="speedPanel"><div id="speed">0 <small>KM/H</small></div><div id="vehName">ON FOOT</div></div>
+  <div id="dialog"><canvas id="dlgPortrait" width="72" height="72"></canvas><b id="dlgName">RATNA</b> <span style="color:#b9b0d6" id="dlgRole">FIXER</span><div id="dlgText"></div></div>
+  <div id="dispatch"></div>
+  <div id="toast"></div>
+  <div id="helpBar">WASD drive/walk · E enter/exit · J shoot · R reload · 1-5 weapons · Z/X/C crew · G garage · M map · P pause · T radio</div>
+  <div id="verStamp">KENCANA BAY · v6 · 18 NOV 2026</div>
+</div>
+<div id="menu">
+  <div class="topbar"><span>12 MISSIONS · CREW · KPD</span><span style="color:#ffd24d;border-color:#ffd24d">KENCANA BAY · v6 · 18 NOV 2026</span><span>GAMELAN FM 101.1</span></div>
+  <div class="logo">
+    <div class="over">TELUK KENCANA · 1998</div>
+    <h1>KENCANA</h1>
+    <div class="bay">BAY</div>
+    <div class="story">Emas, bensin, dan pengkhianatan — seorang wheelman pulang ke Teluk Kencana.</div>
+  </div>
+  <div class="bottom">
+    <div class="btns">
+      <button class="primary" id="btnStart">▶ &nbsp;MULAI</button>
+      <button id="btnSave">SAVE</button>
+      <button id="btnLoad">LOAD</button>
+      <button id="btnEnd">END GAME</button>
+    </div>
+    <div class="foot">Click to start · Mouse aims · WASD moves · Progress saves automatically · v6 · 18 Nov 2026</div>
+  </div>
+</div>
+<div id="mapScreen">
+  <h2>🗺 PETA KENCANA — GPS AKTIF</h2>
+  <div class="cols">
+    <div class="col"><h3 style="color:#ffd24d">📜 STORY MISSIONS</h3><div id="missionList"></div><div style="margin-top:14px;color:#cfc6e8" id="currentJob"></div></div>
+    <div class="col" style="flex:3"><canvas id="mapCanvas" width="760" height="640"></canvas></div>
+    <div class="col"><h3 style="color:#ffd24d">📊 STATS</h3><div id="statsPanel"></div><div style="margin-top:12px"><b style="color:#ffd24d">LEGENDA</b><br>🟡 Objective / Checkpoint<br>🔵 KPD / Polisi<br>🔴 Musuh / Gang<br>🟢 Safehouse / Garage<br>🟠 Crew / Kontak</div>
+    <div style="margin-top:18px"><button id="btnCloseMap" style="padding:10px 18px">TUTUP [M]</button> <button id="btnTitle2" style="padding:10px 18px">TITLE</button></div></div>
+  </div>
+</div>
+<p id="status" role="status" aria-live="polite"></p>
+<script src="./vendor/three.min.js?v=6"></script>
+<script type="module" src="./src/main.js?v=6"></script>
+</body>
+</html>
