@@ -3,131 +3,275 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>KENCANA BAY — A Crime Story in Kencana Bay · 1998</title>
+<title>Kencana Bay — A Crime Story in Kencana Bay · 1998</title>
 <style>
+  :root {
+    --gold: #ffb400;
+    --pink: #ff2e63;
+    --teal: #3fd2c0;
+    --panel: rgba(16, 14, 26, 0.72);
+    --panel-line: rgba(255, 255, 255, 0.16);
+    --text: #f4f1e8;
+    --muted: #c9c2b2;
+  }
   * { box-sizing: border-box; }
-  html, body { margin: 0; height: 100%; overflow: hidden; background: #1b1026; font-family: system-ui, -apple-system, "Segoe UI", sans-serif; color: #f2ede6; }
-  #game { position: fixed; inset: 0; width: 100%; height: 100%; display: block; }
-  .panel { background: rgba(16, 10, 28, 0.78); border: 1px solid rgba(255, 255, 255, 0.14); border-radius: 10px; backdrop-filter: blur(3px); }
-  #hud { position: fixed; inset: 0; pointer-events: none; display: none; z-index: 5; }
-  #mission-panel { position: absolute; top: 14px; left: 14px; width: 330px; padding: 12px 14px; }
-  .m-title { font-size: 17px; font-weight: 800; color: #ffd23f; letter-spacing: 0.4px; }
-  .m-desc { font-size: 13px; margin-top: 4px; color: #e8e2d8; }
-  .m-next { font-size: 12px; margin-top: 6px; color: #ffb4c8; }
-  .m-bar { height: 6px; background: rgba(255,255,255,0.18); border-radius: 3px; margin-top: 8px; overflow: hidden; }
-  .m-fill { height: 100%; background: linear-gradient(90deg, #ffb400, #ff5e8a); }
-  #crew-panel { position: absolute; top: 168px; left: 14px; width: 330px; padding: 8px 12px; }
-  .crew-row { display: flex; gap: 10px; align-items: center; padding: 6px 0; font-size: 12px; }
-  .crew-letter { width: 34px; height: 34px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 16px; background: #e86a1c; color: #fff; flex: none; }
-  .crew-row:nth-child(2) .crew-letter { background: #2e6fb5; }
-  .crew-row:nth-child(3) .crew-letter { background: #7b2fbe; }
-  .hired { color: #7dff9a; font-weight: 700; }
-  #kpd-panel { position: absolute; top: 14px; right: 14px; width: 250px; padding: 12px 14px; text-align: right; font-size: 13px; }
-  .kpd-head { color: #6db3ff; font-weight: 800; letter-spacing: 1px; font-size: 13px; }
-  .pursuing { color: #ffb400; font-weight: 700; }
-  .cash { font-size: 26px; font-weight: 800; color: #7dff9a; margin-top: 4px; }
-  .wanted-label { font-size: 11px; letter-spacing: 2px; color: #ffb4c8; margin-top: 4px; }
-  .stars { font-size: 20px; color: #ffd23f; letter-spacing: 2px; }
-  .clock, .radio { font-size: 12px; color: #e8e2d8; margin-top: 2px; }
-  #minimap-wrap { position: absolute; left: 14px; bottom: 44px; text-align: left; }
-  #minimap { width: 168px; height: 168px; border-radius: 50%; border: 3px solid #ffd23f; background: #141021; display: block; }
-  #loc-name { font-size: 15px; font-weight: 800; color: #ffd23f; margin-top: 6px; text-shadow: 0 1px 4px rgba(0,0,0,0.8); }
-  #loc-street { font-size: 12px; color: #e8e2d8; text-shadow: 0 1px 4px rgba(0,0,0,0.8); }
-  #hp-bar { width: 168px; height: 7px; background: rgba(255,255,255,0.2); border-radius: 4px; margin-top: 5px; overflow: hidden; }
-  #hp-fill { height: 100%; background: #58d654; }
-  #rep-line { font-size: 11px; color: #c9f2c9; margin-top: 4px; }
-  #weapons { position: absolute; right: 14px; top: 46%; display: flex; flex-direction: column; gap: 6px; }
-  .weapon { width: 74px; padding: 6px 4px; text-align: center; font-size: 10px; background: rgba(16,10,28,0.78); border: 1px solid rgba(255,255,255,0.16); border-radius: 8px; }
-  .weapon.active { border-color: #ffd23f; background: rgba(90, 60, 10, 0.85); }
-  .w-icon { font-size: 15px; color: #ffd23f; }
-  #speed { position: absolute; right: 18px; bottom: 44px; text-align: right; text-shadow: 0 2px 6px rgba(0,0,0,0.8); }
-  #speed-num { font-size: 52px; font-weight: 800; line-height: 1; }
-  #speed-unit { font-size: 13px; }
-  #speed-vehicle { font-size: 15px; font-weight: 800; color: #ffd23f; }
-  #dialogue { position: absolute; left: 50%; bottom: 52px; transform: translateX(-50%); width: 560px; max-width: 60vw; display: none; align-items: center; gap: 12px; padding: 10px 14px; }
-  #portrait { width: 64px; height: 64px; border-radius: 8px; flex: none; }
-  #dlg-name { font-weight: 800; color: #ffd23f; font-size: 14px; }
-  #dlg-role { font-size: 11px; color: #ffb4c8; margin-left: 6px; }
-  #dlg-text { font-size: 14px; margin-top: 2px; }
-  #helpbar { position: absolute; left: 50%; bottom: 8px; transform: translateX(-50%); font-size: 12px; color: rgba(255,255,255,0.85); text-shadow: 0 1px 3px rgba(0,0,0,0.9); white-space: nowrap; }
-  #version-stamp { position: absolute; right: 14px; bottom: 118px; font-size: 11px; font-weight: 700; color: #1a1026; background: #ffd23f; border-radius: 20px; padding: 4px 10px; letter-spacing: 0.5px; }
-  /* Title screen */
-  #title-screen { position: fixed; inset: 0; z-index: 10; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; padding: 26px 20px 30px; background: linear-gradient(180deg, rgba(20,8,32,0.25) 0%, rgba(20,8,32,0) 35%, rgba(20,8,32,0) 60%, rgba(20,8,32,0.55) 100%); pointer-events: none; }
-  #title-screen .title-bottom { margin-top: auto; }
-  #title-screen .top-row { width: 100%; display: flex; justify-content: space-between; align-items: flex-start; }
-  .chip { font-size: 12px; font-weight: 700; letter-spacing: 1.5px; padding: 8px 14px; border-radius: 20px; background: rgba(16,10,28,0.6); border: 1px solid rgba(255,255,255,0.25); }
-  .stamp { font-size: 12px; font-weight: 800; letter-spacing: 1px; padding: 8px 14px; border-radius: 20px; background: #ffd23f; color: #1a1026; }
-  .logo-block { text-align: center; margin-top: 3vh; }
-  .overline { font-size: 15px; letter-spacing: 6px; color: #8ad8ff; font-weight: 700; }
-  .logo { font-size: 92px; line-height: 0.95; font-weight: 900; letter-spacing: 4px; background: linear-gradient(180deg, #ffe98a 0%, #ffb400 45%, #ff5e8a 100%); -webkit-background-clip: text; background-clip: text; color: transparent; text-shadow: 0 4px 30px rgba(255, 140, 60, 0.35); }
-  .bay-badge { display: inline-block; margin-top: 8px; font-size: 20px; font-weight: 800; letter-spacing: 10px; padding: 4px 18px 4px 28px; border: 2px solid rgba(255,255,255,0.85); border-radius: 24px; }
-  .tagline { margin-top: 12px; font-size: 16px; font-style: italic; color: #ffe9d6; text-shadow: 0 2px 8px rgba(0,0,0,0.8); }
-  .title-buttons { display: flex; gap: 12px; pointer-events: auto; }
-  .title-buttons button { font-size: 16px; font-weight: 800; letter-spacing: 2px; padding: 14px 28px; border-radius: 30px; border: 1px solid rgba(255,255,255,0.5); background: rgba(16,10,28,0.55); color: #fff; cursor: pointer; }
-  .title-buttons button.gold { background: linear-gradient(90deg, #ffb400, #ff5e8a); border-color: transparent; }
-  .title-foot { font-size: 12px; color: rgba(255,255,255,0.85); text-shadow: 0 1px 3px rgba(0,0,0,0.9); }
-  /* Map screen */
-  #map-screen { position: fixed; inset: 0; z-index: 12; display: none; align-items: center; justify-content: center; gap: 24px; background: rgba(24, 10, 38, 0.72); }
-  #map-canvas { width: 600px; height: 600px; border: 2px solid rgba(255,255,255,0.4); border-radius: 12px; }
-  #map-missions { width: 320px; font-size: 13px; }
-  .map-title { font-size: 18px; font-weight: 800; color: #ffd23f; margin-bottom: 10px; }
-  .map-mission { padding: 4px 0; color: #e8e2d8; }
-  .map-mission.active { color: #ffd23f; font-weight: 700; }
-  .map-stats { margin-top: 14px; line-height: 1.7; color: #c9f2c9; font-size: 12px; }
+  html, body { margin: 0; height: 100%; overflow: hidden; background: #1a1420; font-family: system-ui, -apple-system, "Segoe UI", sans-serif; color: var(--text); }
+  #game { position: fixed; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; }
   #status { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+  .hidden { display: none !important; }
+
+  /* ---------- title screen ---------- */
+  #title-screen { position: fixed; inset: 0; z-index: 20; display: flex; flex-direction: column; justify-content: flex-start; align-items: center; padding-top: 5vh; pointer-events: none; }
+  #title-screen .logo { text-align: center; pointer-events: none; }
+  #title-screen .overline { letter-spacing: 0.42em; font-size: 13px; color: #ffe9a8; text-shadow: 0 2px 12px rgba(0,0,0,0.7); }
+  #title-screen h1 { margin: 2px 0 0; font-size: 84px; line-height: 0.95; font-weight: 900; letter-spacing: 0.04em;
+    background: linear-gradient(180deg, #ffe9a8 0%, var(--gold) 45%, var(--pink) 100%);
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+    filter: drop-shadow(0 4px 18px rgba(0,0,0,0.65)); }
+  #title-screen .bay { display: inline-block; margin-top: 6px; padding: 3px 18px; border-radius: 999px; background: linear-gradient(90deg, var(--gold), var(--pink)); color: #1a1420; font-weight: 800; font-size: 22px; letter-spacing: 0.3em; }
+  #title-screen .tagline { margin-top: 10px; font-size: 17px; font-style: italic; color: #fff; text-shadow: 0 2px 10px rgba(0,0,0,0.8); }
+  .chips { position: absolute; top: 18px; left: 18px; right: 18px; display: flex; justify-content: space-between; pointer-events: none; }
+  .chip { background: var(--panel); border: 1px solid var(--panel-line); border-radius: 999px; padding: 7px 14px; font-size: 13px; font-weight: 600; backdrop-filter: blur(6px); }
+  .chip b { color: var(--gold); }
+  #title-buttons { position: absolute; bottom: 34px; left: 0; right: 0; display: flex; gap: 12px; justify-content: center; pointer-events: auto; }
+  #title-buttons button { pointer-events: auto; border: 1px solid var(--panel-line); background: var(--panel); color: var(--text); backdrop-filter: blur(8px);
+    font-size: 16px; font-weight: 700; padding: 13px 26px; border-radius: 999px; cursor: pointer; }
+  #title-buttons button:hover { background: rgba(255, 180, 0, 0.25); }
+  #title-buttons button.primary { background: linear-gradient(90deg, var(--gold), var(--pink)); color: #1a1420; border: none; }
+  #title-stamp { position: absolute; bottom: 96px; left: 0; right: 0; text-align: center; font-size: 12px; letter-spacing: 0.2em; color: rgba(255,255,255,0.75); text-shadow: 0 1px 6px rgba(0,0,0,0.8); }
+  #title-footer { position: absolute; bottom: 8px; left: 0; right: 0; text-align: center; font-size: 12px; color: rgba(255,255,255,0.6); }
+
+  /* ---------- HUD ---------- */
+  #hud { position: fixed; inset: 0; z-index: 10; pointer-events: none; font-size: 14px; }
+  .panel { background: var(--panel); border: 1px solid var(--panel-line); border-radius: 12px; backdrop-filter: blur(6px); padding: 10px 14px; }
+  #mission-panel { position: absolute; top: 16px; left: 16px; width: 300px; }
+  #mission-name { font-weight: 800; font-size: 14px; color: var(--gold); letter-spacing: 0.04em; }
+  #mission-brief { margin-top: 4px; color: var(--text); line-height: 1.35; }
+  #mission-payout { margin-top: 4px; color: var(--teal); font-weight: 700; }
+  #kpd-panel { position: absolute; top: 16px; right: 16px; text-align: right; min-width: 210px; }
+  #kpd-panel .label { font-size: 11px; letter-spacing: 0.2em; color: var(--muted); }
+  #wanted-stars { font-size: 22px; color: var(--gold); letter-spacing: 2px; line-height: 1.1; }
+  #cash { font-size: 24px; font-weight: 800; }
+  #clock { font-size: 13px; color: var(--muted); }
+  #rep { font-size: 12px; color: var(--teal); font-weight: 700; }
+  #hp-wrap { margin-top: 6px; height: 8px; background: rgba(255,255,255,0.15); border-radius: 99px; overflow: hidden; }
+  #hp-bar { height: 100%; width: 100%; background: linear-gradient(90deg, #2f9e5f, #7fd26a); }
+  #radio-line { margin-top: 6px; font-size: 12px; color: #ffd34d; }
+  #minimap-wrap { position: absolute; left: 16px; bottom: 16px; }
+  #minimap { border-radius: 50%; border: 3px solid rgba(255,255,255,0.35); box-shadow: 0 4px 18px rgba(0,0,0,0.5); display: block; }
+  #minimap-label { position: absolute; left: 0; right: 0; bottom: -20px; text-align: center; font-size: 11px; color: #fff; text-shadow: 0 1px 4px #000; }
+  #speed-box { position: absolute; right: 16px; bottom: 16px; text-align: right; }
+  #speed { font-size: 34px; font-weight: 900; text-shadow: 0 2px 8px rgba(0,0,0,0.7); }
+  #speed-label { font-size: 13px; font-weight: 700; color: var(--gold); }
+  #version-pill { position: absolute; right: 16px; bottom: 108px; background: linear-gradient(90deg, var(--gold), var(--pink)); color: #1a1420; font-size: 11px; font-weight: 800; padding: 4px 10px; border-radius: 999px; letter-spacing: 0.08em; }
+  /* Horizontal weapon bar: slot 0 is the fist, slots 1-5 are the guns. Active slot glows
+     orange, locked guns go grey with LOCKED under the icon. */
+  #weapon-slots { position: absolute; left: 50%; bottom: 34px; transform: translateX(-50%); display: flex; flex-direction: row; gap: 8px; }
+  .wslot { position: relative; width: 62px; height: 62px; background: var(--panel); border: 2px solid var(--panel-line); border-radius: 12px; backdrop-filter: blur(6px); display: flex; flex-direction: column; align-items: center; justify-content: center; }
+  .wslot.active { background: linear-gradient(180deg, #ff8a3d, #ff7a2a); border-color: #fff; box-shadow: 0 0 0 2px rgba(255,180,0,0.5), 0 4px 14px rgba(0,0,0,0.5); }
+  .wslot.locked { opacity: 0.55; }
+  .wslot.locked .wicon { filter: grayscale(1); opacity: 0.4; }
+  .wslot .wnum { position: absolute; top: 3px; left: 6px; font-size: 11px; font-weight: 800; color: rgba(255,255,255,0.75); }
+  .wslot.active .wnum { color: #1a1420; }
+  .wslot .wicon { width: 44px; height: 30px; margin-top: 6px; }
+  .wslot .wammo { font-size: 11px; font-weight: 800; color: var(--gold); }
+  .wslot.active .wammo { color: #1a1420; }
+  .wslot.locked .wammo { font-size: 9px; color: #aaa; letter-spacing: 0.05em; }
+  #weapon-name { position: absolute; left: calc(50% + 240px); bottom: 52px; font-size: 15px; font-weight: 900; letter-spacing: 0.06em; color: #fff; text-shadow: 0 2px 6px rgba(0,0,0,0.8); text-transform: uppercase; }
+  #race-hud { position: absolute; top: 16px; left: 50%; transform: translateX(-50%); text-align: center; }
+  #race-timer { font-size: 30px; font-weight: 900; color: var(--pink); }
+  #race-dist { font-size: 12px; font-weight: 600; color: var(--muted); }
+  #race-gate { font-size: 13px; font-weight: 700; }
+  #dialogue-bar { position: absolute; left: 50%; bottom: 110px; transform: translateX(-50%); width: 560px; max-width: 72vw; display: flex; gap: 12px; align-items: center; background: var(--panel); border: 1px solid var(--panel-line); border-radius: 14px; padding: 12px 16px; backdrop-filter: blur(8px); }
+  #dialogue-portrait { width: 64px; height: 64px; border-radius: 10px; flex: none; }
+  #dialogue-name { font-weight: 800; color: var(--gold); font-size: 13px; letter-spacing: 0.06em; }
+  #dialogue-text { margin-top: 2px; line-height: 1.4; }
+  #help-bar { position: absolute; left: 50%; bottom: 8px; transform: translateX(-50%); font-size: 12px; color: rgba(255,255,255,0.85); text-shadow: 0 1px 4px #000; white-space: nowrap; }
+  #toasts { position: absolute; top: 110px; left: 50%; transform: translateX(-50%); display: flex; flex-direction: column; gap: 6px; align-items: center; }
+  .toast { background: var(--panel); border: 1px solid var(--gold); border-radius: 999px; padding: 7px 16px; font-weight: 700; font-size: 13px; }
+  .hint { position: absolute; left: 50%; bottom: 170px; transform: translateX(-50%); background: var(--panel); border: 1px solid var(--teal); border-radius: 999px; padding: 8px 16px; font-weight: 700; font-size: 13px; }
+  #crew-row { position: absolute; left: 16px; top: 200px; display: flex; flex-direction: column; gap: 6px; }
+  .crew-chip { background: var(--panel); border: 1px solid var(--panel-line); border-radius: 8px; padding: 6px 10px; font-size: 12px; pointer-events: none; }
+  .crew-chip b { color: var(--gold); }
+
+  /* ---------- transparent map ---------- */
+  #map-overlay { position: fixed; inset: 0; z-index: 15; display: flex; gap: 20px; align-items: flex-start; justify-content: center; padding: 40px 20px;
+    background: linear-gradient(180deg, rgba(255,138,61,0.28), rgba(122,63,160,0.34)); pointer-events: none; }
+  #map-overlay .map-left { pointer-events: none; }
+  #map-canvas { border-radius: 16px; border: 2px solid rgba(255,255,255,0.4); box-shadow: 0 8px 30px rgba(0,0,0,0.5); display: block; }
+  #map-overlay h2 { margin: 0 0 4px; letter-spacing: 0.2em; font-size: 20px; text-shadow: 0 2px 8px rgba(0,0,0,0.8); }
+  #map-overlay .map-sub { color: #ffe9a8; font-size: 13px; margin-bottom: 10px; text-shadow: 0 1px 4px #000; }
+  #map-side { width: 300px; }
+  #map-side h3 { margin: 0 0 6px; font-size: 12px; letter-spacing: 0.2em; color: var(--gold); text-shadow: 0 1px 4px #000; }
+  #map-missions { list-style: none; margin: 0; padding: 0; }
+  #map-missions li { display: flex; gap: 8px; align-items: center; padding: 3px 8px; border-radius: 8px; margin-bottom: 3px; background: var(--panel); font-size: 12px; }
+  #map-missions li.active { border: 1px solid var(--gold); }
+  #map-missions li.done { opacity: 0.55; text-decoration: line-through; }
+  .mini-portrait { width: 24px; height: 24px; border-radius: 6px; flex: none; }
+  .mstatus { margin-left: auto; font-size: 11px; color: var(--muted); }
+  #map-missions li.active .mstatus { color: var(--gold); }
+  #map-legend { margin-top: 10px; background: var(--panel); border-radius: 10px; padding: 8px 12px; font-size: 12px; line-height: 1.55; }
+  #map-legend ul { list-style: none; margin: 0; padding: 0; }
+  .lg-star { color: var(--gold); }
+  .lg-police { color: #6aa8ff; }
+  .lg-safe { color: var(--teal); }
+  .lg-garage { color: var(--teal); font-weight: 800; }
+  .lg-race { color: var(--pink); }
+  #map-stats { margin-top: 12px; font-size: 12px; line-height: 1.6; color: var(--text); background: var(--panel); border-radius: 10px; padding: 10px 12px; }
+  #map-hint { margin-top: 10px; font-size: 12px; color: #fff; text-shadow: 0 1px 4px #000; }
+
+  /* ---------- garage panel ---------- */
+  #garage-panel { position: fixed; inset: 0; z-index: 18; display: flex; align-items: center; justify-content: flex-start; padding-left: 28px; pointer-events: none; }
+  #garage-card { pointer-events: auto; width: 420px; background: var(--panel); border: 1px solid var(--teal); border-radius: 16px; padding: 20px 22px; backdrop-filter: blur(10px); }
+  #garage-card h2 { margin: 0; color: var(--teal); letter-spacing: 0.12em; }
+  #garage-card p { color: var(--muted); font-size: 13px; line-height: 1.5; }
+  #garage-cash { font-weight: 700; color: var(--text); }
+  #paint-row { display: flex; gap: 8px; margin: 12px 0; flex-wrap: wrap; }
+  .paint-btn { border: 2px solid var(--paint, #fff); background: rgba(0,0,0,0.4); color: #fff; border-radius: 999px; padding: 8px 14px; font-weight: 700; font-size: 13px; cursor: pointer; }
+  .paint-btn:hover { background: var(--paint, #fff); color: #111; }
+  .garage-actions { display: flex; gap: 8px; margin-top: 14px; flex-wrap: wrap; }
+  .garage-actions button { border: 1px solid var(--panel-line); background: rgba(255,255,255,0.1); color: var(--text); border-radius: 999px; padding: 10px 16px; font-weight: 700; cursor: pointer; }
+  .garage-actions button.primary { background: linear-gradient(90deg, var(--gold), var(--pink)); color: #1a1420; border: none; }
+
+  /* ---------- pause ---------- */
+  #pause-panel { position: fixed; inset: 0; z-index: 18; display: flex; align-items: center; justify-content: center; background: rgba(10, 8, 16, 0.6); }
+  #pause-card { text-align: center; background: var(--panel); border: 1px solid var(--panel-line); border-radius: 16px; padding: 28px 40px; }
+  #pause-card h2 { margin: 0 0 16px; letter-spacing: 0.2em; }
+  #pause-card button { display: block; width: 220px; margin: 8px auto; border: 1px solid var(--panel-line); background: rgba(255,255,255,0.1); color: var(--text); border-radius: 999px; padding: 11px; font-weight: 700; cursor: pointer; }
+  #pause-card button.primary { background: linear-gradient(90deg, var(--gold), var(--pink)); color: #1a1420; border: none; }
 </style>
+<script type="importmap">
+{ "imports": { "three": "./vendor/three.module.min.js" } }
+</script>
 </head>
 <body>
-<canvas id="game"></canvas>
+<canvas id="game" aria-label="Kencana Bay: an open-world crime game. Drive the gold Garuda GT through six districts, run missions, outrun the KPD."></canvas>
 <p id="status" role="status" aria-live="polite"></p>
 
-<div id="hud">
-  <div id="mission-panel" class="panel"></div>
-  <div id="crew-panel" class="panel"></div>
-  <div id="kpd-panel" class="panel"></div>
-  <div id="minimap-wrap">
-    <canvas id="minimap" width="168" height="168"></canvas>
-    <div id="loc-name">Pantai Kidul</div>
-    <div id="loc-street">Ferris Wheel</div>
-    <div id="hp-bar"><div id="hp-fill" style="width:100%"></div></div>
-    <div id="rep-line">REP FIXER · 1320</div>
-  </div>
-  <div id="weapons"></div>
-  <div id="speed"><span id="speed-num">0</span> <span id="speed-unit">KM/H</span><div id="speed-vehicle">ON FOOT</div></div>
-  <div id="dialogue" class="panel"><canvas id="portrait" width="64" height="64"></canvas><div><span id="dlg-name"></span><span id="dlg-role"></span><div id="dlg-text"></div></div></div>
-  <div id="helpbar">WASD drive/walk · E enter/exit · J shoot · R reload · 1-5 weapons · Z/X/C crew · G garage · M map · P pause · T radio</div>
-  <div id="version-stamp"></div>
-</div>
-
+<!-- Title screen -->
 <div id="title-screen">
-  <div class="top-row">
-    <span class="chip">12 MISSIONS · CREW · KPD</span>
-    <span class="stamp">KENCANA BAY · v6 · 18 NOV 2026</span>
-    <span class="chip">GAMELAN FM 101.1</span>
+  <div class="chips">
+    <div class="chip"><b>12</b> MISSIONS · CREW · KPD</div>
+    <div class="chip">GAMELAN FM <b>101.1</b></div>
   </div>
-  <div class="logo-block">
-    <div class="overline">— TELUK KENCANA · 1998 —</div>
-    <div class="logo">KENCANA</div>
-    <div class="bay-badge">BAY</div>
+  <div class="logo">
+    <div class="overline">TELUK KENCANA · 1998</div>
+    <h1>KENCANA</h1>
+    <div class="bay">BAY</div>
     <div class="tagline">Emas, bensin, dan pengkhianatan — seorang wheelman pulang ke Teluk Kencana.</div>
   </div>
-  <div class="title-bottom">
-    <div class="title-buttons">
-      <button id="btn-start" class="gold">▶ MULAI</button>
-      <button id="btn-save">SAVE</button>
-      <button id="btn-load">LOAD</button>
-      <button id="btn-end">END GAME</button>
+  <div id="title-stamp">KENCANA BAY · v7 · 19 NOV 2026</div>
+  <div id="title-buttons">
+    <button id="btn-start" class="primary">▶ MULAI</button>
+    <button id="btn-save">SAVE</button>
+    <button id="btn-load">LOAD</button>
+    <button id="btn-end">END GAME</button>
+  </div>
+  <div id="title-footer">Progress saves automatically · Kencana Bay, 1998</div>
+</div>
+
+<!-- In-game HUD -->
+<div id="hud" class="hidden">
+  <div id="mission-panel" class="panel">
+    <div id="mission-name">MISSION 1/12</div>
+    <div id="mission-brief"></div>
+    <div id="mission-payout"></div>
+  </div>
+  <div id="kpd-panel" class="panel">
+    <div class="label">KPD RESPONSE</div>
+    <div id="wanted-stars">☆☆☆☆☆</div>
+    <div id="cash">$0</div>
+    <div id="clock">18:36 · DAY 1</div>
+    <div id="rep">REP FIXER · 0</div>
+    <div id="hp-wrap"><div id="hp-bar"></div></div>
+    <div id="radio-line">GAMELAN FM 101.1 — Bonang Malam</div>
+  </div>
+  <div id="crew-row">
+    <div class="crew-chip"><b>Agus</b> — Driver · <span id="crew-agus">HIRE $200 [Z]</span></div>
+    <div class="crew-chip"><b>Bambang</b> — Mechanic · <span id="crew-bambang">HIRE $350 [X]</span></div>
+    <div class="crew-chip"><b>Ratna</b> — Fixer · <span id="crew-ratna">HIRE $300 [C]</span></div>
+  </div>
+  <div id="minimap-wrap">
+    <canvas id="minimap" width="220" height="220"></canvas>
+    <div id="minimap-label">KENCANA BAY — GPS AKTIF</div>
+  </div>
+  <div id="speed-box">
+    <div id="speed">0 KM/H</div>
+    <div id="speed-label">ON FOOT</div>
+  </div>
+  <div id="version-pill">v7 · 19 NOV 2026</div>
+  <div id="weapon-slots"></div>
+  <div id="weapon-name">Pistol</div>
+  <div id="race-hud" class="panel hidden">
+    <div id="race-timer">00:00</div>
+    <div id="race-gate">GATE 1/5</div>
+    <div id="race-dist"></div>
+  </div>
+  <div id="dialogue-bar" class="hidden">
+    <canvas id="dialogue-portrait" width="64" height="64"></canvas>
+    <div>
+      <div id="dialogue-name">Ratna</div>
+      <div id="dialogue-text"></div>
     </div>
-    <div class="title-foot" style="text-align:center; margin-top: 12px;">Click to start · Mouse aims · WASD moves · Progress saves automatically · v6 · 18 Nov 2026</div>
+  </div>
+  <div id="toasts"></div>
+  <div id="garage-hint" class="hint hidden">Press G — Enter Bengkel Bambang</div>
+  <div id="race-hint" class="hint hidden">Press E — Start the street race!</div>
+  <div id="help-bar">WASD drive/walk · E enter/exit · J shoot · R reload · 0-5 weapons · Z/X/C crew · G garage · M map · P pause · T radio</div>
+</div>
+
+<!-- Transparent map -->
+<div id="map-overlay" class="hidden">
+  <div class="map-left">
+    <h2>PETA KENCANA BAY</h2>
+    <div class="map-sub">GPS AKTIF — the city shows through the map</div>
+    <canvas id="map-canvas" width="540" height="540"></canvas>
+  </div>
+  <div id="map-side">
+    <h3>STORY</h3>
+    <ul id="map-missions"></ul>
+    <div id="map-stats"></div>
+    <div id="map-legend">
+      <h3>LEGEND</h3>
+      <ul>
+        <li>➤ You are here</li>
+        <li><span class="lg-star">★</span> Story objective</li>
+        <li><span class="lg-police">●</span> KPD police</li>
+        <li><span class="lg-safe">◆</span> Safehouse</li>
+        <li><span class="lg-garage">G</span> Garage — Bengkel Bambang</li>
+        <li><span class="lg-race">⚑</span> Street race</li>
+        <li>○ Crew / contact</li>
+      </ul>
+    </div>
+    <div id="map-hint">Press M to close the map</div>
   </div>
 </div>
 
-<div id="map-screen">
-  <canvas id="map-canvas" width="600" height="600"></canvas>
-  <div id="map-missions"></div>
+<!-- Garage interior panel -->
+<div id="garage-panel" class="hidden">
+  <div id="garage-card">
+    <h2>BENGKEL BAMBANG</h2>
+    <p>The Garuda sits on the lift. Repaint her in any colour, or pay to fix her up. Walk to the door and press G to leave.</p>
+    <div id="garage-cash"></div>
+    <div id="garage-paint"></div>
+    <div id="paint-row"></div>
+    <div class="garage-actions">
+      <button id="btn-repair" class="primary">Repair — $150</button>
+      <button id="btn-talk">Talk to Bambang</button>
+      <button id="btn-garage-exit">Leave (G)</button>
+    </div>
+  </div>
 </div>
 
-<script src="./vendor/three.min.js"></script>
-<script type="module" src="./src/main.js"></script>
+<!-- Pause -->
+<div id="pause-panel" class="hidden">
+  <div id="pause-card">
+    <h2>PAUSED</h2>
+    <button id="btn-resume" class="primary">Resume (P)</button>
+    <button id="btn-quit">Quit to title</button>
+  </div>
+</div>
+
+<script type="module" src="./src/main.js?v=7"></script>
 </body>
 </html>
