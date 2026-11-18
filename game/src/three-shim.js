@@ -1,4 +1,4 @@
-// Re-export the vendored global THREE (game/vendor/three.min.js, loaded
-// by index.html before this module) so the ES modules can import it.
+// The vendored Three.js build loads as a classic script and puts THREE on
+// the window; this module just hands that global to the ES modules.
 export const THREE = window.THREE;
 export default window.THREE;

@@ -1,68 +1,97 @@
-// Traffic cars and pedestrians: they drive/walk the road grid so the city
-// feels alive in every screenshot. One job: ambient life, no mission logic.
-import { CITY } from './config.js';
-import { makeCar, makeCharacter } from './vehicles.js';
+// Traffic and pedestrians: ordinary cars looping around the road grid and
+// people walking the sidewalks. Both are pure scenery with simple rules.
+import { WORLD } from './config.js';
+import { makeRng, range } from './random.js';
+import { createCar } from './vehicles.js';
 
-const TRAFFIC_COLORS = ['#c23b3b', '#3b7ac2', '#d1a93d', '#3ba66a', '#e8e8e8', '#7a4fd1', '#e07b2a'];
-const TRAFFIC_TYPES = ['sedan', 'sedan', 'taxi', 'van', 'truck', 'sports', 'sedan'];
+const TRAFFIC_KINDS = ['sedan', 'sedan', 'taxi', 'van', 'truck', 'sedan'];
+const SHIRT_COLORS = [0xe05a3a, 0x2fae5f, 0x4fc3f7, 0xffb400, 0x7b2fbe, 0xe8e8e8];
 
-export function createTraffic(scene, random, count = 14) {
+export function createTraffic(seed) {
+  const rng = makeRng(seed + 77);
   const cars = [];
-  for (let i = 0; i < count; i += 1) {
-    const type = TRAFFIC_TYPES[i % TRAFFIC_TYPES.length];
-    const color = type === 'taxi' ? '#f5c93d' : TRAFFIC_COLORS[i % TRAFFIC_COLORS.length];
-    const car = makeCar(color, { type });
-    const road = -CITY.size / 2 + Math.floor(random() * 11) * CITY.roadEvery;
-    const along = (random() - 0.5) * CITY.size;
-    const vertical = random() < 0.5;
-    // Front is local +Z: rotation.y = 0 faces +Z, PI/2 faces +X, etc.
-    const dir = random() < 0.5 ? 1 : -1;
-    car.position.set(vertical ? road : along, 0, vertical ? along : road);
-    car.rotation.y = vertical ? (dir > 0 ? 0 : Math.PI) : (dir > 0 ? Math.PI / 2 : -Math.PI / 2);
-    scene.add(car);
-    cars.push({ mesh: car, speed: 8 + random() * 7, vertical, road, dir });
+  for (let i = 0; i < 14; i += 1) {
+    const horizontal = rng() < 0.5;
+    const road = (horizontal ? WORLD.roadZs : WORLD.roadXs)[Math.floor(rng() * 5)];
+    const along = range(rng, -330, 330);
+    const kind = TRAFFIC_KINDS[Math.floor(rng() * TRAFFIC_KINDS.length)];
+    const colors = [0x7fb069, 0xef476f, 0x4fc3f7, 0xd8d8d8, 0x8a6f8a];
+    const car = createCar(kind, horizontal ? along : road, horizontal ? road : along, horizontal ? (rng() < 0.5 ? Math.PI / 2 : -Math.PI / 2) : (rng() < 0.5 ? 0 : Math.PI), colors[Math.floor(rng() * colors.length)]);
+    car.speed = range(rng, 8, 16);
+    car.horizontal = horizontal;
+    car.road = road;
+    cars.push(car);
   }
-  return {
-    cars,
-    step(dt) {
-      for (const c of cars) {
-        if (c.vertical) c.mesh.position.z += c.dir * c.speed * dt;
-        else c.mesh.position.x += c.dir * c.speed * dt;
-        const p = c.vertical ? c.mesh.position.z : c.mesh.position.x;
-        if (p > CITY.size / 2) { if (c.vertical) c.mesh.position.z = -CITY.size / 2; else c.mesh.position.x = -CITY.size / 2; }
-        if (p < -CITY.size / 2) { if (c.vertical) c.mesh.position.z = CITY.size / 2; else c.mesh.position.x = CITY.size / 2; }
-      }
-    },
-  };
+  return cars;
 }
 
-export function createPedestrians(scene, random, count = 22) {
-  const peds = [];
-  const shirtColors = ['#c23b3b', '#3b7ac2', '#d1a93d', '#e8e8e8', '#7a4fd1'];
-  for (let i = 0; i < count; i += 1) {
-    const p = makeCharacter();
-    p.children.forEach((c) => { if (c.material && c.material.color) c.material = c.material.clone(); });
-    const shirt = p.children[3];
-    if (shirt) shirt.material.color.set(shirtColors[i % shirtColors.length]);
-    p.scale.setScalar(0.92);
-    p.position.set((random() - 0.5) * 560, 0, (random() - 0.5) * 560);
-    p.rotation.y = random() * Math.PI * 2;
-    scene.add(p);
-    peds.push({ mesh: p, speed: 1.5 + random() * 1.5, dir: random() * Math.PI * 2, turnT: 2 + random() * 4 });
+export function stepTraffic(cars, dt) {
+  for (const car of cars) {
+    if (car.horizontal) {
+      car.x += Math.sin(car.heading) * car.speed * dt;
+      car.z = car.road;
+      if (car.x > 345) car.x = -345;
+      if (car.x < -345) car.x = 345;
+    } else {
+      car.z += Math.cos(car.heading) * car.speed * dt;
+      car.x = car.road;
+      if (car.z > 345) car.z = -345;
+      if (car.z < -345) car.z = 345;
+    }
+    car.group.position.set(car.x, 0, car.z);
   }
-  return {
-    peds,
-    step(dt) {
-      for (const p of peds) {
-        p.turnT -= dt;
-        if (p.turnT <= 0) { p.dir += (Math.random() - 0.5) * 2.4; p.turnT = 2 + Math.random() * 4; }
-        p.mesh.position.x += Math.sin(p.dir) * p.speed * dt;
-        p.mesh.position.z += Math.cos(p.dir) * p.speed * dt;
-        p.mesh.position.x = Math.max(-290, Math.min(290, p.mesh.position.x));
-        p.mesh.position.z = Math.max(-290, Math.min(290, p.mesh.position.z));
-        p.mesh.rotation.y = p.dir;
-        p.mesh.position.y = Math.abs(Math.sin(performance.now() / 240 + p.speed * 10)) * 0.12;
-      }
-    },
-  };
+}
+
+export function createPedestrians(seed, THREE) {
+  const rng = makeRng(seed + 131);
+  const peds = [];
+  for (let i = 0; i < 22; i += 1) {
+    const g = new THREE.Group();
+    const shirt = new THREE.MeshLambertMaterial({ color: SHIRT_COLORS[Math.floor(rng() * SHIRT_COLORS.length)] });
+    const skin = new THREE.MeshLambertMaterial({ color: 0xd99a6c });
+    const pants = new THREE.MeshLambertMaterial({ color: 0x2a2a33 });
+    const legL = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.8, 0.24), pants);
+    legL.position.set(-0.14, 0.4, 0);
+    const legR = legL.clone();
+    legR.position.x = 0.14;
+    const torso = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.8, 0.4), shirt);
+    torso.position.y = 1.2;
+    const head = new THREE.Mesh(new THREE.BoxGeometry(0.45, 0.45, 0.42), skin);
+    head.position.y = 1.85;
+    const hair = new THREE.Mesh(new THREE.BoxGeometry(0.48, 0.16, 0.45), new THREE.MeshLambertMaterial({ color: 0x1a1a1a }));
+    hair.position.y = 2.1;
+    g.add(legL, legR, torso, head, hair);
+    g.traverse((o) => { if (o.isMesh) o.castShadow = true; });
+    const horizontal = rng() < 0.5;
+    const road = (horizontal ? WORLD.roadZs : WORLD.roadXs)[Math.floor(rng() * 5)];
+    const along = range(rng, -330, 330);
+    const offset = range(rng, 9, 12) * (rng() < 0.5 ? -1 : 1);
+    const ped = {
+      group: g,
+      x: horizontal ? along : road + offset,
+      z: horizontal ? road + offset : along,
+      heading: horizontal ? (rng() < 0.5 ? Math.PI / 2 : -Math.PI / 2) : (rng() < 0.5 ? 0 : Math.PI),
+      speed: range(rng, 1.2, 2.2),
+      phase: rng() * Math.PI * 2,
+    };
+    g.position.set(ped.x, 0, ped.z);
+    g.rotation.y = ped.heading;
+    peds.push(ped);
+  }
+  return peds;
+}
+
+export function stepPedestrians(peds, dt, time) {
+  for (const ped of peds) {
+    ped.x += Math.sin(ped.heading) * ped.speed * dt;
+    ped.z += Math.cos(ped.heading) * ped.speed * dt;
+    if (ped.x > 348) ped.x = -348;
+    if (ped.x < -348) ped.x = 348;
+    if (ped.z > 348) ped.z = -348;
+    if (ped.z < -348) ped.z = 348;
+    ped.group.position.set(ped.x, 0, ped.z);
+    // A gentle walk bob.
+    ped.group.position.y = Math.abs(Math.sin(time * 6 + ped.phase)) * 0.08;
+    ped.group.rotation.y = ped.heading;
+  }
 }

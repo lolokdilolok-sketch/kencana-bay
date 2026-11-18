@@ -1,61 +1,72 @@
-// Sound, all synthesized with WebAudio — no audio files, no network.
-// Gamelan FM 101.1: a slow pentatonic pluck loop. One job: make noise.
-export function createAudio() {
+// Gamelan FM 101.1: a small synthesised loop — bright bell tones on a
+// pentatonic row over a low gong. WebAudio only; nothing is downloaded.
+const SCALE = [523.25, 587.33, 659.25, 783.99, 880.0, 1046.5];
+const MELODY = [0, 2, 4, 3, 2, 1, 0, 2, 4, 5, 4, 2, 1, 0, 3, 2];
+const BEAT = 0.42;
+
+export function createRadio() {
   let ctx = null;
-  let radioOn = true;
-  let engineOsc = null;
-  const scale = [0, 2, 4, 7, 9]; // pelog-ish pentatonic
-  let noteT = 0;
-  function ensure() {
-    if (!ctx) {
-      try { ctx = new (window.AudioContext || window.webkitAudioContext)(); } catch { ctx = null; }
+  let master = null;
+  let playing = false;
+  let step = 0;
+  let nextTime = 0;
+  let timer = null;
+
+  function tone(freq, when, dur, gainValue, type) {
+    const osc = ctx.createOscillator();
+    osc.type = type || 'sine';
+    osc.frequency.value = freq;
+    const gain = ctx.createGain();
+    gain.gain.setValueAtTime(0, when);
+    gain.gain.linearRampToValueAtTime(gainValue, when + 0.015);
+    gain.gain.exponentialRampToValueAtTime(0.0001, when + dur);
+    osc.connect(gain);
+    gain.connect(master);
+    osc.start(when);
+    osc.stop(when + dur + 0.05);
+  }
+
+  function schedule() {
+    if (!playing) return;
+    while (nextTime < ctx.currentTime + 0.6) {
+      const idx = MELODY[step % MELODY.length];
+      const freq = SCALE[idx];
+      tone(freq, nextTime, 1.6, 0.16, 'sine');
+      tone(freq * 2, nextTime, 0.5, 0.05, 'triangle');
+      if (step % 8 === 0) tone(130.81, nextTime, 2.4, 0.2, 'sine');
+      if (step % 4 === 2) tone(SCALE[(idx + 2) % SCALE.length] / 2, nextTime, 1.0, 0.07, 'sine');
+      step += 1;
+      nextTime += BEAT;
     }
-    if (ctx && ctx.state === 'suspended') ctx.resume();
-    return ctx;
+    timer = setTimeout(schedule, 120);
   }
-  function pluck(freq, when, dur = 0.5, vol = 0.12) {
-    if (!ctx) return;
-    const o = ctx.createOscillator(); const g = ctx.createGain();
-    o.type = 'sine'; o.frequency.value = freq;
-    g.gain.setValueAtTime(vol, when);
-    g.gain.exponentialRampToValueAtTime(0.001, when + dur);
-    o.connect(g).connect(ctx.destination);
-    o.start(when); o.stop(when + dur);
-  }
+
   return {
-    unlock() { ensure(); },
-    get radioOn() { return radioOn; },
-    toggleRadio() { radioOn = !radioOn; return radioOn; },
-    step(dt, speed) {
-      if (!ensure() || !radioOn) return;
-      noteT -= dt;
-      if (noteT <= 0) {
-        noteT = 0.42;
-        const base = 220;
-        const n = scale[Math.floor(Math.random() * scale.length)];
-        const oct = Math.random() < 0.25 ? 2 : 1;
-        pluck(base * Math.pow(2, n / 12) * oct, ctx.currentTime);
-        if (Math.random() < 0.3) pluck(base / 2, ctx.currentTime + 0.1, 0.7, 0.07);
+    start() {
+      if (playing) return;
+      try {
+        if (!ctx) {
+          ctx = new (window.AudioContext || window.webkitAudioContext)();
+          master = ctx.createGain();
+          master.gain.value = 0.5;
+          master.connect(ctx.destination);
+        }
+        if (ctx.state === 'suspended') void ctx.resume();
+        playing = true;
+        nextTime = ctx.currentTime + 0.1;
+        schedule();
+      } catch {
+        playing = false;
       }
-      if (engineOsc && speed !== undefined) engineOsc.frequency.value = 50 + speed * 2;
     },
-    engine(on) {
-      if (!ensure()) return;
-      if (on && !engineOsc) {
-        engineOsc = ctx.createOscillator(); const g = ctx.createGain();
-        engineOsc.type = 'sawtooth'; engineOsc.frequency.value = 60;
-        g.gain.value = 0.03; engineOsc.connect(g).connect(ctx.destination); engineOsc.start();
-      } else if (!on && engineOsc) { try { engineOsc.stop(); } catch {} engineOsc = null; }
+    stop() {
+      playing = false;
+      if (timer) clearTimeout(timer);
     },
-    shoot() {
-      if (!ensure()) return;
-      const b = ctx.createBuffer(1, ctx.sampleRate * 0.12, ctx.sampleRate);
-      const d = b.getChannelData(0);
-      for (let i = 0; i < d.length; i += 1) d[i] = (Math.random() * 2 - 1) * (1 - i / d.length);
-      const s = ctx.createBufferSource(); s.buffer = b;
-      const g = ctx.createGain(); g.gain.value = 0.25;
-      s.connect(g).connect(ctx.destination); s.start();
+    toggle() {
+      if (playing) this.stop();
+      else this.start();
     },
-    cash() { if (ensure()) { pluck(660, ctx.currentTime, 0.2, 0.15); pluck(880, ctx.currentTime + 0.09, 0.3, 0.15); } },
+    get playing() { return playing; },
   };
 }
