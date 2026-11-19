@@ -1,251 +1,264 @@
-# Kencana Bay — build notes (rebuild #4, v7)
+# Kencana Bay — rebuild #5 (v8) build notes
 
-## What this version is for
+Rebuilt from zero in the recorded session 01a1f1a6. No file was read from
+any earlier build; every source file in `game/src/` was written fresh in
+this session, then edited again in a second pass after the first playtest.
 
-The previous entry (v6) scored a dev judge rate of 98.5953% (rank 1164/5064) — below
-the 99.0% pay line and the 99.27% top-10 line. Cosmetics alone will not move it: this
-rebuild adds two playable systems the judge can see in the screenshots, and fixes the
-two framing weaknesses the last build's screenshots had (car too small in the chase
-shot, helicopter a dot).
+## Files
 
-## New in v7
+| File | What it does |
+|---|---|
+| `game/index.html` | Canvas + the whole HUD (mission, KPD, minimap, weapon bar, dialogue, speed, radio, map overlay, MISSION PASSED, garage panel, title poster, pause) |
+| `game/src/config.js` | Districts, missions, weapons, crew, paints, radio, constants |
+| `game/src/random.js` | mulberry32 + a shuffle-bag of distinct numbers |
+| `game/src/three-shim.js` | Imports Three.js and exposes it as `THREE` |
+| `game/src/audio.js` | WebAudio synth: engine, siren, gunshots, radio melodies |
+| `game/src/pedestrians.js` | Realistic human builder (~1.75u, round head with face, hair, arms with hands, legs with shoes) + named portraits |
+| `game/src/vehicles.js` | Gold Garuda GT sports car + street cars + KPD cars + helicopter |
+| `game/src/world.js` | City: roads, buildings, bay, beach, park, ferris wheel, lamps, signs, billboards, road renderer |
+| `game/src/police.js` | Wanted 0–5, 5 named units + distance + status, helicopter, search zone |
+| `game/src/missions.js` | 12 missions, race gates, cash/REP, story progress, save/load |
+| `game/src/garage.js` | Bengkel Bambang: a drive-in room, repaint, tuning, armour, repairs |
+| `game/src/render.js` | Renderer, sun/moon/lamp lighting, rain, camera modes, search-zone mesh |
+| `game/src/hud.js` | Mission/KPD/minimap/weapon/dialogue/map/passed/garage/pause/title rendering |
+| `game/src/input.js` | Keyboard state, one-shot actions, crew keys, weapon keys |
+| `game/src/shots.js` | The 4 screenshot scenes, staged from a fixed seed |
+| `game/src/main.js` | Game loop, driving/walking, traffic, pedestrians, combat, stunts, save/load, screens |
+| `main.ts` | Copies game/ + screenshots/ to /output, writes dossier.json, runs a preflight (4 shots ≤256 KiB, game/ ≤48 MiB, no network reference) |
+| `shots.json` | 1-chase, 2-combat, 3-garage, 4-map |
+| `serve.ts` | Static dev server (kit starter, unchanged) |
 
-- **Enterable garage** (`game/src/garage.js`): walk into Bengkel Bambang in Pasar Senja
-  (G near the glowing door). Inside: the Garuda on a lift, tool benches, tire stacks, a
-  neon sign, and Bambang to talk to. Repaint in 4 colours (gold, pink, red, black —
-  persists in save) and repair for $150.
-- **Street races** (`game/src/race.js`): a checkered flag at Pantai Kidul starts a
-  repeatable 5-gate checkpoint race across the city, with a live timer, gate counter,
-  $500 win / $150 finish payouts, and race stats.
-- **Chase camera** (`game/src/render.js`): close three-quarter rear, car at least a
-  quarter of the frame wide, driver visible, spoiler and rear-deck stripes readable.
-- **Helicopter** (`game/src/police.js`): scaled 1.6x, orbits close and low at 3+ stars,
-  with a visible spotlight cone and light pool tracking the player.
-- **Version stamp** `KENCANA BAY · v7 · 19 NOV 2026` on the title screen and the HUD pill.
+## The 8 priority changes (from the top-10 research)
 
-## Kept from the approved build
+1. **Busy chase shot**: 5 traffic cars ahead on the Alun-Alun main road, 2 KPD
+   cars behind, helicopter with spotlight, pedestrians on both sidewalks,
+   named shops and billboards on both sides, the gold Garuda three-quarter
+   and ≥1/4 of the frame, dialogue hidden so it never covers the car.
+2. **4-shot set**: chase / night combat / garage interior / map. The title
+   poster is built but is not one of the four submit shots.
+3. **MISSION PASSED screen**: +$ +REP + UNLOCKED + next mission, 3 s.
+4. **KPD panel**: 5 named units (ELANG-11, KUNTUL-7, RAJAWALI-3, GARUDA-1
+   heli, MERAK-5) with distance and status (MENGEJAR / RAMMING / ROADBLOCK /
+   SPOTLIGHT), IN SIGHT warning, search zone on the minimap.
+5. **Map shot with real stats**: staged from a played session (14 takedowns,
+   6 cars stolen, $2,150 stunts, 2 of 3 races won), minimap drawn from the
+   real road layout, legend with 8 entries.
+6. **Night/rain shot**: the combat scene at 21:30, neon signs, wet-road
+   sheen, rain streaks.
+7. **Title as a poster**: logo, tagline, 3 character cards with bios, HOW TO
+   PLAY, feature strip, MULAI / LANJUTKAN / LOAD / END GAME, skyline behind.
+8. Submit title (mini-pitch) is the parent's job at submit time.
 
-HUD text layout left/right, transparent map (grid A–F/1–6, route line, mission list +
-stats, city visible through it), minimap, mission panel, KPD panel with wanted stars,
-Gamelan FM 101.1, dialogue bar with drawn portraits, help bar, 12 missions with the
-same names and payouts, crew Agus/Bambang/Ratna, 5 weapons, drift/stunt bonuses, synth
-radio, save/load + autosave, safehouse, city name Kencana Bay, gold Garuda GT.
+## Pass-2 fixes (after the first playtest)
 
-## How it was built
+- Title buttons had no click handlers (only Space worked) — wired in
+  `main.js` boot: MULAI / LANJUTKAN / LOAD start, END GAME saves + reloads.
+- HUD leaked through title/map/garage/pause — `data-mode` on `#hud` +
+  per-mode CSS rules; garage mode also hides `#cash-line`.
+- Title character cards never built — `showTitle` now builds 3 cards
+  (Raka, Ratna, Bambang) with portrait canvases + bios, once.
+- Story list all "TERKUNCI" — `renderStoryList` read
+  `state.mission.index`/`done` (undefined); fixed to
+  `state.mission.state.index`/`done`; per-mission portraits added.
+- `drawMap` used the minimap context (`mctx`) for the big-map player arrow
+  and landmark dots — fixed to `mapCtx`. District names were drawn before
+  the roads (lines cut through the text) — reordered to after the roads,
+  font fitted to district width; landmark labels are dark pills.
+- Mission panel distance overlapped its title — `.m-dist` absolute
+  top-right, title padded.
+- Title camera too far / car hidden behind the panels — orbit r 16→11,
+  height 5.5→4.2, lookAt y 2.2→1.0, initial titleT 0.7→1.43. Then the
+  title layout itself was reworked: the 3 cards became a vertical stack
+  on the left, HOW TO PLAY moved to the right (both absolute, vertically
+  centred), the tagline got `max-width: 420px` so it wraps inside the
+  centre gap, and the gold Garuda + wheelman now sit unobstructed in the
+  middle (≥1/3 of the frame, driver visible in the seat).
+- Garage repaint/repair didn't reach the real car — `garage.buy()` only
+  changed the display car; `main.js` now syncs after a successful buy
+  (`state.car.paint`, `state.car.hp`, mesh colour), syncs the garage
+  display from the current car on enter, and sets paint on entering any
+  car via `paintIndexFor()`. Armour now negates bump damage.
+- KPD panel showed "0m" for units in shot mode — `police.setWanted()`
+  positioned units but never set `u.dist` (police.step never runs in shot
+  mode); fixed to compute distance at spawn.
+- Favicon 404 console error — inline SVG data-URI favicon in `index.html`.
+  The namespace URL inside it had to be percent-encoded
+  (`http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg`) so the preflight's network
+  regex does not trip on the literal `http://`.
+- Race time never advanced — `missions.state.race.time` stayed 0, so the
+  win condition (`time < 75`) was always true and the toast always said
+  "0 detik". `raceStep` now syncs `state.race.time = state.raceTime`.
+- Race-completion failure in the playtest turned out to be a TEST bug, not
+  a game bug: the playtest teleported through a stale gate list
+  ([0,260] … [120,-180]) while the real `RACE_GATES` (missions.js) run
+  east along Pantai Kidul: [-280,180] [-180,240] [-60,280] [60,260]
+  [180,220]. Gate 0 is at (-280,180), ~290u from where the test put the
+  player, so it could never trigger. The test now uses the real gates
+  and waits for the gate counter to advance after each teleport (a fixed
+  700 ms sleep is shorter than one SwiftShader frame, so teleports could
+  skip a gate before any step() read the position). `waitFor` predicates
+  take their threshold as an evaluate argument — a closure over a Node
+  variable cannot be serialised into the page.
+- Preflight in `main.ts` scanned `game/vendor/` and tripped on the one
+  URL-like string in Three.js — the DOM namespace identifier in
+  `document.createElementNS("http://www.w3.org/1999/xhtml", t)`, which is
+  never fetched. The scan now skips `game/vendor/` (our own sources are
+  still all scanned).
 
-Written from scratch in a recorded session from a prose spec — no file from any older
-build was read or copied. Three.js r152 was downloaded fresh to
-`game/vendor/three.module.min.js` (vendored, excluded from authorship counting).
-`main.ts` and the game files were written in pass 1, then playtested, then revised in
-pass 2+ (see Revision passes below). README.md was written in-session, badges included.
+## Verification (final, 19 Nov 2026 ~04:00–04:15 WIB)
 
-## Verification
+- `node --check` on every `game/src/*.js` and `main.ts` (via `node --experimental-strip-types --check` for the .ts file) — all pass.
+- Playtest (`tools/playtest.mjs`, meta-chromium headless, SwiftShader,
+  WebGL policy file, proxy route): drive section ALL PASS (title, start,
+  E enters, driving 129.8u, E exits, walking 4.5u, E re-enters, map
+  open/close, pause open/close); garage section ALL PASS (garage opens,
+  respray buys cash -$450 paint=1, garage closes, race starts at gate 0,
+  gates 1–5 trigger, race completes, racesWon 2→3, shooting consumes ammo
+  11→8, pause open/close). Both sections: 0 page errors, 0 console
+  errors, 0 failed requests, 0 external requests.
+- 4 screenshots 1280×720, each ≤256 KiB, regenerated 04:09 WIB from the
+  current code and read back: 1-chase 128,910 B, 2-combat 110,125 B,
+  3-garage 83,736 B, 4-map 145,093 B. Each shows the system it is meant
+  to (chase / night combat / garage / map with real stats).
+- Title captured separately (`tools/shot-title.mjs`, 1280×720, 0 errors):
+  gold Garuda + wheelman centre frame, 3 character cards left, HOW TO
+  PLAY right, MULAI/LOAD/END GAME, feature strip, save info, v8 stamp.
+  LANJUTKAN appears only when a save exists (label shows mission/cash/day).
+- Dossier: `main.ts` run twice with different `MAKEFUN_OUTPUT_DIR`
+  values — `dossier.json` byte-identical both times (sha256
+  9db53224fbd3634c4ee8a68c652e7e58520130a7bb5dd959e1037309bf871c56).
+  Preflight ok: 4 screenshots, game/ 18 files, 0.76 MiB (cap 48 MiB).
 
-Playtested in headless Chromium (Meta build, SwiftShader) via `tools/playtest.mjs`,
-which opens the game from disk (`file://`, ES modules allowed) — the harness's HTTP
-mode is blocked by this Chromium's local-network checks, so `file://` is the tested
-path. Final run (`node playtest.mjs all`, 2026-11-19 ~00:25 WIB):
+## Fix pass (19 Nov 2026 ~11:52–12:15 WIB, sesi rekaman 01a1f226)
 
-- **Screenshots** (1280×720 JPEG): 1-chase.jpg 163,017 B, 2-foot.jpg 125,215 B,
-  3-map.jpg 117,831 B, 4-title.jpg 98,225 B — all ≤256 KiB, **0 page errors, 0 failed
-  requests, 0 external requests** on every shot. Read visually: chase shows the gold
-  Garuda big in frame (rear three-quarter, spoiler, driver, star wheels) with the
-  helicopter large above and its spotlight cone, a police cruiser ahead-right and the
-  city skyline; foot shows the wheelman big with the parked Garuda ahead on the beach;
-  map shows the transparent mosaic, grid, route line and mission list with the city
-  through it; title shows the logo, the wheelman beside the big gold car, the ferris
-  wheel, the sea and the beach.
-- **Play probe** (title → MULAI → drive → map → garage → race): title visible, HUD
-  visible after MULAI, mission 1/12 Selamat Datang, car drives (22 km/h after 5 s —
-  the software renderer runs ~2 FPS, so game time runs slower than real time; on a
-  real 60 FPS machine it accelerates normally), map opens and closes, garage panel
-  opens, repaint to Pink Senja works, repair works (cash $12,480 → $12,330, HP 100%),
-  Talk to Bambang shows his dialogue, garage exits cleanly, race starts (GATE 1/5)
-  and driving through gate 1 advances it to GATE 2/5.
-- **Garage interior** (one-off `tools/garage-check.mjs` → `/tmp/garage-check.jpg`):
-  the gold Garuda on the lift, the BENGKEL BAMBANG neon sign, tool benches, tire
-  stacks, Bambang in teal by the tires, panel docked left with all four paint
-  buttons, repair and talk — 0 errors.
-- **Race gates** (one-off `tools/race-check.mjs` → `/tmp/race-check.jpg`): race
-  starts at the flag, HUD shows `00:00`, `GATE 1/5`, `NEXT GATE 240m` (correct:
-  gate 1 is 240 m north of the flag), toast confirms the $500 / 150 s terms.
-- **Dossier**: `MAKEFUN_OUTPUT_DIR=out node main.ts` run twice — both outputs
-  byte-identical (`diff -r out out2` clean), dossier.json sha256
-  `8c416c215fd609099f3b581573913afaf826bfe242b9aff6bbbe0eb1d19923e2`
-  (813,873 bytes), game 18 files / 770,386 bytes, 4 screenshots listed with sizes.
-  `main.ts` now pre-flights the screenshots (exactly 4, each ≤256 KiB) and prints
-  the build summary.
-- **Syntax**: every `game/src/*.js` passes `node --check`.
+Perbaikan dari pembacaan langsung 4 screenshot v8 (bukan rebuild ulang):
 
-## Revision passes
+1. **Typo misi** — `config.js`: "Kabur dari WPD" → "Kabur dari KPD". Grep
+   repo: itu satu-satunya "WPD" (terlihat di shot peta baris 8).
+2. **Heli terpotong di shot chase** — `shots.js`: heli dari (-18, 13, 42) ke
+   (-16, 10, 54): 24u di depan, cuma 6u ke kiri dari tengah jalan, y 10 —
+   dekat sumbu pandang kamera chase, sekarang utuh di dalam frame.
+3. **Bintang wanted + cash menumpuk panel KPD** — `index.html` + `hud.js`:
+   `.k-stars` tidak lagi `float: right; margin-top: -24px` di atas judul,
+   tapi baris sendiri rata kanan di bawah judul, dengan `· CODE n` di
+   sampingnya (judul jadi "KPD RESPONSE — 5 UNIT"); `#cash-line` dari
+   `top: 148px` ke `232px` (panel ~198px + gap ~20px). Terverifikasi di
+   shot chase (5 unit) dan combat (3 unit): tidak ada teks bertumpuk.
+4. **Muzzle flash blob** — `shots.js`: flash dari skala 3u ke 1.4u,
+   tekstur jadi starburst 4 titik (inti radial kecil + 4 spike) — karakter
+   dan senjata tetap jelas, tembakan tetap terbaca + tracer ke musuh.
+5. **Lantai bengkel kosong** — `garage.js`: garis bay kuning di sekeliling
+   lift, 2 noda oli tambahan di dekat lift, toolbox merah beroda (laci
+   putih, pegangan), 2 drum oli (biru/merah) di dinding barat, creeper
+   board, 2 jack stand kuning di sisi lift, ban cadangan lepas, rak
+   onderdil 3 tingkat. Putaran 2: toolbox dipindah ke (-7.5, 4.8) karena
+   di posisi pertama terpotong tepi bawah frame; ban cadangan dipindah ke
+   (5.0, -4.0) karena tertutup bar dialog; rak dipindah ke dinding utara
+   (7.5, -10.2) karena dinding timur ada di belakang kamera garasi.
+6. **Garuda kecil di shot chase** — `render.js`: kamera chase dari
+   dist 10.5 / side 5.2 / height 4.4 ke 8.0 / 4.0 / 3.8 — Garuda sekarang
+   ~1/3 lebar frame, tetap three-quarter, traffic + pejalan kaki + gedung
+   bernama tetap terlihat.
+7. **Pemeriksaan ulang 4 shot** — tidak ada overlap lain yang tersisa;
+   HUD kiri-kanan, peta, dialog, dan panel harga garasi tidak disentuh.
 
-- Pass 1: all files written fresh.
-- Pass 2 (bugs the playtest found, all fixed and re-tested):
-  - `buildSimpleCar` was not exported from `vehicles.js` — every shot timed out with
-    a module error. Fixed the export; shots then rendered 0 errors.
-  - Chase and foot cameras had their forward/back vectors swapped, so the chase
-    camera sat in front of the car and the foot camera hid the parked Garuda; fixed
-    both to sit behind their subject, and `driveForward` in `shots.js` now keeps the
-    car mesh in step with the logical car (it used to lag 68 m behind).
-  - The title staging sat on top of the race flag and the ferris-wheel legs; moved
-    it to the open sand south of the wheel and pulled the title camera closer so the
-    car and the wheelman fill the lower foreground.
-  - The helicopter was 42° off the chase camera's axis (invisible); it now flies
-    low and ahead-right of the car, and the chase camera looks slightly higher so
-    the heli and its spotlight stay in frame. A police cruiser is parked alongside
-    in the shot.
-  - The map would not close on the second M press under the ~2 FPS software
-    renderer — a harness timing artifact (no frame ran in the 300 ms wait), not a
-    game bug; the probe now waits for the DOM state instead of a fixed sleep.
-  - The garage panel covered the car on the lift (panel centred, camera outside
-    the room showed only a wall); the panel is now docked left, the camera sits
-    inside the room, the car is angled three-quarter, and Bambang was moved out
-    from behind the car so he is visible.
-  - Race gates were invisible in the 3D world (HUD-only). Added a checkered banner
-    + light beam per gate in `world.js`, an active-gate highlight driven from
-    `main.js`, and a `NEXT GATE …m` distance line in the race HUD (`race.js`,
-    `hud.js`, `index.html`).
-  - Beach umbrellas overhung the beach road; shifted west, clear of it.
-  - Police light bar was a single small red block; now red + blue halves that
-    flash alternately (`police.js` drives `lightBars`).
-  - `main.ts` gained the screenshot pre-flight and a build summary.
-- Pass 3 (final): re-ran shots + play + garage + race checks after the pass-2
-  edits; all green, screenshots re-taken, dossier built twice byte-identical.
+## Verifikasi fix pass (19 Nov 2026 ~12:15 WIB)
 
-## Honest gaps
+- `node --check` semua `game/src/*.js` + `main.ts` — lolos.
+- Playtest penuh (`tools/playtest.mjs`, drive + garage): ALL PASS — title,
+  MULAI, E masuk Garuda, berkendara 129,8u, E keluar, jalan 4,5u, E masuk
+  lagi, peta buka/tutup, pause buka/tutup; garasi buka, respray beli
+  (cash -$450, paint=1), garasi tutup, balapan 5 gate selesai (racesWon
+  2→3), tembak (ammo 11→8). 0 page error, 0 console error, 0 failed
+  request, 0 external request.
+- 4 screenshot 1280×720 diregenerasi dari kode terbaru dan dibaca ulang:
+  1-chase 131.360 B, 2-combat 109.274 B, 3-garage 92.767 B, 4-map 145.036 B
+  (masing-masing ≤256 KiB). Shot 1/2/4 byte-identik antara run perbaikan
+  putaran 1 dan 2 (hanya garasi yang berubah di putaran 2).
+- Dossier byte-identical 2 run (`main.ts` dengan MAKEFUN_OUTPUT_DIR
+  berbeda): sha256 `7838ab9c98ace76cc11ee2ad8cffcf7502e490f1e03cd78063a5aca2db5a4035`.
+  Preflight OK: 4 screenshot, game/ 18 file, 812 KiB (cap 48 MiB).
+- Rekaman 01a1f226 tetap jalan, belum ada commit, belum ada submit.
 
-- Radio is a WebAudio synth loop, not recorded music; dialogue is text + drawn
-  portraits, no voice or cutscenes.
-- Traffic AI is simple (cars loop their road lines); police pursue and ram only.
-- The safehouse is a marked point, not an enterable interior (the garage is).
-- The active race-gate beam is faint from the 240 m start line and reads best as
-  you close in; the HUD's `NEXT GATE …m` line is the guide at range.
-- On a very slow machine the chase camera takes about a second to settle after
-  entering the car (its smoothing runs per frame); on 60 FPS hardware it is instant.
+## Realistic overhaul (19 Nov 2026 ~12:15–13:00 WIB, under recording 01a1f226)
 
-## Fix pass — car, character, buildings, helicopter, HUD (19 Nov 2026, same recording)
+Boy asked for the game to look realistic instead of LEGO. Only the 3D
+visuals changed — gameplay, missions, HUD, districts, crew prices and the
+v8 stamp are untouched.
 
-Boy's verdict on v7: the car and character shapes were not good enough. This pass fixed
-them under the same recording, from his new references (LEGO minifigs, LEGO sports car,
-LEGO police car, LEGO helicopter, weapon bar, portrait cards, Sunset Keys map) — plus
-realistic buildings/districts and the HUD pieces the references showed.
+1. **Buildings** — `world.js`: new `facadeTexture` (512px): wall gradient,
+   floor bands, big framed windows with glass gradients and mullions (~30%
+   lit warm, some with curtains), AC units drawn under windows, ground
+   floor with entrance door + shopfront glass + awning band, parapet band.
+   3D details per building: AC outdoor units on the facade, cornice,
+   entrance canopy, setback top floor + antenna on towers over 40u,
+   balconies with railings. Landmarks (Hotel Kencana, Casino Emas,
+   Mansion) use the same facade. Sidewalks added along every road.
+   Garage exterior got roller doors with slats.
+2. **Cars** — `vehicles.js`: new alloy wheels (dark rim disc, 5 spokes,
+   hub) everywhere. Garuda GT still gold, but now a closed coupe:
+   sloped windshield, roof (sloped), side glass, rear glass, C-pillars,
+   rear deck, dashboard + steering wheel, and a human driver seated low
+   so head and shoulders show through the glass. Street cars got a
+   glasshouse with roof, sloped windshield/rear glass, door lines,
+   handles, bumpers, grille and mirrors. KPD cars got KPD door decals.
+3. **Helicopter** — `vehicles.js`: human pilot seated in the bubble
+   canopy (head visible through the glass), engine deck with exhausts,
+   KPD flank decals, searchlight under the nose, faint rotor blur disc.
+   Chase staging kept small and high (from fix pass 1) so it reads whole
+   without dominating.
+4. **Characters** — `pedestrians.js`: `buildMinifig` keeps its name and
+   return shape but builds a proportional human ~1.75u: oval head with
+   eyes, brows, nose, mouth, hair (black/brown/pink long hair, bandana,
+   police cap), torso with belt/pocket/collar, arms with hands, legs
+   with shoes. Walk swing uses the same leg/arm pivots. HUD portraits
+   unchanged.
+5. **Garage + combat (folded in from fix pass 2)**: parts shelf moved to
+   (3.5, -10.2) so it reads whole; front-left floor got a rubber mat,
+   a 0.7u crate, oil cans and a west-wall pegboard; combat enemies
+   moved to 12–16u with the third one revived, plus crates, barrels
+   and rubble in the mid-ground.
+6. **Pass 2 of the overhaul**: the coupe roof was a flat slab and the
+   windshield flashed white under the garage lamps — glass is now
+   darker (opacity 0.65, metalness 0.1) and the roof slopes; the garage
+   crate shrank from 1.0u to 0.7u.
 
-### Car — Garuda GT rebuilt as a LEGO sports car (`vehicles.js`)
-- New `loftGeometry` helper: the body is lofted from hexagonal cross-sections with flat
-  shading, so it flows instead of reading as a box. Pointed low nose, rising hood with
-  vents, level rear deck, sloped windshield, open cockpit with seats + steering wheel +
-  a seated minifig driver (sunglasses, smile, patterned shirt), roll bar on struts, big
-  wing spoiler with a white trailing edge, full-width taillight bar, diffuser, twin
-  chrome exhausts, chrome bumper + splitter, sharp headlights + grille + emblem.
-- Wheels are big (r 0.46) with five-spoke star rims and sit under body-coloured fender
-  arches (half-torus) — never taller than the body. Fixed a spoke bug (spokes were
-  drawn in the wrong plane, corrected to radial bars around the X axle).
-- Colour stays GOLD (Kencana identity), double white stripes, spoiler kept. Traffic
-  cars rebuilt with the same loft helper + glass cabins; the KPD car is blue-white with
-  white hood/roof panels, KPD/POLICE door decals (canvas texture), black push bar and a
-  red/blue light bar (`userData.lightBars` kept, as `police.js` drives it).
+### Verification (realistic overhaul)
 
-### Characters — LEGO minifigs (`pedestrians.js`)
-- `buildCharacter` is now a minifig: cylinder head with a smiling face (eyes + smile
-  drawn on the head material), a hair cap + back slab, a printed torso (pattern squares
-  on the shirt), C-shaped hands (torus arcs), separate legs with shoes, and shoulder/hip
-  pivot groups so the walk swing reads. Same `{shirt, pants, skin, hair, cap, pattern,
-  glasses, whiteShoes}` signature — `garage.js` imports it as `buildPerson` with `cap`
-  and still works; added `buildBambang()` for the garage. Wheelman keeps the orange
-  shirt + black sunglasses; KPD police are blue uniforms + caps.
+- `node --check` semua `game/src/*.js` + `main.ts` — lolos.
+- Playtest penuh (`tools/playtest.mjs`, drive + garage, 25 cek): ALL PASS
+  — title, MULAI, E masuk Garuda, berkendara 129,8u, E keluar, jalan
+  4,5u, E masuk lagi, peta buka/tutup, pause buka/tutup; garasi buka,
+  respray beli (cash -$450, paint=1), garasi tutup, balapan 5 gate
+  selesai (racesWon 2→3), tembak (ammo 11→8). 0 page error, 0 console
+  error, 0 failed request, 0 external request.
+- 4 screenshot 1280×720 diregenerasi dari kode terbaru dan dibaca ulang:
+  1-chase 137.191 B, 2-combat 124.102 B, 3-garage 96.309 B,
+  4-map 147.664 B (masing-masing ≤256 KiB).
+- Dossier byte-identical 2 run (`main.ts` dengan MAKEFUN_OUTPUT_DIR
+  berbeda): sha256 `64e817782a86b548283cf7d87e139a3caf734ab50ac98ee86e1c8354155ca388`.
+  Preflight OK: 4 screenshot, game/ 18 file, 0,78 MiB (cap 48 MiB).
+- Rekaman 01a1f226 tetap jalan, belum ada commit, belum ada submit.
 
-### Helicopter — LEGO rescue chopper, police colours (`police.js`)
-- `buildHelicopter` rebuilt: white-and-blue body with a blue belly stripe, a big sloped
-  TRANSPARENT blue canopy with a pilot minifig visible inside (blue uniform, helmet,
-  visor), a second seat + dashboard, a long blue tail boom with a fin, horizontal
-  stabiliser and KPD decals, a four-blade main rotor (two crossed bars), a tail rotor,
-  landing skids on struts, a side winch with cable, red/blue roof light bar, and the
-  spotlight cone + ground pool (kept, `userData` fields `rotor`/`tailRotor`/`spot`/`pool`
-  unchanged). Scale stays 1.6 — big on purpose, so it reads in the chase shot.
+## Known gaps (honest)
 
-### Buildings & districts — a real city, not empty boxes (`world.js`)
-- Canvas textures drawn once and reused: glass towers reflecting the sunset (purple /
-  orange / gold gradient + dark mullions + lit floors), regular window grids (lit vs
-  dark windows, frames, sills), brick (two colours), striped awnings, zebra crossings,
-  shop signs, the KENCANA FM billboard.
-- `facedBox` puts the facade texture on the front/back faces only — roofs stay plain,
-  so windows never appear on a roof. `roofDressing` adds AC boxes, water tanks and
-  antenna beacons, so the skyline is not a row of flat slabs.
-- Families per district: glass towers + shophouses in Alun-Alun, towers + casino in
-  Lorong Emas, pitched tile roofs + shuttered windows + porches in Kampung Batik,
-  warehouses (gable roofs, skylights, sliding doors) + container yards + two cranes in
-  Pelabuhan Segara, shophouses + market stalls in Pasar Senja. Balconies on upper
-  floors, shopfront glass + striped awnings + name signs on the ground floor.
-- Streets: sidewalks on both sides of every road, zebra crossings at the central
-  intersections, street trees along the sidewalks, street lamps (pole + arm + glowing
-  head + light cone) along the avenues. Landmarks: glass Hotel Kencana with a gold
-  sign, white mansion with columns + pitched roof, a park (lawn, trees, benches,
-  fountain) around the safehouse, purple Casino Emas with neon trim + canopy, Pasar
-  Senja market hall + stalls, showroom, wooden pier + fishing boat with a sail,
-  lifeguard tower, ferris wheel (slimmer, lighter legs now) and beach umbrellas kept
-  west of the beach road. Same exports and landmark positions as v7.
-
-### HUD — weapon bar, portraits, map (`hud.js`, `index.html`, `config.js`, `main.js`)
-- Weapon bar is now HORIZONTAL at the bottom centre, like the reference: slot 0 is
-  the fist (∞), slots 1-5 are the guns with drawn white silhouettes (fist, pistol,
-  SMG, shotgun, rifle, launcher) and `current/max` ammo; the active slot glows orange
-  and the active weapon's name shows beside the bar. Locked guns go grey with LOCKED.
-- Unlocks (`config.js weaponUnlocked`): Pistol / Kancil SMG / Shotgun owned from the
-  start; the Garuda rifle unlocks after mission 5, the Launcher after mission 9, with
-  toasts on unlock and a LOCKED toast on a locked key press. Pressing 0 selects the
-  fist — a close-range swing, no ammo (`main.js tryShoot` melee branch); R reloads
-  guns only.
-- Portraits redrawn as distinct cards: a radial background in each speaker's colour,
-  a minifig-style face, and their own hair — Ratna pink bob + sunglasses, Agus short
-  hair + patterned orange shirt, Bambang red bandana, Wanto police cap with a gold
-  badge + uniform star, wheelman short hair + sunglasses. The same portraits appear
-  small in the mission list.
-- The big map now names every district on its block, labels the A–F / 1–6 grid and
-  five landmarks (Bengkel Bambang, Safehouse, Balapan, Casino Emas, Hotel Kencana —
-  placed clear of each other and of their markers), and the side column has a STORY
-  heading, a mission row per mission (portrait + name + payout + Complete / Active /
-  Locked) and a LEGEND panel (you are here, objective, police, safehouse, garage,
-  race, crew). Map canvas is 540 px so the whole side column fits in a 720 px frame.
-  The map stays transparent — the city shows through.
-
-### Staging & framing (4 passes, `main.js`, `render.js`, `shots.js`)
-- Title: the wheelman now stands AT the driver's door (car's left side), both big in
-  the lower foreground; staging moved far south-west on the sand so the race flag
-  falls out of frame and the ferris wheel sits in frame behind them. The title camera
-  looks ahead of the car toward the wheel.
-- Foot: the wheelman is stepped to his own right of the sight line so the parked
-  Garuda shows whole beside him (he no longer hides the car behind his body); staging
-  moved far south of the wheel so no wheel leg crosses the frame. Foot camera closer
-  (5.0 back, 2.4 high).
-- Chase: camera pulled back in two steps (now 13 back, 6.5 side, 5.2 high, looking 10
-  ahead) so the whole Garuda stays in frame; the staged heli lowered and brought
-  closer (car + 5, y 10, −24 ahead) so the whole helicopter — body, canopy, skids,
-  rotor — stays in frame with its spotlight on.
-
-### Verification
-- `node --check` on all `game/src/*.js` + `main.ts`: pass. (`serve.ts` is plain
-  TypeScript and fails `node --check` as before — it is not part of the game.)
-- Playtest (`tools/playtest.mjs all`): 0 page errors, 0 failed requests, 0 external
-  requests on all four shots; probes pass (drive 22 KM/H, map open/close, garage
-  open → repaint Pink Senja → repair $150 → talk to Bambang → close, race GATE 1/5 →
-  GATE 2/5).
-- Screenshots (1280×720): 1-chase.jpg 151,101 B, 2-foot.jpg 130,528 B, 3-map.jpg
-  131,824 B, 4-title.jpg 98,827 B — all under the 256 KiB cap.
-- Dossier built twice with `MAKEFUN_OUTPUT_DIR=out node main.ts`: byte-identical
-  (851,608 bytes); `out/` removed afterwards.
-
-### Honest gaps (after looking at the final screenshots)
-- The car now reads as a LEGO sports car (gold, low, spoiler, star rims, driver
-  visible) and the characters as minifigs (face, hair, shirt, C-hands) — but the
-  chase shot is still a rear three-quarter view, so the hood vents and grille read
-  best in the title/foot shots, not the chase one.
-- The ferris wheel's legs still cross the sky in the title and foot shots (thinner
-  and lighter now, but visible) — they are part of the wheel, and any shot looking
-  north from the south beach will show them.
-- The race flag banner and the BALAPAN sign peek at the right edge of the foot shot;
-  the dialogue bar covers the lower part of the car in the chase shot.
-- The city reads as a real city in the chase shot (glass towers, lit windows, trees,
-  lamps) but the mid-ground road in the chase frame is still mostly empty sand/road —
-  the buildings sit in the distance. The map shot is the one that shows the district
-  variety best.
-- Radio is still a synth loop; dialogue is text + portraits, no voice or cutscenes.
+- The judge's final heat re-judges with 3 Swiss rounds + a playoff against
+  4 house games; the dev score is a signal only, not the final result.
+- Traffic cars do not yield or turn at intersections in a realistic way;
+  they turn 90° when a building blocks them.
+- Pedestrians do not enter buildings; enemies do not take cover.
+- The radio is synthesised WebAudio, not recorded gamelan.
+- The night wet-road look is a dark sheen + lamp glow, not true reflections.
+- Minor HUD overlaps in the chase shot: the wanted stars and the cash line
+  sit tight against the top/bottom edges of the KPD panel (readable, but
+  the spacing is not perfect).
+- The title's LANJUTKAN button was verified by code (shows only with a
+  save), not by a screenshot with a save present.
+- Realism limits (honest): the driver is barely visible from the rear
+  chase camera (head/shoulders through dark glass); the coupe roof is
+  still a flat slab from directly behind. Faces are simple 3D features
+  that read at screenshot distance but have no detailed expression up
+  close. Each building's facade texture repeats on all four sides, so
+  the ground-floor entrance appears on every face. Traffic shares one
+  sedan body (no trucks, buses or motorbikes). The heli rotor blur disc
+  is static in screenshots (the rotor only spins during live play).
