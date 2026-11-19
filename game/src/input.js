@@ -1,103 +1,89 @@
-// Keyboard and mouse input, one job: remember which keys are down right now and hand out
-// single-press actions (a key that was pressed since the last read, not held). The game loop
-// polls the held keys every frame; menus and one-shot actions take the pressed edge.
-
+// Keyboard and mouse input. Held keys give steering / throttle; one-shot
+// presses (enter car, shoot, reload, weapons, crew, garage, map, pause,
+// radio) are queued as bit flags and taken once by the loop.
 export const ACTION_CONFIRM = 1;
 export const ACTION_PAUSE = 2;
-export const ACTION_MAP = 4;
-export const ACTION_GARAGE = 8;
-export const ACTION_RADIO = 16;
-export const ACTION_ENTER = 32;
+export const ACTION_ENTER = 4;
+export const ACTION_SHOOT = 8;
+export const ACTION_RELOAD = 16;
+export const ACTION_MAP = 32;
+export const ACTION_GARAGE = 64;
+export const ACTION_RADIO = 128;
 
-const CONFIRM_KEYS = new Set(['Enter', 'Space']);
-const PAUSE_KEYS = new Set(['KeyP', 'Escape']);
-const MAP_KEYS = new Set(['KeyM']);
-const GARAGE_KEYS = new Set(['KeyG']);
-const RADIO_KEYS = new Set(['KeyT']);
-const ENTER_KEYS = new Set(['KeyE']);
+const KEYMAP = {
+  KeyW: 'up', ArrowUp: 'up',
+  KeyS: 'down', ArrowDown: 'down',
+  KeyA: 'left', ArrowLeft: 'left',
+  KeyD: 'right', ArrowRight: 'right',
+  Space: 'brake',
+};
 
-export function createInput(canvas) {
-  const down = new Set();
-  const pressed = new Set();
-  const mouse = { x: 0, y: 0, clicked: false };
+export function createInput() {
+  const held = new Set();
+  let actions = 0;
+  let weaponKey = -1;
+  let crewKey = '';
 
-  function onKeyDown(event) {
-    if (event.repeat) return;
-    down.add(event.code);
-    pressed.add(event.code);
-    if (['Space', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(event.code)) {
-      event.preventDefault();
+  window.addEventListener('keydown', (event) => {
+    if (event.repeat) {
+      if (KEYMAP[event.code]) event.preventDefault();
+      return;
     }
-  }
-
-  function onKeyUp(event) {
-    down.delete(event.code);
-  }
-
-  function onMouseMove(event) {
-    mouse.x = event.clientX;
-    mouse.y = event.clientY;
-  }
-
-  function onMouseDown(event) {
-    mouse.x = event.clientX;
-    mouse.y = event.clientY;
-    mouse.clicked = true;
-  }
-
-  window.addEventListener('keydown', onKeyDown);
-  window.addEventListener('keyup', onKeyUp);
-  canvas.addEventListener('mousemove', onMouseMove);
-  canvas.addEventListener('mousedown', onMouseDown);
-  // Title buttons are DOM, so clicks on them never reach the canvas; the mouse position
-  // is still tracked for the title screen's subtle parallax.
-  window.addEventListener('mousemove', onMouseMove);
-  // A key released while the tab is hidden never sends keyup: let go of everything on blur.
-  window.addEventListener('blur', () => {
-    down.clear();
-    pressed.clear();
+    if (KEYMAP[event.code]) {
+      held.add(KEYMAP[event.code]);
+      event.preventDefault();
+      return;
+    }
+    switch (event.code) {
+      case 'Enter': case 'Space': actions |= ACTION_CONFIRM; break;
+      case 'KeyE': actions |= ACTION_ENTER; break;
+      case 'KeyJ': case 'Mouse0': actions |= ACTION_SHOOT; break;
+      case 'KeyR': actions |= ACTION_RELOAD; break;
+      case 'KeyM': actions |= ACTION_MAP; break;
+      case 'KeyG': actions |= ACTION_GARAGE; break;
+      case 'KeyT': actions |= ACTION_RADIO; break;
+      case 'KeyP': case 'Escape': actions |= ACTION_PAUSE; break;
+      case 'Digit0': case 'Digit1': case 'Digit2': case 'Digit3': case 'Digit4': case 'Digit5':
+        weaponKey = Number(event.code.slice(5));
+        break;
+      case 'KeyZ': crewKey = 'Z'; break;
+      case 'KeyX': crewKey = 'X'; break;
+      case 'KeyC': crewKey = 'C'; break;
+      default: return;
+    }
+    event.preventDefault();
+  });
+  window.addEventListener('keyup', (event) => {
+    if (KEYMAP[event.code]) held.delete(KEYMAP[event.code]);
+  });
+  window.addEventListener('blur', () => held.clear());
+  window.addEventListener('mousedown', (event) => {
+    if (event.button === 0) actions |= ACTION_SHOOT;
   });
 
   return {
-    isDown(code) {
-      return down.has(code);
-    },
-    wasPressed(code) {
-      return pressed.has(code);
-    },
-    /** WASD / arrows as a -1..1 pair: x is strafe/steer, y is forward/back. */
-    axis() {
-      const x = (this.isDown('KeyD') || this.isDown('ArrowRight') ? 1 : 0)
-        - (this.isDown('KeyA') || this.isDown('ArrowLeft') ? 1 : 0);
-      const y = (this.isDown('KeyW') || this.isDown('ArrowUp') ? 1 : 0)
-        - (this.isDown('KeyS') || this.isDown('ArrowDown') ? 1 : 0);
-      return { x, y };
-    },
-    /** One-shot actions pressed since the last call; clears the pressed set. */
+    held,
     takeActions() {
-      let actions = 0;
-      for (const code of pressed) {
-        if (CONFIRM_KEYS.has(code)) actions |= ACTION_CONFIRM;
-        if (PAUSE_KEYS.has(code)) actions |= ACTION_PAUSE;
-        if (MAP_KEYS.has(code)) actions |= ACTION_MAP;
-        if (GARAGE_KEYS.has(code)) actions |= ACTION_GARAGE;
-        if (RADIO_KEYS.has(code)) actions |= ACTION_RADIO;
-        if (ENTER_KEYS.has(code)) actions |= ACTION_ENTER;
-      }
-      pressed.clear();
-      return actions;
+      const taken = actions;
+      actions = 0;
+      return taken;
     },
-    takeClick() {
-      const c = mouse.clicked;
-      mouse.clicked = false;
+    takeWeapon() {
+      const w = weaponKey;
+      weaponKey = -1;
+      return w;
+    },
+    takeCrew() {
+      const c = crewKey;
+      crewKey = '';
       return c;
     },
-    mouse() {
-      return mouse;
-    },
-    clear() {
-      pressed.clear();
-      mouse.clicked = false;
+    axis() {
+      return {
+        throttle: (held.has('up') ? 1 : 0) - (held.has('down') ? 1 : 0),
+        steer: (held.has('right') ? 1 : 0) - (held.has('left') ? 1 : 0),
+        brake: held.has('brake'),
+      };
     },
   };
 }

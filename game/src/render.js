@@ -1,53 +1,36 @@
-// Drawing only: the Three.js renderer, the sunset scene, and the cameras. The world, the
-// vehicles and the HUD own their own state; this file only paints what it is handed. Camera
-// modes: title (beach postcard), chase (close three-quarter rear, the shot that sells the car),
-// foot (third person behind the wheelman), garage (inside the workshop). A gradient sky dome
-// and warm fog give the whole city one sun-soaked look.
-
+// Drawing only: the Three.js scene, the sun, the sky and the cameras.
+// The HUD is DOM (hud.js); this module paints the 3D world and moves the
+// camera. Cameras: a close three-quarter chase cam, an over-shoulder foot
+// cam, a slow orbit for the title poster, a fixed interior cam for the
+// garage, and a high view behind the transparent map.
 import { THREE } from './three-shim.js';
-import { SUNSET } from './config.js';
+import { PALETTE } from './config.js';
 
-export const SCREEN_TITLE = 'title';
-export const SCREEN_PLAY = 'play';
-export const SCREEN_PAUSED = 'paused';
-export const SCREEN_OVER = 'over';
-
-function makeSkyTexture() {
-  const canvas = document.createElement('canvas');
-  canvas.width = 4;
-  canvas.height = 256;
-  const ctx = canvas.getContext('2d');
-  const grad = ctx.createLinearGradient(0, 0, 0, 256);
-  grad.addColorStop(0, '#7a3fa0');
-  grad.addColorStop(0.45, '#ff8a5c');
-  grad.addColorStop(0.75, '#ffc46b');
-  grad.addColorStop(1, '#ffe9a8');
-  ctx.fillStyle = grad;
-  ctx.fillRect(0, 0, 4, 256);
-  const tex = new THREE.CanvasTexture(canvas);
-  tex.colorSpace = THREE.SRGBColorSpace;
-  return tex;
+function skyMaterial(night) {
+  const top = night ? PALETTE.nightSkyTop : PALETTE.sunsetSkyTop;
+  const mid = night ? PALETTE.nightSkyMid : PALETTE.sunsetSkyMid;
+  const low = night ? PALETTE.nightSkyLow : PALETTE.sunsetSkyLow;
+  return new THREE.ShaderMaterial({
+    side: THREE.BackSide,
+    depthWrite: false,
+    uniforms: {
+      top: { value: new THREE.Color(top) },
+      mid: { value: new THREE.Color(mid) },
+      low: { value: new THREE.Color(low) },
+    },
+    vertexShader: 'varying vec3 vP; void main(){ vP = position; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }',
+    fragmentShader: `varying vec3 vP; uniform vec3 top; uniform vec3 mid; uniform vec3 low;
+      void main(){
+        float h = normalize(vP).y;
+        vec3 c = h > 0.25 ? mix(mid, top, smoothstep(0.25, 0.9, h)) : mix(low, mid, smoothstep(-0.08, 0.25, h));
+        gl_FragColor = vec4(c, 1.0);
+      }`,
+  });
 }
 
-function makeSunSprite() {
-  const canvas = document.createElement('canvas');
-  canvas.width = 128;
-  canvas.height = 128;
-  const ctx = canvas.getContext('2d');
-  const grad = ctx.createRadialGradient(64, 64, 4, 64, 64, 64);
-  grad.addColorStop(0, 'rgba(255,240,200,1)');
-  grad.addColorStop(0.35, 'rgba(255,180,90,0.9)');
-  grad.addColorStop(1, 'rgba(255,140,60,0)');
-  ctx.fillStyle = grad;
-  ctx.fillRect(0, 0, 128, 128);
-  const tex = new THREE.CanvasTexture(canvas);
-  tex.colorSpace = THREE.SRGBColorSpace;
-  return tex;
-}
-
-export function createRenderer(canvas) {
-  const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
-  renderer.setPixelRatio(1);
+export function createRender(canvas, worldGroup) {
+  const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance' });
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.5));
   renderer.shadowMap.enabled = true;
   renderer.shadowMap.type = THREE.PCFSoftShadowMap;
   renderer.outputColorSpace = THREE.SRGBColorSpace;
@@ -55,115 +38,147 @@ export function createRenderer(canvas) {
   renderer.toneMappingExposure = 1.15;
 
   const scene = new THREE.Scene();
-  scene.fog = new THREE.Fog(SUNSET.fogColor, SUNSET.fogNear, SUNSET.fogFar);
-  scene.background = makeSkyTexture();
+  scene.add(worldGroup);
+  const sky = new THREE.Mesh(new THREE.SphereGeometry(1500, 24, 16), skyMaterial(false));
+  scene.add(sky);
+  scene.fog = new THREE.Fog(0xe06a9a, 150, 900);
 
-  const sun = new THREE.DirectionalLight(SUNSET.sunColor, SUNSET.sunIntensity);
-  sun.position.set(-260, 190, -140);
+  const sun = new THREE.DirectionalLight(0xff8a3d, 3.1);
+  sun.position.set(-260, 180, -120);
   sun.castShadow = true;
   sun.shadow.mapSize.set(2048, 2048);
-  sun.shadow.camera.left = -420;
-  sun.shadow.camera.right = 420;
-  sun.shadow.camera.top = 420;
-  sun.shadow.camera.bottom = -420;
+  sun.shadow.camera.left = -160;
+  sun.shadow.camera.right = 160;
+  sun.shadow.camera.top = 160;
+  sun.shadow.camera.bottom = -160;
   sun.shadow.camera.far = 900;
   sun.shadow.bias = -0.0004;
   scene.add(sun);
-
-  const hemi = new THREE.HemisphereLight(SUNSET.hemiSky, SUNSET.hemiGround, SUNSET.hemiIntensity);
+  scene.add(sun.target);
+  const hemi = new THREE.HemisphereLight(0xffb3d0, 0x3a2a4a, 1.5);
   scene.add(hemi);
-  const ambient = new THREE.AmbientLight(0xffe0b8, SUNSET.ambient);
-  scene.add(ambient);
+  const amb = new THREE.AmbientLight(0xffe0c0, 0.55);
+  scene.add(amb);
+  // A big low sun disc on the horizon, west over the sea.
+  const sunDisc = new THREE.Mesh(
+    new THREE.CircleGeometry(46, 32),
+    new THREE.MeshBasicMaterial({ color: '#ffd94d', fog: false }),
+  );
+  sunDisc.position.set(-900, 90, -100);
+  sunDisc.lookAt(0, 60, 0);
+  scene.add(sunDisc);
+  // Moon for the night mode.
+  const moon = new THREE.Mesh(
+    new THREE.CircleGeometry(22, 24),
+    new THREE.MeshBasicMaterial({ color: '#e8ecff', fog: false }),
+  );
+  moon.position.set(600, 320, -500);
+  moon.lookAt(0, 60, 0);
+  moon.visible = false;
+  scene.add(moon);
 
-  const sunSprite = new THREE.Sprite(new THREE.SpriteMaterial({
-    map: makeSunSprite(), transparent: true, depthWrite: false, fog: false,
-  }));
-  sunSprite.position.set(-700, 260, -420);
-  sunSprite.scale.set(320, 320, 1);
-  scene.add(sunSprite);
+  const camera = new THREE.PerspectiveCamera(62, 1280 / 720, 0.5, 3000);
+  camera.position.set(0, 30, 60);
 
-  const camera = new THREE.PerspectiveCamera(58, 16 / 9, 0.1, 2400);
+  let night = false;
+  let camMode = 'title';
+  let camPos = new THREE.Vector3(0, 30, 60);
+  let camLook = new THREE.Vector3(0, 0, 0);
+  let titleT = 0;
 
-  // Camera smoothing state, so cuts never snap.
-  const cam = { pos: new THREE.Vector3(0, 40, 120), look: new THREE.Vector3(0, 0, 0) };
-
-  function resize(width, height) {
-    renderer.setSize(width, height, false);
-    camera.aspect = width / height;
+  function resize() {
+    const w = window.innerWidth;
+    const h = window.innerHeight;
+    renderer.setSize(w, h, false);
+    camera.aspect = w / h;
     camera.updateProjectionMatrix();
   }
+  window.addEventListener('resize', resize);
+  resize();
 
-  function lookAtSmooth(targetPos, targetLook, dt, snap) {
-    if (snap) {
-      cam.pos.copy(targetPos);
-      cam.look.copy(targetLook);
+  function setNight(on) {
+    night = on;
+    sky.material = skyMaterial(on);
+    sun.intensity = on ? 0.5 : 3.1;
+    sun.color.set(on ? 0x8aa0ff : 0xff8a3d);
+    hemi.intensity = on ? 0.5 : 1.5;
+    amb.intensity = on ? 0.25 : 0.55;
+    scene.fog.color.set(on ? 0x101a3a : 0xe06a9a);
+    sunDisc.visible = !on;
+    moon.visible = on;
+    renderer.toneMappingExposure = on ? 1.0 : 1.15;
+  }
+
+  // Chase: three-quarter rear, close enough that the car is >= 1/4 of the
+  // frame. Foot: over the shoulder. Title: slow orbit around the hero car.
+  function updateCamera(dt, focus) {
+    const f = focus || { x: 0, z: 0, heading: 0, speed: 0, y: 0 };
+    const sin = Math.sin(f.heading || 0);
+    const cos = Math.cos(f.heading || 0);
+    let wantPos;
+    let wantLook;
+    if (camMode === 'chase') {
+      // Close three-quarter rear: the car fills >= 1/4 of the frame
+      // (dist 8.0 / side 4.0 / height 3.8, FOV 62).
+      const dist = 8.0;
+      const side = 4.0;
+      const height = 3.8;
+      wantPos = new THREE.Vector3(
+        f.x - sin * dist - cos * side,
+        (f.y || 0) + height,
+        f.z - cos * dist + sin * side,
+      );
+      wantLook = new THREE.Vector3(f.x + sin * 8, (f.y || 0) + 1.2, f.z + cos * 8);
+    } else if (camMode === 'foot' || camMode === 'combat') {
+      const dist = camMode === 'combat' ? 6.5 : 5.5;
+      wantPos = new THREE.Vector3(
+        f.x - sin * dist - cos * 2.2,
+        (f.y || 0) + 3.1,
+        f.z - cos * dist + sin * 2.2,
+      );
+      wantLook = new THREE.Vector3(f.x + sin * 10, (f.y || 0) + 1.4, f.z + cos * 10);
+    } else if (camMode === 'garage') {
+      wantPos = new THREE.Vector3(f.x + 8.5, 3.4, f.z + 7.5);
+      wantLook = new THREE.Vector3(f.x - 1, 1.6, f.z - 1);
+    } else if (camMode === 'map') {
+      wantPos = new THREE.Vector3(f.x, 260, f.z + 60);
+      wantLook = new THREE.Vector3(f.x, 0, f.z);
     } else {
-      const k = 1 - Math.exp(-6 * dt);
-      cam.pos.lerp(targetPos, k);
-      cam.look.lerp(targetLook, k);
+      // Title orbit: a slow circle around the hero staging point, close
+      // enough that the gold Garuda and the wheelman fill a third of the
+      // frame, starting from the car's front three-quarter side.
+      titleT += dt * 0.12;
+      const r = 11;
+      wantPos = new THREE.Vector3(
+        (f.x || 0) + Math.sin(titleT) * r,
+        4.2,
+        (f.z || 0) + Math.cos(titleT) * r,
+      );
+      wantLook = new THREE.Vector3(f.x || 0, 1.0, f.z || 0);
     }
-    camera.position.copy(cam.pos);
-    camera.lookAt(cam.look);
-  }
-
-  const tmp = new THREE.Vector3();
-
-  /** Chase camera: close three-quarter rear — behind the car, offset to the side, so the
-   * car fills the frame and the road ahead reads. */
-  function chaseCamera(car, dt, snap) {
-    const forward = new THREE.Vector3(Math.sin(car.heading), 0, Math.cos(car.heading));
-    const side = new THREE.Vector3(Math.cos(car.heading), 0, -Math.sin(car.heading));
-    // Pulled back from the v7 framing: the whole Garuda stays in frame, big, with the
-    // road and the helicopter ahead still visible.
-    const pos = new THREE.Vector3(car.x, 0, car.z)
-      .addScaledVector(forward, -13)
-      .addScaledVector(side, 6.5);
-    pos.y = 5.2;
-    // Look a little above the car's roofline so a low police helicopter ahead stays in frame.
-    tmp.set(car.x, 2.4, car.z).addScaledVector(forward, 10);
-    lookAtSmooth(pos, tmp, dt, snap);
-  }
-
-  /** Foot camera: behind the wheelman, close, looking where he faces — he fills the
-   * frame, the street and the car beside him read behind him. */
-  function footCamera(player, dt, snap) {
-    const forward = new THREE.Vector3(Math.sin(player.heading), 0, Math.cos(player.heading));
-    const pos = new THREE.Vector3(player.x, 0, player.z).addScaledVector(forward, -5.0);
-    pos.y = 2.4;
-    tmp.set(player.x, 1.4, player.z).addScaledVector(forward, 5);
-    lookAtSmooth(pos, tmp, dt, snap);
-  }
-
-  /** Title camera: close on the car and the wheelman in the lower foreground, the ferris
-   * wheel, beach and sea behind them — the postcard backdrop. The look point sits ahead
-   * of the car toward the ferris wheel, so the wheel is in frame left and the car and the
-   * man stay big together on the right. */
-  function titleCamera(car, wheelman, dt, snap) {
-    const pos = new THREE.Vector3(car.x + 7, 2.6, car.z + 9);
-    tmp.set(car.x - 6, 1.6, car.z - 12);
-    if (wheelman) tmp.lerp(new THREE.Vector3(wheelman.x, 1.6, wheelman.z), 0.3);
-    lookAtSmooth(pos, tmp, dt, snap);
-  }
-
-  /** Garage camera: inside the workshop (the front wall culls from outside), looking at
-   * the car on the lift — the panel is docked to the left of the screen, so the car sits
-   * in the clear right half. */
-  function garageCamera(room, dt, snap) {
-    const pos = new THREE.Vector3(room.x - 9, 4.5, room.z + 6);
-    tmp.set(room.x, 2.0, room.z - 1);
-    lookAtSmooth(pos, tmp, dt, snap);
-  }
-
-  function render() {
-    renderer.render(scene, camera);
+    const k = camMode === 'title' ? 1 : Math.min(1, dt * 6);
+    camPos.lerp(wantPos, k);
+    camLook.lerp(wantLook, k);
+    camera.position.copy(camPos);
+    camera.lookAt(camLook);
+    // The shadow camera follows the focus so shadows stay crisp.
+    sun.position.set(f.x - 260, 180, f.z - 120);
+    sun.target.position.set(f.x, 0, f.z);
   }
 
   return {
-    renderer, scene, camera,
-    resize, render, chaseCamera, footCamera, titleCamera, garageCamera,
-    snapCamera() {
-      cam.pos.set(0, 40, 120);
-      cam.look.set(0, 0, 0);
+    scene, camera, renderer,
+    get night() { return night; },
+    setMode(mode) { camMode = mode; if (mode === 'title') titleT = 1.43; },
+    setNight,
+    snapCamera(focus) {
+      camPos.set(0, 0, 0);
+      camLook.set(0, 0, 0);
+      updateCamera(10, focus);
+    },
+    draw(dt, focus) {
+      updateCamera(dt, focus);
+      renderer.render(scene, camera);
     },
   };
 }

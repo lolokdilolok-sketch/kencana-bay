@@ -1,75 +1,119 @@
-// The story: 12 missions in order, each with a checkpoint star in the world, a briefing,
-// a contact who talks, and a payout. Reaching the checkpoint completes the mission, pays
-// the cash, and opens the next one. Mission 6 (Balapan Senja) is a 4-stage race through
-// the city instead of a single stop. Nothing here draws; the HUD reads this state.
+// The story: 12 missions, a crew to hire, a street race with 5 gates, and
+// the MISSION PASSED screen. Missions are data (see config.js); this module
+// tracks the active one, its checkpoints and its rewards, and keeps the
+// lifetime stats the map screen shows.
+import { MISSIONS, CREW, WEAPONS } from './config.js';
 
-import { MISSIONS } from './config.js';
+export const RACE_GATES = [
+  [-280, 180], [-180, 240], [-60, 280], [60, 260], [180, 220],
+];
 
 export function createMissions() {
-  let index = 0;
-  let stage = 0;
-  let done = false;
-  let current = MISSIONS[0];
+  const state = {
+    index: 0, // mission 1..12 (0-based)
+    done: 0,
+    stage: 0,
+    cash: 12480,
+    rep: 1320,
+    repLevel: 'FIXER',
+    takedowns: 0,
+    carsStolen: 0,
+    stunts: 0,
+    racesWon: 0,
+    racesRun: 0,
+    playSeconds: 0,
+    hired: { agus: false, bambang: false, ratna: false },
+    unlockedWeapons: new Set([0, 1, 2]),
+    passed: null, // { name, pay, rep, unlocked } shown on the MISSION PASSED screen
+    race: null, // { gate, time, best }
+  };
 
-  // Mission 6's four race stages, in order.
-  const RACE_STAGES = [
-    { x: -300, z: 60 },
-    { x: -60, z: -60 },
-    { x: 180, z: -180 },
-    { x: 300, z: 120 },
-  ];
+  function active() { return MISSIONS[state.index] || null; }
+  function storyPct() { return Math.round((state.done / MISSIONS.length) * 100); }
 
-  function target() {
-    if (done) return null;
-    if (current.name === 'Balapan Senja') return RACE_STAGES[Math.min(stage, RACE_STAGES.length - 1)];
-    return current.target;
-  }
-
-  function objectiveText() {
-    if (done) return 'Story complete — Kencana Bay is yours.';
-    if (current.name === 'Balapan Senja') return `Balapan Senja — Stage ${stage + 1}/4`;
-    return `${current.name} — ${current.brief}`;
-  }
-
-  /** Call when the player is close to the current target. Returns the payout or 0. */
-  function checkReached(x, z) {
-    if (done) return { payout: 0, completed: false, finished: false };
-    const t = target();
-    const dist = Math.hypot(x - t.x, z - t.z);
-    if (dist > 14) return { payout: 0, completed: false, finished: false };
-    if (current.name === 'Balapan Senja') {
-      stage += 1;
-      if (stage < RACE_STAGES.length) return { payout: 0, completed: false, finished: false, stage };
-    }
-    const payout = current.payout;
-    index += 1;
-    stage = 0;
-    if (index >= MISSIONS.length) {
-      done = true;
-      current = null;
-      return { payout, completed: true, finished: true };
-    }
-    current = MISSIONS[index];
-    return { payout, completed: true, finished: false };
-  }
-
-  function state() {
-    return {
-      index, stage, done,
-      mission: current ? { name: current.name, payout: current.payout, brief: current.brief, contact: current.contact, line: current.line } : null,
-      target: target(),
-      objective: objectiveText(),
+  function completeMission() {
+    const m = active();
+    if (!m) return null;
+    state.cash += m.pay;
+    const repGain = 80 + m.pay / 10;
+    state.rep += repGain;
+    state.done += 1;
+    const unlocked = [];
+    if (state.index + 1 === 3) { state.unlockedWeapons.add(3); unlocked.push('SHOTGUN'); }
+    if (state.index + 1 === 5) { state.unlockedWeapons.add(4); unlocked.push('GARUDA'); }
+    if (state.index + 1 === 9) { state.unlockedWeapons.add(5); unlocked.push('LAUNCHER'); }
+    const next = MISSIONS[state.index + 1];
+    state.passed = {
+      name: m.name, pay: m.pay, rep: Math.round(repGain), unlocked,
+      next: next ? next.name : null,
     };
+    state.index = Math.min(state.index + 1, MISSIONS.length - 1);
+    state.stage = 0;
+    return state.passed;
   }
 
-  function load(saved) {
-    if (typeof saved === 'number' && saved >= 0 && saved < MISSIONS.length) {
-      index = saved;
-      stage = 0;
-      done = false;
-      current = MISSIONS[index];
+  function startRace() {
+    state.race = { gate: 0, time: 0, best: state.race ? state.race.best : null };
+    state.racesRun += 1;
+    return state.race;
+  }
+
+  function raceGate() {
+    if (!state.race) return false;
+    state.race.gate += 1;
+    if (state.race.gate >= RACE_GATES.length) {
+      const win = state.race.time < 75;
+      if (win) {
+        state.cash += 500;
+        state.racesWon += 1;
+        state.rep += 60;
+      } else {
+        state.cash += 150;
+      }
+      const result = { win, time: state.race.time, pay: win ? 500 : 150 };
+      state.race = null;
+      return result;
     }
+    return false;
   }
 
-  return { state, checkReached, load, count: MISSIONS.length };
+  function hire(id) {
+    const c = CREW.find((x) => x.id === id);
+    if (!c || state.hired[id] || state.cash < c.hire) return false;
+    state.cash -= c.hire;
+    state.hired[id] = true;
+    return true;
+  }
+
+  function weaponUnlocked(i) {
+    const w = WEAPONS[i];
+    return state.unlockedWeapons.has(i) || state.done >= w.unlock;
+  }
+
+  return {
+    state, active, storyPct, completeMission, startRace, raceGate, hire, weaponUnlocked,
+    addCash(n) { state.cash += n; },
+    addStunt(n) { state.stunts += n; state.cash += n; },
+    addTakedown() { state.takedowns += 1; state.rep += 15; },
+    addStolen() { state.carsStolen += 1; },
+    resetPassed() { state.passed = null; },
+    load(save) {
+      if (!save) return;
+      Object.assign(state, {
+        index: save.index ?? 0, done: save.done ?? 0, cash: save.cash ?? 12480,
+        rep: save.rep ?? 1320, takedowns: save.takedowns ?? 0, carsStolen: save.carsStolen ?? 0,
+        stunts: save.stunts ?? 0, racesWon: save.racesWon ?? 0, racesRun: save.racesRun ?? 0,
+        playSeconds: save.playSeconds ?? 0, hired: save.hired ?? state.hired,
+      });
+      state.unlockedWeapons = new Set(save.unlockedWeapons ?? [0, 1, 2]);
+    },
+    save() {
+      return {
+        index: state.index, done: state.done, cash: state.cash, rep: state.rep,
+        takedowns: state.takedowns, carsStolen: state.carsStolen, stunts: state.stunts,
+        racesWon: state.racesWon, racesRun: state.racesRun, playSeconds: state.playSeconds,
+        hired: state.hired, unlockedWeapons: [...state.unlockedWeapons],
+      };
+    },
+  };
 }

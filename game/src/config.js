@@ -1,118 +1,115 @@
-// Kencana Bay — shared constants: city, districts, story, crew, weapons, keys.
-// One job: every number the rest of the game agrees on lives here.
+// Kencana Bay — every tuning number, name and colour in one place.
+// The city is a fixed 1280x720 logical HUD over a 3D world: x east, z south,
+// the city spans -330..330 on both axes, the sea lies west of x = -330.
+export const STEP = 1 / 60;
+export const SAVE_KEY = 'kencana.save.v8';
+export const VERSION_STAMP = 'KENCANA BAY · v8 · 19 NOV 2026';
 
-export const VERSION_STAMP = 'KENCANA BAY · v7 · 19 NOV 2026';
-export const SAVE_KEY = 'kencana.save.v7';
-
-// World layout: a road grid, avenues and streets every 120 units, roads 14 wide.
-// The sea sits on the west edge (x < -360); the beach road runs along it.
-export const CITY = {
-  minX: -420, maxX: 420, minZ: -420, maxZ: 420,
-  roadGap: 120, roadWidth: 14,
-  seaX: -360, // west of this line is water
-  beachZ: 300, // ferris wheel and umbrellas live near here
+export const WORLD = {
+  half: 330,
+  seaX: -330,
+  roadGap: 120,
+  roadWidth: 14,
+  roads: [-300, -180, -60, 60, 180, 300],
 };
 
-// Six districts, each with a map colour and a short label for the HUD.
 export const DISTRICTS = [
-  { id: 'segara', name: 'Pelabuhan Segara', color: '#3f7fbf', x0: -360, z0: -360, x1: -120, z1: -120, note: 'Docks · Warehouses' },
-  { id: 'batik', name: 'Kampung Batik', color: '#e06a9a', x0: -120, z0: -360, x1: 140, z1: -120, note: 'Old town · Batik shops' },
-  { id: 'alun', name: 'Alun-Alun', color: '#ffd34d', x0: -120, z0: -120, x1: 140, z1: 140, note: 'Hotel · Mansion' },
-  { id: 'emas', name: 'Lorong Emas', color: '#b06ae0', x0: 140, z0: -120, x1: 360, z1: 140, note: 'Casino · Neon' },
-  { id: 'kidul', name: 'Pantai Kidul', color: '#3fd2c0', x0: -360, z0: 140, x1: -100, z1: 360, note: 'Beach · Ferris wheel' },
-  { id: 'senja', name: 'Pasar Senja', color: '#ff8a3d', x0: 100, z0: 140, x1: 360, z1: 360, note: 'Market · Showroom · Garage' },
+  { id: 'segara', name: 'Pelabuhan Segara', short: 'SEGARA', x0: -330, z0: -330, x1: -110, z1: -110, color: '#5b7d8c', accent: '#7fb3c8', kind: 'port' },
+  { id: 'batik', name: 'Kampung Batik', short: 'BATIK', x0: -110, z0: -330, x1: 110, z1: -110, color: '#c98a4b', accent: '#e8b06a', kind: 'kampung' },
+  { id: 'alun', name: 'Alun-Alun', short: 'ALUN-ALUN', x0: -110, z0: -110, x1: 110, z1: 110, color: '#8a7fd0', accent: '#b3a6ff', kind: 'downtown' },
+  { id: 'emas', name: 'Lorong Emas', short: 'LORONG EMAS', x0: 110, z0: -110, x1: 330, z1: 110, color: '#c9a227', accent: '#ffd94d', kind: 'casino' },
+  { id: 'pantai', name: 'Pantai Kidul', short: 'PANTAI KIDUL', x0: -330, z0: 110, x1: 110, z1: 330, color: '#e88ca0', accent: '#ffb3c2', kind: 'beach' },
+  { id: 'pasar', name: 'Pasar Senja', short: 'PASAR SENJA', x0: 110, z0: 110, x1: 330, z1: 330, color: '#d06a4b', accent: '#ff9a70', kind: 'market' },
 ];
 
-export function districtAt(x, z) {
-  for (const d of DISTRICTS) {
-    if (x >= d.x0 && x < d.x1 && z >= d.z0 && z < d.z1) return d;
-  }
-  return null;
-}
-
-// The 12 story missions. target is the checkpoint the player must reach.
 export const MISSIONS = [
-  { name: 'Selamat Datang', payout: 300, target: { x: -60, z: -60 }, brief: 'Ratna wants to meet you at the Alun-Alun. Walk there and say hello.', contact: 'Ratna', line: 'So the wheelman is back. Kencana missed you, kid.' },
-  { name: 'Hot Wheels', payout: 450, target: { x: -300, z: -300 }, brief: 'A Garuda GT is parked at the docks. Take it — quietly.', contact: 'Ratna', line: 'The gold one. Keys are in it. Try not to scratch her.' },
-  { name: 'Antar Paket', payout: 400, target: { x: 240, z: -60 }, brief: 'Drive the package to the casino in Lorong Emas. No stops.', contact: 'Agus', line: 'Straight roads, no police. I will watch your back from the radio.' },
-  { name: 'Tagihan Pasar', payout: 550, target: { x: 240, z: 240 }, brief: 'Collect the market debt at Pasar Senja. They will not pay nicely.', contact: 'Ratna', line: 'Ask once. Then ask with the shotgun.' },
-  { name: 'Mata-Mata', payout: 500, target: { x: 0, z: -300 }, brief: 'Watch the batik warehouse in Kampung Batik. Report who comes and goes.', contact: 'Wanto', line: 'Eyes open, mouth shut. The commissioner pays for silence.' },
-  { name: 'Balapan Senja', payout: 700, target: { x: -300, z: 300 }, brief: 'Sunset race at Pantai Kidul. Four stages, no brakes, no mercy.', contact: 'Agus', line: 'Four gates. Win it and the whole bay knows your name.' },
-  { name: 'Gudang Segara', payout: 650, target: { x: -300, z: -180 }, brief: 'Clear the dock warehouse of the rival gang. Bring the Garuda.', contact: 'Ratna', line: 'They took our crates. Take them back — all of them.' },
-  { name: 'Kabur dari WPD', payout: 600, target: { x: 60, z: 60 }, brief: 'Lose the KPD tail and reach the Alun-Alun safehouse.', contact: 'Agus', line: 'Three stars on you. Cut through the market, they hate the alleys.' },
-  { name: 'Heat Wave', payout: 750, target: { x: 300, z: 0 }, brief: 'A heat wave of police is coming. Survive it and meet Wanto.', contact: 'Wanto', line: 'The department wants a show. Give them a chase, then vanish.' },
-  { name: 'Kencana Hilang', payout: 700, target: { x: -180, z: 180 }, brief: 'Your Garuda was stolen. Track it to the beach and take it back.', contact: 'Bambang', line: 'I saw them tow it toward Pantai Kidul. My lift is ready when you get it back.' },
-  { name: 'Double Cross', payout: 900, target: { x: 300, z: 300 }, brief: 'The double cross happens at the showroom. Be there first.', contact: 'Ratna', line: 'Trust no one tonight. Especially not me.' },
-  { name: 'The Last Ride', payout: 1200, target: { x: -60, z: -60 }, brief: 'One last ride through Kencana Bay. End it where it started.', contact: 'Ratna', line: 'Drive, kid. The sun is setting and the bay is ours.' },
+  { name: 'Selamat Datang', pay: 300, type: 'goto', target: [-60, -60], brief: 'Temui Ratna di Alun-Alun. Kencana menunggumu.' },
+  { name: 'Hot Wheels', pay: 450, type: 'steal', target: [60, -180], brief: 'Curi Garuda GT di showroom Alun-Alun.' },
+  { name: 'Antar Paket', pay: 400, type: 'goto', target: [180, 180], brief: 'Antar paket ke Pasar Senja. Jangan ditanya isinya.' },
+  { name: 'Tagihan Pasar', pay: 550, type: 'shootout', target: [180, 240], brief: 'Tagih utang preman pasar. Mereka tidak suka ditagih.' },
+  { name: 'Mata-Mata', pay: 500, type: 'goto', target: [-180, -180], brief: 'Awasi gudang Segara. Foto, jangan ketahuan.' },
+  { name: 'Balapan Senja', pay: 700, type: 'race', target: [-240, 240], brief: 'Balapan jalanan di Pantai Kidul. 5 checkpoint, jangan kalah.' },
+  { name: 'Gudang Segara', pay: 650, type: 'shootout', target: [-240, -240], brief: 'Bersihkan gudang dari geng Segara.' },
+  { name: 'Kabur dari KPD', pay: 600, type: 'escape', target: [60, 60], brief: 'KPD mengepung. Kabur dan hilangkan bintang.' },
+  { name: 'Heat Wave', pay: 750, type: 'shootout', target: [240, -60], brief: 'Serbu markas geng di Lorong Emas.' },
+  { name: 'Kencana Hilang', pay: 700, type: 'goto', target: [0, 300], brief: 'Cari mobil curian di Pantai Kidul.' },
+  { name: 'Double Cross', pay: 900, type: 'shootout', target: [-60, 180], brief: 'Ratna dikhianati. Balas di Kampung Batik.' },
+  { name: 'The Last Ride', pay: 1200, type: 'escape', target: [240, 240], brief: 'Satu pelarian terakhir dari Teluk Kencana.' },
 ];
 
 export const CREW = [
-  { id: 'agus', name: 'Agus Prasetyo', role: 'Driver · Getaway', price: 200, key: 'Z', line: 'I drive, you shoot. That is the deal.' },
-  { id: 'bambang', name: 'Bambang', role: 'Mechanic · Bengkel', price: 350, key: 'X', line: 'Bring her in dirty, take her out gold.' },
-  { id: 'ratna', name: 'Ratna', role: 'Fixer · Contacts', price: 300, key: 'C', line: 'I know a guy. I always know a guy.' },
+  { key: 'Z', id: 'agus', name: 'Agus Prasetyo', role: 'Driver · Getaway', hire: 200, color: '#e8a33d', hair: 'black', shirt: '#3d6fb5' },
+  { key: 'X', id: 'bambang', name: 'Bambang', role: 'Mechanic · Bengkel', hire: 350, color: '#c94b4b', hair: 'bandana', shirt: '#4b7d4b' },
+  { key: 'C', id: 'ratna', name: 'Ratna', role: 'Fixer · Contacts', hire: 300, color: '#e87fb5', hair: 'pink', shirt: '#8a4bd0' },
 ];
 
 export const WEAPONS = [
-  { name: 'Pistol', damage: 25, ammo: 60 },
-  { name: 'Kancil SMG', damage: 12, ammo: 180 },
-  { name: 'Shotgun', damage: 60, ammo: 24 },
-  { name: 'Garuda', damage: 40, ammo: 90 },
-  { name: 'Launcher', damage: 120, ammo: 6 },
+  { name: 'FISTS', ammo: Infinity, max: Infinity, unlock: 0, price: 0 },
+  { name: 'PISTOL', ammo: 12, max: 60, unlock: 0, price: 0 },
+  { name: 'KANCIL SMG', ammo: 32, max: 160, unlock: 0, price: 0 },
+  { name: 'SHOTGUN', ammo: 6, max: 24, unlock: 3, price: 1200 },
+  { name: 'GARUDA', ammo: 30, max: 120, unlock: 5, price: 3800 },
+  { name: 'LAUNCHER', ammo: 1, max: 4, unlock: 9, price: 9000 },
 ];
 
-/** Weapon unlocks: the first three guns are owned from the start; the Garuda rifle is
- * earned after mission 5 (index 4, Tagihan Pasar) and the Launcher after mission 9
- * (index 8, Kabur dari WPD). Locked weapons show LOCKED in the weapon bar. */
-export function weaponUnlocked(weaponIndex, missionIndex) {
-  if (weaponIndex < 3) return true;
-  if (weaponIndex === 3) return missionIndex >= 4;
-  return missionIndex >= 8;
-}
-
-// Garage repaint colours (persist in save).
 export const PAINTS = [
-  { id: 'gold', name: 'Emas Kencana', hex: 0xffb400 },
-  { id: 'pink', name: 'Pink Senja', hex: 0xff2e63 },
-  { id: 'red', name: 'Merah Garuda', hex: 0xd21f2b },
-  { id: 'black', name: 'Hitam Lorong', hex: 0x1a1a22 },
+  { name: 'Emas Kencana', color: '#ffb400' },
+  { name: 'Pink Senja', color: '#ff2e63' },
+  { name: 'Merah Merdeka', color: '#d21f2b' },
+  { name: 'Hitam Malam', color: '#1c1c22' },
+  { name: 'Biru Teluk', color: '#2b6fd0' },
 ];
 
-// Street race: 5 gates across the city, start flag at Pantai Kidul.
-export const RACE = {
-  start: { x: -300, z: 300 },
-  gates: [
-    { x: -300, z: 60 },
-    { x: -60, z: -60 },
-    { x: 180, z: -180 },
-    { x: 300, z: 120 },
-    { x: -180, z: 300 },
-  ],
-  winPayout: 500, losePayout: 150, parTime: 150, // seconds
+export const GARAGE_MENU = [
+  { name: 'Repair', price: 150, desc: 'Perbaiki body sampai 100%' },
+  { name: 'Respray', price: 450, desc: 'Ganti cat, hilangkan panas' },
+  { name: 'Engine tune', price: 4000, desc: '+top speed, +akselerasi' },
+  { name: 'Armour plating', price: 3000, desc: '+armour, tahan tabrakan' },
+];
+
+export const KPD_UNITS = [
+  { name: 'ELANG-11', kind: 'car' },
+  { name: 'KUNTUL-7', kind: 'car' },
+  { name: 'RAJAWALI-3', kind: 'car' },
+  { name: 'GARUDA-1', kind: 'heli' },
+  { name: 'MERAK-5', kind: 'car' },
+];
+
+export const RADIO = {
+  station: 'GAMELAN FM 101.1',
+  tracks: ['Bonang Malam', 'Saron Senja', 'Kendang Kota', 'Gong Teluk', 'Gender Wayang'],
 };
 
-export const GARAGE = {
-  door: { x: 300, z: 300 }, // entrance marker in Pasar Senja
-  room: { x: 1500, z: 0 }, // interior lives far from the city, same scene
+export const PLAYER = {
+  name: 'Raka',
+  role: 'Wheelman',
+  walkSpeed: 9,
+  carAccel: 26,
+  carBrake: 40,
+  carMax: 46, // ~166 km/h
+  carTurn: 1.9,
+  hp: 100,
 };
 
-export const KEYS = {
-  forward: 'KeyW', back: 'KeyS', left: 'KeyA', right: 'KeyD',
-  enter: 'KeyE', shoot: 'KeyJ', reload: 'KeyR', garage: 'KeyG',
-  map: 'KeyM', pause: 'KeyP', radio: 'KeyT', drift: 'Space',
-  crewAgus: 'KeyZ', crewBambang: 'KeyX', crewRatna: 'KeyC',
-  weapons: ['Digit1', 'Digit2', 'Digit3', 'Digit4', 'Digit5'],
+export const PALETTE = {
+  sunsetSkyTop: '#2b1e5e',
+  sunsetSkyMid: '#e06a9a',
+  sunsetSkyLow: '#ff9a3d',
+  nightSkyTop: '#050510',
+  nightSkyMid: '#101a3a',
+  nightSkyLow: '#1c2a55',
+  sea: '#2b6f8e',
+  sand: '#e8c98f',
+  road: '#33333d',
+  roadLine: '#e8d44d',
+  sidewalk: '#8a8a92',
+  grass: '#4b7d3d',
+  text: '#f2ead8',
+  muted: '#b8b0a0',
+  gold: '#ffb400',
+  pink: '#ff2e63',
+  kpd: '#2b6fd0',
 };
 
-export const PHYSICS = {
-  walkSpeed: 6, runSpeed: 10,
-  carAccel: 26, carBrake: 40, carMaxSpeed: 46, carReverse: 12,
-  carSteer: 1.9, driftGrip: 0.86,
-  trafficSpeed: 9,
-};
-
-export const SUNSET = {
-  sunColor: 0xff8a3d, sunIntensity: 3.4,
-  hemiSky: 0xffd9a0, hemiGround: 0x7a4a6a, hemiIntensity: 1.9,
-  ambient: 0.95, fogColor: 0xf2a56b, fogNear: 260, fogFar: 900,
-  skyTop: 0x7a3fa0, skyMid: 0xff8a5c, skyLow: 0xffc46b,
-};
+export const FONT = 'system-ui, -apple-system, "Segoe UI", sans-serif';
+export const FONT_DISPLAY = '"Arial Black", "Segoe UI", system-ui, sans-serif';

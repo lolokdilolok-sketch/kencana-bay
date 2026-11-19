@@ -1,40 +1,20 @@
-// A small seeded random number generator (mulberry32): the same seed gives the same game,
-// which is what makes the screenshot scenes repeatable. Plus the small helpers every
-// generator in the game reaches for, so no file rolls its own randomness.
-
+// Seeded random: a small hash-based generator. The same seed always gives the
+// same sequence, so the city, the traffic and the screenshot scenes repeat.
 export function createRandom(seed) {
-  let a = seed | 0;
-  return function random() {
-    a = (a + 0x6d2b79f5) | 0;
-    let t = Math.imul(a ^ (a >>> 15), 1 | a);
-    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-  };
-}
-
-/** A float in [min, max). */
-export function range(rng, min, max) {
-  return min + rng() * (max - min);
-}
-
-/** An integer in [min, max]. */
-export function rangeInt(rng, min, max) {
-  return Math.floor(min + rng() * (max - min + 1));
-}
-
-/** One element of an array, picked by the seeded rng. */
-export function pick(rng, list) {
-  return list[Math.floor(rng() * list.length)];
-}
-
-/** Fisher-Yates shuffle that returns a new array, driven by the seeded rng. */
-export function shuffle(rng, list) {
-  const out = list.slice();
-  for (let i = out.length - 1; i > 0; i -= 1) {
-    const j = Math.floor(rng() * (i + 1));
-    const tmp = out[i];
-    out[i] = out[j];
-    out[j] = tmp;
+  let s = (seed >>> 0) || 1;
+  function next() {
+    s = (s + 0x9e3779b9) >>> 0;
+    let z = s;
+    z = Math.imul(z ^ (z >>> 16), 0x21f0aaad);
+    z = Math.imul(z ^ (z >>> 15), 0x735a2d97);
+    z ^= z >>> 15;
+    return (z >>> 0) / 4294967296;
   }
-  return out;
+  return {
+    next,
+    range(a, b) { return a + next() * (b - a); },
+    int(a, b) { return a + Math.floor(next() * (b - a + 1)); },
+    pick(list) { return list[Math.floor(next() * list.length)]; },
+    chance(p) { return next() < p; },
+  };
 }
