@@ -240,6 +240,69 @@ v8 stamp are untouched.
   Preflight OK: 4 screenshot, game/ 18 file, 0,78 MiB (cap 48 MiB).
 - Rekaman 01a1f226 tetap jalan, belum ada commit, belum ada submit.
 
+## Round 5 (19 Nov 2026) — recording repair + small polish
+
+Why: round 4 was rejected on `transcripts_witnessed` — its 14 final files
+changed outside the attached recording (the fix recording 01a1f226 was
+sealed on the site but its local receipt was lost). Round 5 remakes real
+changes to the same 14 files under a NEW recording
+(01a1f37e-552e-71f6-acb0-4558fcebafe8), so the final content is witnessed.
+
+- `world.js` — facades vary per side and per district: the street-facing
+  side (toward the nearest road) gets the entrance + shopfront, the other
+  sides get windows only, the rear is darker with fewer lit windows.
+  `facadeTexture(base, litColor, floors, { cols, litChance, ground })`
+  with ground treatments `shop` / `door` / `roller` / `plain`; per-district
+  specs in `DISTRICTS` (`facade: { cols, litChance, ground }`) — port
+  warehouses get roller shutters, kampung houses a single door, downtown
+  5 columns, casino more lit windows. AC units, canopy, shopfront plane
+  and balconies now sit on the front face (via `facePoint`), and the
+  hotel / casino / mansion landmarks use front + side + rear textures
+  (sign side = front).
+- `vehicles.js` — Garuda roof is now two panels meeting at a crown ridge
+  (arched, not a flat slab); rear glass is bigger, more sloped and lighter
+  (opacity 0.45) so the driver reads from the chase camera; the driver sits
+  higher (y 0.24) with a headrest behind him. Garuda stays GOLD. Traffic
+  gets a second body: a hatchback (L 4.1, longer roof, upright tailgate
+  glass, roof spoiler lip, rear wiper) — every second `sedan` request
+  builds one (deterministic counter); KPD cars stay sedans
+  (`{ forceSedan: true }`).
+- `pedestrians.js` — characters read apart: Ratna ponytail (pink, tied)
+  + earrings + fair skin, Agus buzz cut + thin moustache + medium skin,
+  Bambang bandana + thick moustache + rolled sleeves + deeper skin, enemy
+  spiky hair + cheek scar + darker skin, generic ped a bun. Portraits
+  (`portraitCanvas`) match the new styles and tells.
+- `garage.js` — tall red tool cabinet with drawers + wall clock on the
+  north wall, coiled air hose on the west wall, parts-bin row on the
+  right bench.
+- `shots.js` — chase stages a 6th traffic car ahead; combat adds enemy
+  return fire (flash + red tracer back at the wheelman).
+- `render.js` — chase camera closer and lower (dist 7.6, height 3.5) so
+  the roof and driver read better.
+- `hud.js` — safehouse marker (green `H`) on the minimap at the garage
+  door (240, 240); player arrow gets a dark outline; KPD unit statuses
+  get colour classes (`k-st-mengejar/blokade/spotlight/mencari`).
+- `config.js` — per-district facade specs in `DISTRICTS`; `CREW` hair
+  matches the new styles (Ratna `ponytail`, Agus `buzz`).
+- `index.html` — framed dialogue portrait (gold border); KPD status
+  colours (chasing red, roadblock orange, spotlight cyan, searching
+  yellow). No HUD wording changed; police stays KPD; city KENCANA BAY.
+- 4 screenshots regenerated from the new code.
+
+### Verification (round 5)
+
+- `node --check` semua `game/src/*.js` + `main.ts` — lolos.
+- Playtest penuh (`tools/playtest.mjs`, drive + garage): ALL PASS — 25 cek,
+  0 page error, 0 console error, 0 failed request, 0 external request.
+- 4 screenshot 1280×720 diregenerasi 19 Nov 2026 ~19:56 WIB di bawah rekaman
+  01a1f3e0 (regenerasi sebelumnya di bawah rekaman 01a1f3dd gagal disegel
+  situs, jadi diregenerasi ulang — hasil byte-identik) dan dibaca ulang:
+  1-chase.jpg 141.066 B, 2-combat.jpg 128.618 B, 3-garage.jpg 99.277 B,
+  4-map.jpg 147.388 B (semua ≤256 KiB).
+- Dossier byte-identical 2 run: sha256
+  `f78c000c3e2d6cdf3167e6b694af4a918b52bef174d68ea582b2b3c267840658`; game/
+  0,80 MiB (cap 48 MiB).
+
 ## Known gaps (honest)
 
 - The judge's final heat re-judges with 3 Swiss rounds + a playoff against
@@ -254,11 +317,10 @@ v8 stamp are untouched.
   the spacing is not perfect).
 - The title's LANJUTKAN button was verified by code (shows only with a
   save), not by a screenshot with a save present.
-- Realism limits (honest): the driver is barely visible from the rear
-  chase camera (head/shoulders through dark glass); the coupe roof is
-  still a flat slab from directly behind. Faces are simple 3D features
-  that read at screenshot distance but have no detailed expression up
-  close. Each building's facade texture repeats on all four sides, so
-  the ground-floor entrance appears on every face. Traffic shares one
-  sedan body (no trucks, buses or motorbikes). The heli rotor blur disc
-  is static in screenshots (the rotor only spins during live play).
+- Realism limits (honest): faces are simple 3D features that read at
+  screenshot distance but have no detailed expression up close. Traffic
+  is sedans, hatchbacks, taxis and vans (no trucks, buses or motorbikes).
+  The heli rotor blur disc is static in screenshots (the rotor only
+  spins during live play). The driver's head sits close under the roof
+  crown — from directly behind, the top of the hair touches the
+  headliner, as in a real low coupe.
