@@ -299,6 +299,13 @@ changes to the same 14 files under a NEW recording
   situs, jadi diregenerasi ulang — hasil byte-identik) dan dibaca ulang:
   1-chase.jpg 141.066 B, 2-combat.jpg 128.618 B, 3-garage.jpg 99.277 B,
   4-map.jpg 147.388 B (semua ≤256 KiB).
+- Diregenerasi LAGI 19 Nov 2026 ~20:17 WIB di bawah rekaman
+  01a1f3f3-b7d0-77ea-8eb4-c89a45d33de5: receipt 01a1f3e0 tidak mencantumkan
+  path file sesi di mesin ini, jadi `makefun submit` menolaknya sebelum
+  upload (tidak ada jatah submit terpakai). Hasil byte-identik lagi —
+  ukuran sama persis (141.066 / 128.618 / 99.277 / 147.388 B), playtest
+  --shots-only OK, 0 page error, 0 console error, 0 failed request,
+  0 external request.
 - Dossier byte-identical 2 run: sha256
   `f78c000c3e2d6cdf3167e6b694af4a918b52bef174d68ea582b2b3c267840658`; game/
   0,80 MiB (cap 48 MiB).
