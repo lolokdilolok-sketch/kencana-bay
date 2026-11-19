@@ -14,12 +14,12 @@ export const WORLD = {
 };
 
 export const DISTRICTS = [
-  { id: 'segara', name: 'Pelabuhan Segara', short: 'SEGARA', x0: -330, z0: -330, x1: -110, z1: -110, color: '#5b7d8c', accent: '#7fb3c8', kind: 'port' },
-  { id: 'batik', name: 'Kampung Batik', short: 'BATIK', x0: -110, z0: -330, x1: 110, z1: -110, color: '#c98a4b', accent: '#e8b06a', kind: 'kampung' },
-  { id: 'alun', name: 'Alun-Alun', short: 'ALUN-ALUN', x0: -110, z0: -110, x1: 110, z1: 110, color: '#8a7fd0', accent: '#b3a6ff', kind: 'downtown' },
-  { id: 'emas', name: 'Lorong Emas', short: 'LORONG EMAS', x0: 110, z0: -110, x1: 330, z1: 110, color: '#c9a227', accent: '#ffd94d', kind: 'casino' },
-  { id: 'pantai', name: 'Pantai Kidul', short: 'PANTAI KIDUL', x0: -330, z0: 110, x1: 110, z1: 330, color: '#e88ca0', accent: '#ffb3c2', kind: 'beach' },
-  { id: 'pasar', name: 'Pasar Senja', short: 'PASAR SENJA', x0: 110, z0: 110, x1: 330, z1: 330, color: '#d06a4b', accent: '#ff9a70', kind: 'market' },
+  { id: 'segara', name: 'Pelabuhan Segara', short: 'SEGARA', x0: -330, z0: -330, x1: -110, z1: -110, color: '#5b7d8c', accent: '#7fb3c8', kind: 'port', facade: { cols: 3, litChance: 2, ground: 'roller' } },
+  { id: 'batik', name: 'Kampung Batik', short: 'BATIK', x0: -110, z0: -330, x1: 110, z1: -110, color: '#c98a4b', accent: '#e8b06a', kind: 'kampung', facade: { cols: 3, litChance: 2, ground: 'door' } },
+  { id: 'alun', name: 'Alun-Alun', short: 'ALUN-ALUN', x0: -110, z0: -110, x1: 110, z1: 110, color: '#8a7fd0', accent: '#b3a6ff', kind: 'downtown', facade: { cols: 5, litChance: 3, ground: 'shop' } },
+  { id: 'emas', name: 'Lorong Emas', short: 'LORONG EMAS', x0: 110, z0: -110, x1: 330, z1: 110, color: '#c9a227', accent: '#ffd94d', kind: 'casino', facade: { cols: 4, litChance: 4, ground: 'shop' } },
+  { id: 'pantai', name: 'Pantai Kidul', short: 'PANTAI KIDUL', x0: -330, z0: 110, x1: 110, z1: 330, color: '#e88ca0', accent: '#ffb3c2', kind: 'beach', facade: { cols: 4, litChance: 3, ground: 'shop' } },
+  { id: 'pasar', name: 'Pasar Senja', short: 'PASAR SENJA', x0: 110, z0: 110, x1: 330, z1: 330, color: '#d06a4b', accent: '#ff9a70', kind: 'market', facade: { cols: 4, litChance: 3, ground: 'shop' } },
 ];
 
 export const MISSIONS = [
@@ -38,9 +38,9 @@ export const MISSIONS = [
 ];
 
 export const CREW = [
-  { key: 'Z', id: 'agus', name: 'Agus Prasetyo', role: 'Driver · Getaway', hire: 200, color: '#e8a33d', hair: 'black', shirt: '#3d6fb5' },
+  { key: 'Z', id: 'agus', name: 'Agus Prasetyo', role: 'Driver · Getaway', hire: 200, color: '#e8a33d', hair: 'buzz', shirt: '#3d6fb5' },
   { key: 'X', id: 'bambang', name: 'Bambang', role: 'Mechanic · Bengkel', hire: 350, color: '#c94b4b', hair: 'bandana', shirt: '#4b7d4b' },
-  { key: 'C', id: 'ratna', name: 'Ratna', role: 'Fixer · Contacts', hire: 300, color: '#e87fb5', hair: 'pink', shirt: '#8a4bd0' },
+  { key: 'C', id: 'ratna', name: 'Ratna', role: 'Fixer · Contacts', hire: 300, color: '#e87fb5', hair: 'ponytail', shirt: '#8a4bd0' },
 ];
 
 export const WEAPONS = [

@@ -11,6 +11,12 @@ const glassMat = new THREE.MeshStandardMaterial({
   transparent: true, opacity: 0.65, depthWrite: false,
 });
 
+/** Lighter glass for the Garuda's rear window, so the driver shows through. */
+const rearGlassMat = new THREE.MeshStandardMaterial({
+  color: '#1a2a3a', roughness: 0.25, metalness: 0.1,
+  transparent: true, opacity: 0.45, depthWrite: false,
+});
+
 /** White text on a transparent background, for KPD decals and signs. */
 function textTexture(text, fg, size = 56) {
   return canvasTexture(256, 96, (x, w, h) => {
@@ -98,10 +104,19 @@ export function buildSportsCar(color, opts = {}) {
   shield.position.set(0, 1.1, L * 0.09);
   shield.rotation.x = 0.55;
   g.add(shield);
-  const roof = box(W * 0.8, 0.1, 1.6, color, { metal: 0.5, rough: 0.3 });
-  roof.position.set(0, 1.4, -L * 0.12);
-  roof.rotation.x = -0.1;
-  g.add(roof);
+  // Arched roof: two panels meeting at a crown ridge above the cabin, so
+  // the roof reads as a curve from behind instead of a flat board.
+  const roofFront = box(W * 0.8, 0.08, 0.95, color, { metal: 0.5, rough: 0.3 });
+  roofFront.position.set(0, 1.47, -L * 0.12 + 0.4);
+  roofFront.rotation.x = 0.17;
+  g.add(roofFront);
+  const roofRear = box(W * 0.8, 0.08, 0.95, color, { metal: 0.5, rough: 0.3 });
+  roofRear.position.set(0, 1.47, -L * 0.12 - 0.47);
+  roofRear.rotation.x = -0.17;
+  g.add(roofRear);
+  const ridge = box(W * 0.8, 0.05, 0.14, color, { metal: 0.5, rough: 0.3 });
+  ridge.position.set(0, 1.55, -L * 0.12 - 0.03);
+  g.add(ridge);
   // C-pillars + rear deck close the cabin from behind, so the rear view
   // reads as a coupe instead of an open tub.
   for (const sx of [-1, 1]) {
@@ -125,12 +140,14 @@ export function buildSportsCar(color, opts = {}) {
     pillar.rotation.x = 0.5;
     g.add(pillar);
   }
+  // Rear glass: bigger, more sloped and lighter than the side glass, so
+  // the driver reads through it from the chase camera behind the car.
   const rearGlass = new THREE.Mesh(
-    new THREE.BoxGeometry(W * 0.78, 0.05, 1.0),
-    glassMat,
+    new THREE.BoxGeometry(W * 0.82, 0.05, 1.2),
+    rearGlassMat,
   );
-  rearGlass.position.set(0, 1.12, -L * 0.32);
-  rearGlass.rotation.x = -0.5;
+  rearGlass.position.set(0, 1.14, -L * 0.30);
+  rearGlass.rotation.x = -0.58;
   g.add(rearGlass);
   // Interior: seats, dashboard, steering wheel.
   for (const sx of [-0.42, 0.42]) {
@@ -148,12 +165,21 @@ export function buildSportsCar(color, opts = {}) {
   wheelRim.position.set(0.42, 1.06, L * 0.0);
   wheelRim.rotation.x = -0.5;
   g.add(wheelRim);
-  // Human driver, seated low so head and shoulders show through the glass.
+  // Human driver, seated high enough that head and shoulders show through
+  // the rear glass from the chase camera, with a headrest behind him.
   if (opts.driver !== false) {
     const d = buildMinifig(CHARACTERS.wheelman, 0.72);
-    d.group.position.set(0.42, 0.15, -L * 0.14);
+    d.group.position.set(0.42, 0.24, -L * 0.14);
     d.group.rotation.y = 0;
     g.add(d.group);
+    const headrest = box(0.34, 0.24, 0.1, '#7a1f1f');
+    headrest.position.set(0.42, 1.32, -L * 0.14 - 0.22);
+    g.add(headrest);
+    for (const px of [-0.1, 0.1]) {
+      const post = box(0.04, 0.16, 0.04, '#1c1c1c');
+      post.position.set(0.42 + px, 1.22, -L * 0.14 - 0.22);
+      g.add(post);
+    }
   }
   // Headlights, grille, chrome bumper, splitter.
   for (const sx of [-0.72, 0.72]) {
@@ -224,12 +250,20 @@ export function buildSportsCar(color, opts = {}) {
   return g;
 }
 
-/** A real-looking sedan / taxi / van: glasshouse with a roof, sloped
- * windshield and rear glass, door lines, handles, bumpers, mirrors and
- * alloy wheels. */
-export function buildStreetCar(kind = 'sedan', color = '#8a8f96') {
+/** A real-looking sedan / taxi / van / hatchback: glasshouse with a roof,
+ * sloped windshield and rear glass, door lines, handles, bumpers, mirrors
+ * and alloy wheels. Every second 'sedan' request builds a hatchback
+ * instead (a deterministic counter, so traffic stops being one repeated
+ * sedan body) — pass { forceSedan: true } to keep a real sedan. */
+let sedanCount = 0;
+export function buildStreetCar(kind = 'sedan', color = '#8a8f96', opts = {}) {
+  if (kind === 'sedan' && !opts.forceSedan) {
+    sedanCount += 1;
+    if (sedanCount % 2 === 0) kind = 'hatchback';
+  }
   const g = new THREE.Group();
-  const L = kind === 'van' ? 5.2 : 4.6;
+  const hb = kind === 'hatchback';
+  const L = kind === 'van' ? 5.2 : hb ? 4.1 : 4.6;
   const W = 2.0;
   const bodyMat = new THREE.MeshStandardMaterial({ color, roughness: 0.4, metalness: 0.4 });
   const body = new THREE.Mesh(new THREE.BoxGeometry(W, 0.85, L), bodyMat);
@@ -237,30 +271,42 @@ export function buildStreetCar(kind = 'sedan', color = '#8a8f96') {
   body.castShadow = true;
   g.add(body);
   // Glasshouse: tinted glass band with a body-colour roof, sloped
-  // windshield and rear glass.
+  // windshield and rear glass. The hatchback's glasshouse runs longer and
+  // its tailgate glass stands more upright.
+  const cabinZ = kind === 'van' ? 0.3 : hb ? -0.05 : -0.2;
   const cabin = new THREE.Mesh(
-    new THREE.BoxGeometry(W * 0.84, 0.5, L * 0.46),
+    new THREE.BoxGeometry(W * 0.84, 0.5, hb ? L * 0.52 : L * 0.46),
     glassMat,
   );
-  cabin.position.set(0, 1.45, kind === 'van' ? 0.3 : -0.2);
+  cabin.position.set(0, 1.45, cabinZ);
   g.add(cabin);
-  const roof = box(W * 0.88, 0.08, L * 0.5, color, { metal: 0.4, rough: 0.4 });
-  roof.position.set(0, 1.74, kind === 'van' ? 0.3 : -0.2);
+  const roof = box(W * 0.88, 0.08, hb ? L * 0.58 : L * 0.5, color, { metal: 0.4, rough: 0.4 });
+  roof.position.set(0, 1.74, cabinZ);
   g.add(roof);
   const shield = new THREE.Mesh(
     new THREE.BoxGeometry(W * 0.8, 0.05, 0.95),
     glassMat,
   );
-  shield.position.set(0, 1.5, kind === 'van' ? 1.45 : 0.95);
+  shield.position.set(0, 1.5, kind === 'van' ? 1.45 : hb ? 0.8 : 0.95);
   shield.rotation.x = 0.45;
   g.add(shield);
   const rearGlass = new THREE.Mesh(
     new THREE.BoxGeometry(W * 0.8, 0.05, 0.9),
     glassMat,
   );
-  rearGlass.position.set(0, 1.5, kind === 'van' ? -0.85 : -1.35);
-  rearGlass.rotation.x = -0.45;
+  rearGlass.position.set(0, 1.5, kind === 'van' ? -0.85 : hb ? -1.5 : -1.35);
+  rearGlass.rotation.x = hb ? -0.3 : -0.45;
   g.add(rearGlass);
+  if (hb) {
+    // Roof spoiler lip over the tailgate + a rear wiper on the glass.
+    const lip = box(W * 0.88, 0.06, 0.32, color, { metal: 0.4, rough: 0.4 });
+    lip.position.set(0, 1.76, -1.3);
+    g.add(lip);
+    const wiper = box(0.04, 0.32, 0.02, '#1c1c1c');
+    wiper.position.set(0.3, 1.38, -1.85);
+    wiper.rotation.x = -0.3;
+    g.add(wiper);
+  }
   // Door shut lines, handles, bumpers, grille, mirrors.
   for (const sx of [-1, 1]) {
     for (const dz of [0.55, -0.65]) {
@@ -315,7 +361,7 @@ export function buildStreetCar(kind = 'sedan', color = '#8a8f96') {
 
 /** A KPD patrol car: blue-white livery, KPD decals, push bar, red-blue light bar. */
 export function buildPoliceCar() {
-  const g = buildStreetCar('sedan', '#f2f2f2');
+  const g = buildStreetCar('sedan', '#f2f2f2', { forceSedan: true });
   const blue = box(2.02, 0.3, 4.62, '#2b6fd0', { metal: 0.3, rough: 0.4 });
   blue.position.y = 0.62;
   g.add(blue);

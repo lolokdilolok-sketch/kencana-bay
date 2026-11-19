@@ -106,12 +106,22 @@ export function createHud(world) {
         mctx.fillStyle = '#ff8a3d';
       });
     }
-    // Player arrow.
+    // Safehouse: Bengkel Bambang, the garage door at (240, 240).
+    mctx.fillStyle = '#7dff9a';
+    mctx.beginPath(); mctx.arc(to(240), to(240), 5, 0, Math.PI * 2); mctx.fill();
+    mctx.fillStyle = '#1c1c1c';
+    mctx.font = 'bold 8px system-ui';
+    mctx.textAlign = 'center';
+    mctx.fillText('H', to(240), to(240) + 3);
+    // Player arrow, with a dark outline so it reads over any district.
     mctx.save();
     mctx.translate(to(state.player.x), to(state.player.z));
     mctx.rotate(state.player.heading || 0);
     mctx.fillStyle = '#ffb400';
     mctx.beginPath(); mctx.moveTo(0, -8); mctx.lineTo(6, 6); mctx.lineTo(-6, 6); mctx.closePath(); mctx.fill();
+    mctx.strokeStyle = '#1c1c1c';
+    mctx.lineWidth = 1.5;
+    mctx.stroke();
     mctx.restore();
   }
 
@@ -303,7 +313,7 @@ export function createHud(world) {
         ? `KPD RESPONSE — ${rows.length} UNIT`
         : 'KPD RESPONSE — AMAN';
       const list = kp.querySelector('.k-units');
-      list.innerHTML = rows.map((r) => `<div class="k-row"><span>${r.name}</span><span>${r.dist}m</span><b>${r.status}</b></div>`).join('')
+      list.innerHTML = rows.map((r) => `<div class="k-row"><span>${r.name}</span><span>${r.dist}m</span><b class="k-st-${r.status.toLowerCase()}">${r.status}</b></div>`).join('')
         || '<div class="k-row"><span>Tidak ada unit mengejar</span></div>';
       // Stars on their own line with the CODE tag beside them, so neither
       // the stars nor the code ever overlap the title above.

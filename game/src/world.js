@@ -3,7 +3,11 @@
 // facades — canvas textures with window grids, frames, lit glass, AC units,
 // ground-floor entrances and shopfronts, plus 3D cornices, canopies,
 // balconies with railings, rooftop tanks and antennas. Every building
-// registers an AABB collider.
+// registers an AABB collider. Facades vary per side and per district: the
+// street-facing side gets the entrance + shopfront, the other sides get
+// windows only (the rear darker, fewer lights), and each district has its
+// own window count, lit ratio and ground-floor treatment — so no entrance
+// repeats on all four faces of a building.
 import { THREE, box, cylinder, canvasTexture } from './three-shim.js';
 import { WORLD, DISTRICTS, PALETTE } from './config.js';
 import { createRandom } from './random.js';
@@ -20,10 +24,18 @@ function shade(hex, amt) {
 /**
  * A real facade: a wall with a vertical gradient, floor bands, big windows
  * with frames, glass gradients and mullions (some lit warm, some with
- * curtains), AC units drawn under some windows, and a ground floor with an
- * entrance door, a shopfront and an awning band.
+ * curtains), AC units drawn under some windows, and a ground floor whose
+ * treatment depends on `opts.ground` — 'shop' (entrance door + shopfront
+ * glass + awning band, for the street side), 'door' (a door + one window,
+ * for kampung houses), 'roller' (a wide roller shutter, for port
+ * warehouses) or 'plain' (ground-floor windows only, for side and rear
+ * faces). `opts.cols` sets the window columns and `opts.litChance` the
+ * share of lit windows (out of 10), so districts read differently.
  */
-function facadeTexture(base, litColor, floors) {
+function facadeTexture(base, litColor, floors, opts = {}) {
+  const cols = opts.cols ?? 4;
+  const litChance = opts.litChance ?? 3;
+  const ground = opts.ground ?? 'shop';
   return canvasTexture(512, 512, (x, w, h) => {
     const grad = x.createLinearGradient(0, 0, 0, h);
     grad.addColorStop(0, shade(base, 18));
@@ -35,9 +47,36 @@ function facadeTexture(base, litColor, floors) {
     x.fillRect(0, 0, 14, h);
     x.fillRect(w - 14, 0, 14, h);
     const floorH = h / floors;
-    const cols = 4;
     const winW = 76;
     const winH = Math.min(floorH * 0.52, 110);
+    const drawWindow = (wx, wy, f, c) => {
+      x.fillStyle = '#232830';
+      x.fillRect(wx - 5, wy - 5, winW + 10, winH + 10);
+      const lit = ((f * 7 + c * 3 + 1) % 10) < litChance;
+      if (lit) {
+        x.fillStyle = litColor;
+      } else {
+        const gg = x.createLinearGradient(wx, wy, wx, wy + winH);
+        gg.addColorStop(0, '#9db8cc');
+        gg.addColorStop(0.55, '#5a7a96');
+        gg.addColorStop(1, '#2c3e55');
+        x.fillStyle = gg;
+      }
+      x.fillRect(wx, wy, winW, winH);
+      x.fillStyle = 'rgba(20,26,34,0.85)';
+      x.fillRect(wx + winW / 2 - 2, wy, 4, winH);
+      x.fillRect(wx, wy + winH / 2 - 2, winW, 4);
+      if (!lit && ((f * 5 + c * 7) % 9) < 2) {
+        x.fillStyle = 'rgba(240,230,210,0.55)';
+        x.fillRect(wx + 4, wy + 4, winW / 2 - 6, winH - 8);
+      }
+      if ((f * 3 + c * 5) % 8 < 2) {
+        x.fillStyle = '#8a8f96';
+        x.fillRect(wx + 10, wy + winH + 6, 42, 20);
+        x.fillStyle = '#3a3f46';
+        x.beginPath(); x.arc(wx + 31, wy + winH + 16, 7, 0, Math.PI * 2); x.fill();
+      }
+    };
     for (let f = 0; f < floors - 1; f += 1) {
       const y0 = f * floorH;
       x.fillStyle = 'rgba(0,0,0,0.28)';
@@ -46,56 +85,71 @@ function facadeTexture(base, litColor, floors) {
       x.fillRect(0, y0, w, 3);
       for (let c = 0; c < cols; c += 1) {
         const wx = 36 + c * ((w - 72) / cols);
-        const wy = y0 + (floorH - winH) / 2;
-        x.fillStyle = '#232830';
-        x.fillRect(wx - 5, wy - 5, winW + 10, winH + 10);
-        const lit = ((f * 7 + c * 3 + 1) % 10) < 3;
-        if (lit) {
-          x.fillStyle = litColor;
-        } else {
-          const gg = x.createLinearGradient(wx, wy, wx, wy + winH);
-          gg.addColorStop(0, '#9db8cc');
-          gg.addColorStop(0.55, '#5a7a96');
-          gg.addColorStop(1, '#2c3e55');
-          x.fillStyle = gg;
-        }
-        x.fillRect(wx, wy, winW, winH);
-        x.fillStyle = 'rgba(20,26,34,0.85)';
-        x.fillRect(wx + winW / 2 - 2, wy, 4, winH);
-        x.fillRect(wx, wy + winH / 2 - 2, winW, 4);
-        if (!lit && ((f * 5 + c * 7) % 9) < 2) {
-          x.fillStyle = 'rgba(240,230,210,0.55)';
-          x.fillRect(wx + 4, wy + 4, winW / 2 - 6, winH - 8);
-        }
-        if ((f * 3 + c * 5) % 8 < 2) {
-          x.fillStyle = '#8a8f96';
-          x.fillRect(wx + 10, wy + winH + 6, 42, 20);
-          x.fillStyle = '#3a3f46';
-          x.beginPath(); x.arc(wx + 31, wy + winH + 16, 7, 0, Math.PI * 2); x.fill();
-        }
+        drawWindow(wx, y0 + (floorH - winH) / 2, f, c);
       }
     }
-    // Ground floor: entrance door, shopfront glass, awning band.
+    // Ground floor, per treatment.
     const gy = (floors - 1) * floorH;
     x.fillStyle = 'rgba(0,0,0,0.3)';
     x.fillRect(0, gy, w, 8);
-    x.fillStyle = '#2b2f38';
-    x.fillRect(40, gy + 26, 74, floorH - 40);
-    x.fillStyle = '#5a7a96';
-    x.fillRect(48, gy + 34, 58, floorH - 56);
-    x.fillStyle = '#232830';
-    x.fillRect(48, gy + 34, 58, 6);
-    x.fillStyle = 'rgba(210,230,245,0.9)';
-    x.fillRect(150, gy + 22, w - 190, floorH - 44);
-    x.fillStyle = '#232830';
-    for (let i = 0; i < 4; i += 1) x.fillRect(150 + i * ((w - 190) / 4), gy + 22, 5, floorH - 44);
-    x.fillRect(150, gy + 22, w - 190, 6);
-    x.fillStyle = shade(base, 34);
-    x.fillRect(0, gy + 8, w, 12);
+    if (ground === 'shop') {
+      x.fillStyle = '#2b2f38';
+      x.fillRect(40, gy + 26, 74, floorH - 40);
+      x.fillStyle = '#5a7a96';
+      x.fillRect(48, gy + 34, 58, floorH - 56);
+      x.fillStyle = '#232830';
+      x.fillRect(48, gy + 34, 58, 6);
+      x.fillStyle = 'rgba(210,230,245,0.9)';
+      x.fillRect(150, gy + 22, w - 190, floorH - 44);
+      x.fillStyle = '#232830';
+      for (let i = 0; i < 4; i += 1) x.fillRect(150 + i * ((w - 190) / 4), gy + 22, 5, floorH - 44);
+      x.fillRect(150, gy + 22, w - 190, 6);
+      x.fillStyle = shade(base, 34);
+      x.fillRect(0, gy + 8, w, 12);
+    } else if (ground === 'door') {
+      // A single entrance door + one shop window beside it.
+      x.fillStyle = '#2b2f38';
+      x.fillRect(40, gy + 26, 74, floorH - 40);
+      x.fillStyle = '#5a7a96';
+      x.fillRect(48, gy + 34, 58, floorH - 56);
+      x.fillStyle = '#232830';
+      x.fillRect(48, gy + 34, 58, 6);
+      x.fillStyle = 'rgba(210,230,245,0.9)';
+      x.fillRect(150, gy + 30, 130, floorH - 52);
+      x.fillStyle = '#232830';
+      x.fillRect(150 + 62, gy + 30, 5, floorH - 52);
+      x.fillStyle = shade(base, 34);
+      x.fillRect(0, gy + 8, w, 12);
+    } else if (ground === 'roller') {
+      // A wide roller shutter for a warehouse + a small personnel door.
+      x.fillStyle = '#6a6f76';
+      x.fillRect(60, gy + 18, w - 150, floorH - 32);
+      x.fillStyle = '#4a4f56';
+      for (let s = 0; s < 6; s += 1) x.fillRect(60, gy + 26 + s * ((floorH - 40) / 6), w - 150, 3);
+      x.fillStyle = '#2b2f38';
+      x.fillRect(w - 66, gy + 26, 44, floorH - 40);
+      x.fillStyle = '#5a7a96';
+      x.fillRect(w - 60, gy + 32, 32, floorH - 52);
+    } else {
+      // Plain side/rear: ground-floor windows in the same grid, no door.
+      for (let c = 0; c < cols; c += 1) {
+        const wx = 36 + c * ((w - 72) / cols);
+        drawWindow(wx, gy + (floorH - winH) / 2, floors - 1, c);
+      }
+    }
     // Parapet band at the top.
     x.fillStyle = 'rgba(0,0,0,0.35)';
     x.fillRect(0, 0, w, 10);
   });
+}
+
+/** A point just outside one face of a box, with the rotation a flat plane
+ * on that face needs. dir is '+x' | '-x' | '+z' | '-z'. */
+function facePoint(dir, x, z, w, dep, out) {
+  if (dir === '+x') return { x: x + w / 2 + out, z, rotY: Math.PI / 2 };
+  if (dir === '-x') return { x: x - w / 2 - out, z, rotY: -Math.PI / 2 };
+  if (dir === '+z') return { x, z: z + dep / 2 + out, rotY: 0 };
+  return { x, z: z - dep / 2 - out, rotY: Math.PI };
 }
 
 function tileTexture(base) {
@@ -354,34 +408,62 @@ export function createWorld(seed = 1) {
         const z = cz + rand.range(-28, 28);
         if (onRoad(x) || onRoad(z)) continue;
         let h;
-        let wallTex;
+        let base;
+        let litColor = '#ffe98a';
+        let floors;
         let roofColor = '#3a3a44';
         if (d.kind === 'downtown') {
           h = rand.range(38, 72);
-          wallTex = facadeTexture(rand.pick(['#5a6a8a', '#7a5a8a', '#4a7a8a']), '#ffe98a', Math.max(4, Math.floor(h / 9)));
+          base = rand.pick(['#5a6a8a', '#7a5a8a', '#4a7a8a']);
+          floors = Math.max(4, Math.floor(h / 9));
         } else if (d.kind === 'casino') {
           h = rand.range(26, 52);
-          wallTex = facadeTexture('#8a6a2a', '#ffd94d', Math.max(4, Math.floor(h / 9)));
+          base = '#8a6a2a';
+          litColor = '#ffd94d';
+          floors = Math.max(4, Math.floor(h / 9));
         } else if (d.kind === 'kampung') {
           h = rand.range(7, 13);
-          wallTex = facadeTexture(rand.pick(['#c98a5b', '#b57a4b', '#d0a06a']), '#ffe98a', 2);
+          base = rand.pick(['#c98a5b', '#b57a4b', '#d0a06a']);
+          floors = 2;
           roofColor = '#a34a2b';
         } else if (d.kind === 'port') {
           h = rand.range(10, 18);
-          wallTex = facadeTexture('#7d8a94', '#c8d8e8', 2);
+          base = '#7d8a94';
+          litColor = '#c8d8e8';
+          floors = 2;
           roofColor = '#4a5560';
         } else if (d.kind === 'market') {
           h = rand.range(8, 14);
-          wallTex = facadeTexture('#b56a4b', '#ffe98a', 2);
+          base = '#b56a4b';
+          floors = 2;
         } else {
           h = rand.range(12, 26);
-          wallTex = facadeTexture('#e88ca0', '#ffe98a', 3);
+          base = '#e88ca0';
+          floors = 3;
         }
+        // The street-facing side is the face toward the nearest road, so
+        // the entrance + shopfront only ever appear on that side. The
+        // other sides get windows only; the rear is darker, fewer lights.
+        const spec = d.facade ?? { cols: 4, litChance: 3, ground: 'shop' };
+        const nearRx = WORLD.roads.reduce((a, b) => (Math.abs(b - x) < Math.abs(a - x) ? b : a));
+        const nearRz = WORLD.roads.reduce((a, b) => (Math.abs(b - z) < Math.abs(a - z) ? b : a));
+        const front = Math.abs(nearRx - x) < Math.abs(nearRz - z)
+          ? (nearRx > x ? '+x' : '-x')
+          : (nearRz > z ? '+z' : '-z');
+        const frontTex = facadeTexture(base, litColor, floors, spec);
+        const sideTex = facadeTexture(base, litColor, floors, { ...spec, ground: 'plain' });
+        const rearTex = facadeTexture(base, litColor, floors, { ...spec, ground: 'plain', litChance: 1 });
+        const frontMat = new THREE.MeshStandardMaterial({ map: frontTex, roughness: 0.85 });
+        const sideMat = new THREE.MeshStandardMaterial({ map: sideTex, roughness: 0.85 });
+        const rearMat = new THREE.MeshStandardMaterial({ map: rearTex, roughness: 0.85 });
         const roofMat = new THREE.MeshStandardMaterial({ color: roofColor, roughness: 0.9 });
-        const wallMat = new THREE.MeshStandardMaterial({ map: wallTex, roughness: 0.85 });
+        const faceMats = { '+x': sideMat, '-x': sideMat, '+z': sideMat, '-z': sideMat };
+        faceMats[front] = frontMat;
+        const rear = front === '+x' ? '-x' : front === '-x' ? '+x' : front === '+z' ? '-z' : '+z';
+        faceMats[rear] = rearMat;
         const b = new THREE.Mesh(
           new THREE.BoxGeometry(w, h, dep),
-          [wallMat, wallMat, roofMat, roofMat, wallMat, wallMat],
+          [faceMats['+x'], faceMats['-x'], roofMat, roofMat, faceMats['+z'], faceMats['-z']],
         );
         b.position.set(x, h / 2, z);
         b.castShadow = true;
@@ -389,25 +471,30 @@ export function createWorld(seed = 1) {
         group.add(b);
         buildings.push({ x, z, w, h, d: dep, district: d.id });
         addCollider(x, z, w / 2 + 0.5, dep / 2 + 0.5);
-        // AC outdoor units mounted on the facade, a cornice on top and an
-        // entrance canopy over the ground-floor door.
+        // AC outdoor units, entrance canopy and shopfront all sit on the
+        // street-facing side now — never on the blank side walls.
         const acCount = h > 30 ? 3 : 2;
         for (let a = 0; a < acCount; a += 1) {
           const ac = box(1.1, 0.7, 0.5, '#9aa0a8');
-          ac.position.set(x + rand.range(-w / 2 + 2, w / 2 - 2), rand.range(6, Math.max(7, h - 4)), z + dep / 2 + 0.3);
+          const fp = facePoint(front, x, z, w, dep, 0.3);
+          ac.position.set(fp.x + (front === '+x' || front === '-x' ? 0 : rand.range(-w / 2 + 2, w / 2 - 2)), rand.range(6, Math.max(7, h - 4)), fp.z + (front === '+x' || front === '-x' ? rand.range(-dep / 2 + 2, dep / 2 - 2) : 0));
+          ac.rotation.y = fp.rotY;
           group.add(ac);
         }
         const cornice = box(w + 0.8, 0.6, dep + 0.8, '#2a2a33');
         cornice.position.set(x, h + 0.3, z);
         group.add(cornice);
-        const canopy = box(5, 0.18, 1.8, '#2a2a33');
-        canopy.position.set(x, 3.4, z + dep / 2 + 0.9);
+        const canopyFp = facePoint(front, x, z, w, dep, 0.9);
+        const canopy = (front === '+x' || front === '-x')
+          ? box(1.8, 0.18, 5, '#2a2a33')
+          : box(5, 0.18, 1.8, '#2a2a33');
+        canopy.position.set(canopyFp.x, 3.4, canopyFp.z);
         group.add(canopy);
         // Setback top floor + antenna on the tallest towers.
         if (h > 40) {
           const setback = new THREE.Mesh(
             new THREE.BoxGeometry(w * 0.55, 5, dep * 0.55),
-            wallMat,
+            frontMat,
           );
           setback.position.set(x, h + 3.1, z);
           setback.castShadow = true;
@@ -439,29 +526,37 @@ export function createWorld(seed = 1) {
           tank.position.set(x + rand.range(-6, 6), h + 1.1, z + rand.range(-5, 5));
           group.add(tank);
         }
-        // Shopfront on the ground floor of some buildings.
+        // Shopfront on the ground floor of some buildings, on the
+        // street-facing side only.
         if (rand.chance(0.35) && h < 30) {
           const name = shopNames[shopIdx++ % shopNames.length];
           const shop = new THREE.Mesh(
             new THREE.PlaneGeometry(w * 0.9, 4.4),
             new THREE.MeshStandardMaterial({ map: shopTexture(name, d.accent, '#1c1c1c'), roughness: 0.8 }),
           );
-          shop.position.set(x, 2.2, z + dep / 2 + 0.06);
+          const shopFp = facePoint(front, x, z, w, dep, 0.06);
+          shop.position.set(shopFp.x, 2.2, shopFp.z);
+          shop.rotation.y = shopFp.rotY;
           group.add(shop);
         }
-        // Balconies with railings on downtown towers.
+        // Balconies with railings on downtown towers, on the street side.
         if (h > 30) {
+          const xFront = front === '+x' || front === '-x';
+          const faceW = xFront ? dep : w; // length of the street-facing wall
           for (let f = 1; f < 4; f += 1) {
             const by = f * (h / 4);
-            const balc = box(w * 0.7, 0.25, 1.6, '#d8d8d8');
-            balc.position.set(x, by, z + dep / 2 + 0.8);
+            const fp = facePoint(front, x, z, w, dep, 0.8);
+            const balc = xFront ? box(1.6, 0.25, faceW * 0.7, '#d8d8d8') : box(faceW * 0.7, 0.25, 1.6, '#d8d8d8');
+            balc.position.set(fp.x, by, fp.z);
             group.add(balc);
-            const rail = box(w * 0.7, 0.9, 0.08, '#3a3f46');
-            rail.position.set(x, by + 0.55, z + dep / 2 + 1.55);
+            const railFp = facePoint(front, x, z, w, dep, 1.55);
+            const rail = xFront ? box(0.08, 0.9, faceW * 0.7, '#3a3f46') : box(faceW * 0.7, 0.9, 0.08, '#3a3f46');
+            rail.position.set(railFp.x, by + 0.55, railFp.z);
             group.add(rail);
             for (const sx of [-1, 1]) {
-              const side = box(0.08, 0.9, 1.6, '#3a3f46');
-              side.position.set(x + sx * w * 0.35, by + 0.55, z + dep / 2 + 0.8);
+              const side = xFront ? box(1.6, 0.9, 0.08, '#3a3f46') : box(0.08, 0.9, 1.6, '#3a3f46');
+              const sideFp = facePoint(front, x + (xFront ? 0 : sx * faceW * 0.35), z + (xFront ? sx * faceW * 0.35 : 0), w, dep, 0.8);
+              side.position.set(sideFp.x, by + 0.55, sideFp.z);
               group.add(side);
             }
           }
@@ -470,13 +565,15 @@ export function createWorld(seed = 1) {
     }
   }
 
-  // Landmarks.
-  // Hotel Kencana (Alun-Alun, tallest tower).
-  const hotelMat = new THREE.MeshStandardMaterial({ map: facadeTexture('#7a8ab0', '#ffe98a', 9), roughness: 0.7 });
+  // Landmarks. Signs sit on the +z face, so the +z face is the front:
+  // entrance + shopfront there, windows only on the sides, darker rear.
+  const hotelFront = new THREE.MeshStandardMaterial({ map: facadeTexture('#7a8ab0', '#ffe98a', 9, { cols: 5, litChance: 3, ground: 'shop' }), roughness: 0.7 });
+  const hotelSide = new THREE.MeshStandardMaterial({ map: facadeTexture('#7a8ab0', '#ffe98a', 9, { cols: 5, litChance: 3, ground: 'plain' }), roughness: 0.7 });
+  const hotelRear = new THREE.MeshStandardMaterial({ map: facadeTexture('#7a8ab0', '#ffe98a', 9, { cols: 5, litChance: 1, ground: 'plain' }), roughness: 0.7 });
   const hotelRoof = new THREE.MeshStandardMaterial({ color: '#2a2a33', roughness: 0.9 });
   const hotel = new THREE.Mesh(
     new THREE.BoxGeometry(30, 80, 24),
-    [hotelMat, hotelMat, hotelRoof, hotelRoof, hotelMat, hotelMat],
+    [hotelSide, hotelSide, hotelRoof, hotelRoof, hotelFront, hotelRear],
   );
   hotel.position.set(40, 40, -40);
   hotel.castShadow = true;
@@ -491,9 +588,13 @@ export function createWorld(seed = 1) {
   neonSigns.push(hotelSign);
 
   // Casino Emas (Lorong Emas) with neon.
+  const casinoFront = new THREE.MeshStandardMaterial({ map: facadeTexture('#8a6a2a', '#ffd94d', 4, { cols: 4, litChance: 4, ground: 'shop' }), roughness: 0.7 });
+  const casinoSide = new THREE.MeshStandardMaterial({ map: facadeTexture('#8a6a2a', '#ffd94d', 4, { cols: 4, litChance: 4, ground: 'plain' }), roughness: 0.7 });
+  const casinoRear = new THREE.MeshStandardMaterial({ map: facadeTexture('#8a6a2a', '#ffd94d', 4, { cols: 4, litChance: 1, ground: 'plain' }), roughness: 0.7 });
+  const casinoRoof = new THREE.MeshStandardMaterial({ color: '#2a2a33', roughness: 0.9 });
   const casino = new THREE.Mesh(
     new THREE.BoxGeometry(34, 30, 26),
-    new THREE.MeshStandardMaterial({ map: facadeTexture('#8a6a2a', '#ffd94d', 4), roughness: 0.7 }),
+    [casinoSide, casinoSide, casinoRoof, casinoRoof, casinoFront, casinoRear],
   );
   casino.position.set(240, 15, -40);
   casino.castShadow = true;
@@ -507,10 +608,13 @@ export function createWorld(seed = 1) {
   group.add(casinoSign);
   neonSigns.push(casinoSign);
 
-  // Mansion (Alun-Alun).
+  // Mansion (Alun-Alun) — a house, so the front gets a door, not a shopfront.
+  const mansionFront = new THREE.MeshStandardMaterial({ map: facadeTexture('#e8dcc0', '#ffe98a', 2, { cols: 4, litChance: 3, ground: 'door' }), roughness: 0.85 });
+  const mansionSide = new THREE.MeshStandardMaterial({ map: facadeTexture('#e8dcc0', '#ffe98a', 2, { cols: 4, litChance: 3, ground: 'plain' }), roughness: 0.85 });
+  const mansionRear = new THREE.MeshStandardMaterial({ map: facadeTexture('#e8dcc0', '#ffe98a', 2, { cols: 4, litChance: 1, ground: 'plain' }), roughness: 0.85 });
   const mansion = new THREE.Mesh(
     new THREE.BoxGeometry(26, 12, 20),
-    new THREE.MeshStandardMaterial({ map: facadeTexture('#e8dcc0', '#ffe98a', 2), roughness: 0.85 }),
+    [mansionSide, mansionSide, mansionFront, mansionFront, mansionFront, mansionRear],
   );
   mansion.position.set(-40, 6, -80);
   mansion.castShadow = true;

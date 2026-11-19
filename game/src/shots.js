@@ -63,9 +63,9 @@ function stageChase(ctx) {
   s.car.mesh.position.set(-40, 0, 60);
   s.car.mesh.rotation.y = Math.PI / 2;
   ctx.playerFig.group.visible = false;
-  // Traffic ahead: 5 cars on the same road, one taxi, one van.
-  const ahead = [[-12, 60], [6, 60], [24, 60], [44, 57], [58, 63]];
-  for (let i = 0; i < 5 && i < ctx.traffic.length; i += 1) {
+  // Traffic ahead: 6 cars on the same road, one taxi, one van.
+  const ahead = [[-12, 60], [6, 60], [24, 60], [44, 57], [58, 63], [72, 60]];
+  for (let i = 0; i < 6 && i < ctx.traffic.length; i += 1) {
     const t = ctx.traffic[i];
     t.mesh.position.set(ahead[i][0], 0, ahead[i][1]);
     t.heading = Math.PI / 2;
@@ -176,6 +176,18 @@ function stageCombat(ctx) {
   const dmg = damageSprite('-55', '#ffd94d');
   dmg.position.set(212, 3.2, -14);
   ctx.render.scene.add(dmg);
+  // Return fire from the second enemy: his own flash + a red tracer back
+  // at the wheelman, so the shootout reads both ways.
+  const eFlash = new THREE.Sprite(new THREE.SpriteMaterial({
+    map: flashTexture(), transparent: true, depthTest: false,
+  }));
+  eFlash.scale.set(1.1, 1.1, 1);
+  eFlash.position.set(214.5, 1.35, 3);
+  ctx.render.scene.add(eFlash);
+  const eTracerGeo = new THREE.BufferGeometry();
+  eTracerGeo.setAttribute('position', new THREE.Float32BufferAttribute([214.5, 1.35, 3, 201, 1.3, -9], 3));
+  const eTracer = new THREE.Line(eTracerGeo, new THREE.LineBasicMaterial({ color: '#ff9a70', transparent: true, opacity: 0.9 }));
+  ctx.render.scene.add(eTracer);
   ctx.police.setWanted(2, s.player);
   const cars = ctx.police.units.filter((u) => u.kind === 'car' && u.mesh.visible);
   if (cars[0]) { cars[0].mesh.position.set(186, 0, -26); cars[0].mesh.rotation.y = Math.PI / 2; cars[0].dist = 18; }

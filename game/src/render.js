@@ -119,10 +119,11 @@ export function createRender(canvas, worldGroup) {
     let wantLook;
     if (camMode === 'chase') {
       // Close three-quarter rear: the car fills >= 1/4 of the frame
-      // (dist 8.0 / side 4.0 / height 3.8, FOV 62).
-      const dist = 8.0;
+      // (dist 7.6 / side 4.0 / height 3.5, FOV 62) — close and low enough
+      // that the arched roof and the driver through the rear glass read.
+      const dist = 7.6;
       const side = 4.0;
-      const height = 3.8;
+      const height = 3.5;
       wantPos = new THREE.Vector3(
         f.x - sin * dist - cos * side,
         (f.y || 0) + height,

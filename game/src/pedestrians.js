@@ -1,23 +1,27 @@
 // Realistic people: proportional humans ~1.75 units tall — a round head
 // with a face (eyes, nose, mouth, brows), hair, a clothed torso, arms with
-// hands, legs with shoes that swing when walking. The same builder makes
-// the wheelman, the crew, the enemies and the pedestrians; portraits are
-// painted on small canvases for the HUD. The export keeps the old name and
+// hands, legs with shoes that swing when walking. Every character reads
+// apart at a glance: distinct hair (ponytail, buzz, spiky, bun, bandana,
+// cap), skin tone and shirt, plus small tells — a thin moustache for Agus,
+// a thick one and rolled sleeves for Bambang, earrings for Ratna, a cheek
+// scar for the enemy. The same builder makes the wheelman, the crew, the
+// enemies and the pedestrians; portraits are painted on small canvases
+// for the HUD. The export keeps the old name and
 // return shape ({ group, head, legL, legR, armL, armR }) so every call
 // site keeps working.
 import { THREE, box, cylinder } from './three-shim.js';
 
 export const CHARACTERS = {
   wheelman: { name: 'Raka', role: 'Wheelman', hair: 'black', shirt: '#e87f2e', shirtPat: '#ffd94d', pants: '#232c4a', skin: '#f2c184' },
-  ratna: { name: 'Ratna', role: 'Fixer · Contacts', hair: 'pink', shirt: '#8a4bd0', shirtPat: '#ff9ad5', pants: '#2a2a33', skin: '#f2c184' },
-  agus: { name: 'Agus Prasetyo', role: 'Driver · Getaway', hair: 'black', shirt: '#3d6fb5', shirtPat: '#9ac2ff', pants: '#232c4a', skin: '#e8b078' },
-  bambang: { name: 'Bambang', role: 'Mechanic · Bengkel', hair: 'bandana', shirt: '#4b7d4b', shirtPat: '#c9c9c9', pants: '#3a3a3a', skin: '#e8b078' },
-  wanto: { name: 'Wanto', role: 'Komisaris KPD', hair: 'cap', shirt: '#2b4a8a', shirtPat: '#ffd94d', pants: '#1c2440', skin: '#f2c184' },
-  enemy: { name: 'Geng Segara', role: 'Musuh', hair: 'black', shirt: '#c94b4b', shirtPat: '#5a1f1f', pants: '#2a2a2a', skin: '#d8a878' },
-  ped: { name: 'Warga', role: 'Pejalan kaki', hair: 'brown', shirt: '#7fb5d0', shirtPat: '#ffffff', pants: '#4a4a55', skin: '#e8b078' },
+  ratna: { name: 'Ratna', role: 'Fixer · Contacts', hair: 'ponytail', shirt: '#8a4bd0', shirtPat: '#ff9ad5', pants: '#2a2a33', skin: '#f7d0a8', earrings: true },
+  agus: { name: 'Agus Prasetyo', role: 'Driver · Getaway', hair: 'buzz', shirt: '#3d6fb5', shirtPat: '#9ac2ff', pants: '#232c4a', skin: '#d9a06a', moustache: 'thin' },
+  bambang: { name: 'Bambang', role: 'Mechanic · Bengkel', hair: 'bandana', shirt: '#4b7d4b', shirtPat: '#c9c9c9', pants: '#3a3a3a', skin: '#c68a52', moustache: 'thick', rolledSleeves: true },
+  wanto: { name: 'Wanto', role: 'Komisaris KPD', hair: 'cap', shirt: '#2b4a8a', shirtPat: '#ffd94d', pants: '#1c2440', skin: '#e8b078' },
+  enemy: { name: 'Geng Segara', role: 'Musuh', hair: 'spiky', shirt: '#c94b4b', shirtPat: '#5a1f1f', pants: '#2a2a2a', skin: '#b98a5a', scar: true },
+  ped: { name: 'Warga', role: 'Pejalan kaki', hair: 'bun', shirt: '#7fb5d0', shirtPat: '#ffffff', pants: '#4a4a55', skin: '#e2ac7e' },
 };
 
-const HAIR_COLORS = { black: '#1c1c1c', brown: '#6b4a2b', pink: '#ff7fb5', bandana: '#c94b4b', cap: '#2b4a8a' };
+const HAIR_COLORS = { black: '#1c1c1c', brown: '#6b4a2b', pink: '#ff7fb5', bandana: '#c94b4b', cap: '#2b4a8a', ponytail: '#ff7fb5', buzz: '#1c1c1c', spiky: '#1c1c1c', bun: '#6b4a2b' };
 
 /** Build a realistic human ~1.75 units tall, facing +z. Returns { group, head, legL, legR, armL, armR }. */
 export function buildMinifig(def, scale = 1) {
@@ -65,16 +69,19 @@ export function buildMinifig(def, scale = 1) {
   collar.position.set(0, 1.42, 0.12);
   g.add(collar);
   // Arms: shoulder pivot — upper arm (sleeve), forearm (skin), hand.
+  // Rolled sleeves (Bambang the mechanic) show more forearm.
   function arm(side) {
     const a = new THREE.Group();
-    const upper = box(0.12, 0.32, 0.14, def.shirt);
-    upper.position.y = -0.16;
+    const sleeveH = def.rolledSleeves ? 0.2 : 0.32;
+    const foreH = def.rolledSleeves ? 0.42 : 0.3;
+    const upper = box(0.12, sleeveH, 0.14, def.shirt);
+    upper.position.y = -sleeveH / 2;
     a.add(upper);
-    const fore = box(0.11, 0.3, 0.12, def.skin);
-    fore.position.y = -0.46;
+    const fore = box(0.11, foreH, 0.12, def.skin);
+    fore.position.y = -(sleeveH + foreH / 2);
     a.add(fore);
     const hand = box(0.1, 0.15, 0.06, def.skin);
-    hand.position.y = -0.64;
+    hand.position.y = -(sleeveH + foreH + 0.075);
     a.add(hand);
     a.position.set(side * 0.28, 1.38, 0);
     return a;
@@ -111,9 +118,9 @@ export function buildMinifig(def, scale = 1) {
   g.add(mouth);
   // Hair / hat. The cap is tilted so the front hairline sits above the
   // eyes while the back still covers the head.
-  function hairCap(y = 1.63, z = -0.01) {
+  function hairCap(y = 1.63, z = -0.01, r = 0.15) {
     const hair = new THREE.Mesh(
-      new THREE.SphereGeometry(0.15, 14, 10, 0, Math.PI * 2, 0, Math.PI * 0.52),
+      new THREE.SphereGeometry(r, 14, 10, 0, Math.PI * 2, 0, Math.PI * 0.52),
       hairMat,
     );
     hair.position.set(0, y, z);
@@ -139,18 +146,62 @@ export function buildMinifig(def, scale = 1) {
     const knot = box(0.1, 0.14, 0.06, '#c94b4b');
     knot.position.set(0.14, 1.66, -0.12);
     g.add(knot);
-  } else if (def.hair === 'pink') {
+  } else if (def.hair === 'ponytail') {
     g.add(hairCap());
-    for (const sx of [-0.13, 0.13]) {
-      const lock = box(0.09, 0.4, 0.12, hairColor);
-      lock.position.set(sx, 1.42, -0.02);
-      g.add(lock);
+    // A long tail down the back, tied with a band in her accent colour.
+    const tail = box(0.11, 0.46, 0.09, hairColor);
+    tail.position.set(0, 1.38, -0.16);
+    tail.rotation.x = 0.12;
+    g.add(tail);
+    const tie = box(0.13, 0.05, 0.11, def.shirtPat);
+    tie.position.set(0, 1.6, -0.15);
+    g.add(tie);
+  } else if (def.hair === 'buzz') {
+    // A buzz cut hugs the skull: a lower, tighter cap than full hair.
+    g.add(hairCap(1.62, -0.01, 0.14));
+  } else if (def.hair === 'spiky') {
+    g.add(hairCap());
+    // Five spikes fanning out over the top of the head.
+    for (let i = 0; i < 5; i += 1) {
+      const a = (i / 5) * Math.PI * 2;
+      const spike = cylinder(0.001, 0.045, 0.16, hairColor);
+      spike.position.set(Math.cos(a) * 0.07, 1.78, Math.sin(a) * 0.07 - 0.01);
+      spike.rotation.z = -Math.cos(a) * 0.5;
+      spike.rotation.x = Math.sin(a) * 0.5;
+      g.add(spike);
     }
-    const back = box(0.26, 0.42, 0.08, hairColor);
-    back.position.set(0, 1.42, -0.12);
-    g.add(back);
+  } else if (def.hair === 'bun') {
+    g.add(hairCap());
+    const bun = new THREE.Mesh(new THREE.SphereGeometry(0.085, 12, 10), hairMat);
+    bun.position.set(0, 1.76, -0.11);
+    bun.castShadow = true;
+    g.add(bun);
   } else {
     g.add(hairCap());
+  }
+  // Moustache (Agus thin, Bambang thick), earrings (Ratna) and a cheek
+  // scar (enemy) — small features that tell the crew apart at a glance.
+  if (def.moustache) {
+    const thick = def.moustache === 'thick';
+    const mo = box(thick ? 0.11 : 0.09, thick ? 0.035 : 0.02, 0.025, '#1c1c1c');
+    mo.position.set(0, 1.55, 0.126);
+    g.add(mo);
+  }
+  if (def.earrings) {
+    for (const sx of [-0.13, 0.13]) {
+      const ear = new THREE.Mesh(
+        new THREE.SphereGeometry(0.02, 8, 6),
+        new THREE.MeshStandardMaterial({ color: '#ffd94d', roughness: 0.3, metalness: 0.8 }),
+      );
+      ear.position.set(sx, 1.56, 0);
+      g.add(ear);
+    }
+  }
+  if (def.scar) {
+    const scar = box(0.015, 0.09, 0.012, '#8a4a3a');
+    scar.position.set(0.06, 1.57, 0.115);
+    scar.rotation.z = 0.5;
+    g.add(scar);
   }
   // Sunglasses for the wheelman.
   if (def === CHARACTERS.wheelman) {
@@ -209,8 +260,29 @@ export function portraitCanvas(def, size = 96) {
   // Hair.
   x.fillStyle = HAIR_COLORS[def.hair] ?? '#1c1c1c';
   x.beginPath(); x.arc(size / 2, size * 0.36, size * 0.24, Math.PI, 0); x.fill();
-  if (def.hair === 'pink') {
-    x.beginPath(); x.arc(size / 2, size * 0.36, size * 0.26, Math.PI, 0); x.fill();
+  if (def.hair === 'ponytail') {
+    // The tail hangs down beside the head, tied with a band.
+    x.fillRect(size * 0.64, size * 0.3, size * 0.12, size * 0.24);
+    x.beginPath(); x.arc(size * 0.7, size * 0.54, size * 0.09, 0, Math.PI * 2); x.fill();
+    x.fillStyle = def.shirtPat;
+    x.fillRect(size * 0.64, size * 0.32, size * 0.12, size * 0.05);
+  }
+  if (def.hair === 'buzz') {
+    // A buzz cut is a thin cap hugging the skull.
+    x.beginPath(); x.arc(size / 2, size * 0.38, size * 0.22, Math.PI, 0); x.fill();
+  }
+  if (def.hair === 'spiky') {
+    for (let i = 0; i < 3; i += 1) {
+      const sx = size * (0.36 + i * 0.14);
+      x.beginPath();
+      x.moveTo(sx - size * 0.05, size * 0.2);
+      x.lineTo(sx, size * 0.08);
+      x.lineTo(sx + size * 0.05, size * 0.2);
+      x.closePath(); x.fill();
+    }
+  }
+  if (def.hair === 'bun') {
+    x.beginPath(); x.arc(size / 2, size * 0.12, size * 0.09, 0, Math.PI * 2); x.fill();
   }
   if (def.hair === 'cap') {
     x.fillStyle = '#1c2440';
@@ -232,6 +304,22 @@ export function portraitCanvas(def, size = 96) {
   if (def === CHARACTERS.wheelman) {
     x.fillStyle = '#111111';
     x.fillRect(size * 0.34, size * 0.38, size * 0.32, size * 0.07);
+  }
+  // Moustache, earrings and scar, matching the 3D model.
+  if (def.moustache) {
+    x.fillStyle = '#1c1c1c';
+    const mh = def.moustache === 'thick' ? size * 0.035 : size * 0.02;
+    x.fillRect(size * 0.44, size * 0.5, size * 0.12, mh);
+  }
+  if (def.earrings) {
+    x.fillStyle = '#ffd94d';
+    x.beginPath(); x.arc(size * 0.26, size * 0.44, size * 0.02, 0, Math.PI * 2); x.fill();
+    x.beginPath(); x.arc(size * 0.74, size * 0.44, size * 0.02, 0, Math.PI * 2); x.fill();
+  }
+  if (def.scar) {
+    x.strokeStyle = '#8a4a3a';
+    x.lineWidth = size * 0.02;
+    x.beginPath(); x.moveTo(size * 0.6, size * 0.34); x.lineTo(size * 0.65, size * 0.44); x.stroke();
   }
   // Shoulders.
   x.fillStyle = def.shirt;

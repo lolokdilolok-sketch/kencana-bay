@@ -1,7 +1,8 @@
 // The enterable garage: Bengkel Bambang. A real room in the same scene, far
 // outside the city (x = -900), so the player and the Garuda teleport into it
 // through the garage door. Inside: the Garuda on a hydraulic lift, tool
-// benches, tyre stacks, a neon sign, Bambang at his workbench — and the
+// benches with parts bins, a tall tool cabinet, a wall clock, a coiled air
+// hose, tyre stacks, a neon sign, Bambang at his workbench — and the
 // upgrade menu (repair / respray / engine tune / armour) with prices.
 import { THREE, box, cylinder, canvasTexture } from './three-shim.js';
 import { PAINTS, GARAGE_MENU } from './config.js';
@@ -85,6 +86,53 @@ export function createGarage(scene) {
     peg.position.set(bx, 2.6, -10.8);
     room.add(peg);
   }
+  // Parts bins on the right bench, behind the hand tools.
+  for (let i = 0; i < 3; i += 1) {
+    const bin = box(0.55, 0.35, 0.4, ['#c94b4b', '#2b6fd0', '#e8a33d'][i]);
+    bin.position.set(9.4 + i * 0.9, 1.18, -10.15);
+    room.add(bin);
+    const parts = box(0.45, 0.06, 0.3, '#333333');
+    parts.position.set(9.4 + i * 0.9, 1.38, -10.15);
+    room.add(parts);
+  }
+  // Tall tool cabinet on the north wall, between the benches, with
+  // drawers; and a wall clock above it, below the neon sign.
+  const cabinet = new THREE.Group();
+  const cabBody = box(2.2, 2.6, 0.8, '#8a2b2b', { metal: 0.3, rough: 0.5 });
+  cabBody.position.y = 1.3;
+  cabinet.add(cabBody);
+  for (let i = 0; i < 4; i += 1) {
+    const drawer = box(1.9, 0.45, 0.06, '#e8e8e8', { metal: 0.4, rough: 0.4 });
+    drawer.position.set(0, 0.45 + i * 0.6, 0.43);
+    cabinet.add(drawer);
+    const pull = box(0.5, 0.05, 0.04, '#333333');
+    pull.position.set(0, 0.45 + i * 0.6, 0.47);
+    cabinet.add(pull);
+  }
+  cabinet.position.set(-3.5, 0, -10.3);
+  room.add(cabinet);
+  const clock = new THREE.Group();
+  const clockFace = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.5, 0.5, 0.08, 24),
+    new THREE.MeshStandardMaterial({ color: '#f2f2f2', roughness: 0.4 }),
+  );
+  clockFace.rotation.x = Math.PI / 2;
+  clock.add(clockFace);
+  const clockRim = new THREE.Mesh(
+    new THREE.TorusGeometry(0.5, 0.05, 8, 24),
+    new THREE.MeshStandardMaterial({ color: '#1c1c1c', roughness: 0.5 }),
+  );
+  clock.add(clockRim);
+  const hourHand = box(0.05, 0.28, 0.02, '#1c1c1c');
+  hourHand.position.set(0.06, 0.12, 0.06);
+  hourHand.rotation.z = -0.9;
+  clock.add(hourHand);
+  const minHand = box(0.04, 0.4, 0.02, '#1c1c1c');
+  minHand.position.set(-0.05, 0.16, 0.06);
+  minHand.rotation.z = 0.5;
+  clock.add(minHand);
+  clock.position.set(0, 4.4, -10.65);
+  room.add(clock);
   // Tyre stacks.
   for (const [tx, tz, n] of [[12.5, -8, 4], [12.5, 8, 3], [-12.5, 8, 3]]) {
     for (let i = 0; i < n; i += 1) {
@@ -171,6 +219,17 @@ export function createGarage(scene) {
     drum.castShadow = true;
     room.add(drum);
   }
+  // Coiled air hose on the west wall, by the oil drums.
+  const hose = new THREE.Mesh(
+    new THREE.TorusGeometry(0.55, 0.09, 8, 20),
+    new THREE.MeshStandardMaterial({ color: '#e8a33d', roughness: 0.7 }),
+  );
+  hose.rotation.y = Math.PI / 2;
+  hose.position.set(-14.6, 2.4, -2);
+  room.add(hose);
+  const hoseNozzle = box(0.3, 0.12, 0.12, '#333333');
+  hoseNozzle.position.set(-14.5, 1.75, -2);
+  room.add(hoseNozzle);
   // Creeper board lying on the floor, foreground left.
   const creeper = box(1.7, 0.1, 0.65, '#7a2b2b', { rough: 0.8 });
   creeper.position.set(-3.2, 0.08, 3.6);
