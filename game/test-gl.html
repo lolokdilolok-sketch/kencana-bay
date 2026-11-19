@@ -1,0 +1,7 @@
+<!doctype html><meta charset="utf-8"><title>gl probe</title><body><script>
+const out = {};
+try { const c = document.createElement('canvas'); const g2 = c.getContext('webgl2'); out.webgl2 = !!g2; out.webgl2renderer = g2 ? g2.getParameter(g2.RENDERER) : null; } catch (e) { out.webgl2err = String(e); }
+try { const c2 = document.createElement('canvas'); const g = c2.getContext('webgl'); out.webgl = !!g; out.webglrenderer = g ? g.getParameter(g.RENDERER) : null; } catch (e) { out.webglerr = String(e); }
+document.title = JSON.stringify(out);
+window.__gl = out;
+</script></body>
