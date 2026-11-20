@@ -14,37 +14,41 @@
      overlap the title, map, garage and pause screens. */
   #hud[data-mode="title"] > #mission-panel, #hud[data-mode="title"] > #kpd-panel,
   #hud[data-mode="title"] > #cash-line, #hud[data-mode="title"] > #minimap-wrap,
-  #hud[data-mode="title"] > #weapon-bar, #hud[data-mode="title"] > #dialogue,
+  #hud[data-mode="title"] > #weapon-bar, #hud[data-mode="title"] > #weapon-name, #hud[data-mode="title"] > #dialogue,
   #hud[data-mode="title"] > #radio-line, #hud[data-mode="title"] > #speed,
-  #hud[data-mode="title"] > #toast, #hud[data-mode="title"] > #help { display: none; }
+  #hud[data-mode="title"] > #toast, #hud[data-mode="title"] > #help,
+  #hud[data-mode="title"] > #crew-bar, #hud[data-mode="title"] > #hit-popup { display: none; }
   #hud[data-mode="map"] > #mission-panel, #hud[data-mode="map"] > #kpd-panel,
   #hud[data-mode="map"] > #cash-line, #hud[data-mode="map"] > #minimap-wrap,
-  #hud[data-mode="map"] > #weapon-bar, #hud[data-mode="map"] > #dialogue,
+  #hud[data-mode="map"] > #weapon-bar, #hud[data-mode="map"] > #weapon-name, #hud[data-mode="map"] > #dialogue,
   #hud[data-mode="map"] > #radio-line, #hud[data-mode="map"] > #speed,
-  #hud[data-mode="map"] > #toast, #hud[data-mode="map"] > #help { display: none; }
+  #hud[data-mode="map"] > #toast, #hud[data-mode="map"] > #help,
+  #hud[data-mode="map"] > #crew-bar, #hud[data-mode="map"] > #hit-popup { display: none; }
   #hud[data-mode="garage"] > #mission-panel, #hud[data-mode="garage"] > #cash-line,
   #hud[data-mode="garage"] > #minimap-wrap,
-  #hud[data-mode="garage"] > #weapon-bar, #hud[data-mode="garage"] > #speed,
-  #hud[data-mode="garage"] > #radio-line, #hud[data-mode="garage"] > #help { display: none; }
+  #hud[data-mode="garage"] > #weapon-bar, #hud[data-mode="garage"] > #weapon-name, #hud[data-mode="garage"] > #speed,
+  #hud[data-mode="garage"] > #radio-line, #hud[data-mode="garage"] > #help,
+  #hud[data-mode="garage"] > #crew-bar, #hud[data-mode="garage"] > #hit-popup { display: none; }
   #hud[data-mode="pause"] > #mission-panel, #hud[data-mode="pause"] > #kpd-panel,
   #hud[data-mode="pause"] > #cash-line, #hud[data-mode="pause"] > #minimap-wrap,
-  #hud[data-mode="pause"] > #weapon-bar, #hud[data-mode="pause"] > #dialogue,
+  #hud[data-mode="pause"] > #weapon-bar, #hud[data-mode="pause"] > #weapon-name, #hud[data-mode="pause"] > #dialogue,
   #hud[data-mode="pause"] > #radio-line, #hud[data-mode="pause"] > #speed,
-  #hud[data-mode="pause"] > #toast, #hud[data-mode="pause"] > #help { display: none; }
+  #hud[data-mode="pause"] > #toast, #hud[data-mode="pause"] > #help,
+  #hud[data-mode="pause"] > #crew-bar, #hud[data-mode="pause"] > #hit-popup { display: none; }
   .glass { background: rgba(16, 12, 28, 0.72); border: 1px solid rgba(255, 217, 77, 0.35); border-radius: 10px; backdrop-filter: blur(3px); box-shadow: 0 4px 18px rgba(0,0,0,0.45); }
-  /* Mission panel, top-left. */
+  /* Mission panel, top-left (round 8: the minimap moved to the
+     bottom-left, so the mission panel takes the freed top-left corner). */
   #mission-panel { position: absolute; top: 14px; left: 14px; width: 320px; padding: 10px 14px; }
   #mission-panel .m-title { font-family: "Arial Black", sans-serif; font-size: 17px; color: #ffd94d; letter-spacing: 0.5px; padding-right: 84px; }
   #mission-panel .m-brief { font-size: 13px; color: #f2ead8; margin-top: 3px; line-height: 1.35; }
   #mission-panel .m-meta { font-size: 12px; color: #b8b0a0; margin-top: 5px; }
   #mission-panel .m-dist { position: absolute; top: 10px; right: 14px; font-size: 22px; font-weight: 800; color: #ffd94d; }
-  /* KPD panel, top-right. */
-  #kpd-panel { position: absolute; top: 14px; right: 14px; width: 300px; padding: 10px 14px; }
+  /* KPD panel, right side, below the weapon bar (round 8: the right
+     column is now DAY/cash/stars/sight -> icon weapon slots + name ->
+     KPD -> radio -> speed, like the reference chase shot; the bar is
+     taller now, so the panel starts at 224). */
+  #kpd-panel { position: absolute; top: 224px; right: 14px; width: 300px; padding: 10px 14px; }
   #kpd-panel .k-title { font-family: "Arial Black", sans-serif; font-size: 14px; color: #ff5e5e; }
-  /* Wanted stars on their own line, right-aligned: they used to float over
-     the title (margin-top: -24px) and collide with it. */
-  #kpd-panel .k-stars { font-size: 24px; color: #ffd94d; letter-spacing: 2px; text-align: right; margin-top: 2px; }
-  #kpd-panel .k-stars .k-code { font-size: 13px; color: #ff9a5e; letter-spacing: 1px; vertical-align: middle; }
   #kpd-panel .k-units { margin-top: 6px; font-size: 12.5px; }
   #kpd-panel .k-row { display: flex; justify-content: space-between; gap: 8px; padding: 2px 0; border-bottom: 1px solid rgba(255,255,255,0.08); }
   #kpd-panel .k-row b { color: #ff9a5e; font-weight: 700; }
@@ -55,62 +59,161 @@
   #kpd-panel .k-row b.k-st-spotlight { color: #7fd0e8; }
   #kpd-panel .k-row b.k-st-mencari { color: #ffd94d; }
   #kpd-panel .k-sight { font-size: 11.5px; color: #7fd0e8; margin-top: 5px; }
-  /* Cash sits well below the KPD panel: the panel is ~198px tall with
-     5 units + stars on their own line, so 232px clears it by ~20px. It
-     used to sit at 148px and overlap the panel's bottom rows. */
-  #cash-line { position: absolute; top: 232px; right: 14px; font-size: 15px; font-weight: 700; color: #ffd94d; text-align: right; text-shadow: 0 1px 4px #000; }
+  /* Top-right cluster, like the reference chase shot (round 8, exact
+     like IMG_9359): row 1 DAY + clock, row 2 the big green cash, row 3
+     the wanted stars alone, row 4 "search zone follows you" + a red
+     IN SIGHT pill. Pixel budget at 1280x720: y 12-124 (day ~18 + cash
+     ~46 + stars ~28 + sight ~20), weapon slots at 132, KPD at 224. */
+  #cash-line { position: absolute; top: 12px; right: 14px; text-align: right; text-shadow: 0 1px 4px #000; }
+  #cash-line .c-day { font-size: 13px; font-weight: 700; color: #f2ead8; letter-spacing: 1px; }
+  #cash-line .c-day .c-clock { font-size: 17px; font-weight: 800; color: #fff; letter-spacing: 0; margin-left: 6px; }
+  #cash-line .c-cash { font-family: "Arial Black", sans-serif; font-size: 42px; line-height: 1.05; color: #7dff9a; }
+  #cash-line .c-stars { font-size: 26px; color: #ffd94d; letter-spacing: 4px; line-height: 1.1; }
+  #cash-line .c-sight { display: flex; align-items: center; justify-content: flex-end; gap: 8px; font-size: 12px; font-weight: 700; color: #b8d8e8; margin-top: 2px; }
+  #cash-line .c-sight .c-sight-pill { background: #d21f2b; color: #fff; font-size: 11px; font-weight: 800; letter-spacing: 1px; padding: 2px 9px; border-radius: 999px; text-shadow: none; }
   #stamp { position: absolute; top: 12px; left: 50%; transform: translateX(-50%); font-size: 11px; letter-spacing: 2px; color: rgba(242,234,216,0.75); background: rgba(16,12,28,0.55); padding: 3px 10px; border-radius: 20px; }
-  /* Minimap, bottom-left. */
+  /* Minimap, bottom-left (round 8: moved from the top-left, like the
+     reference's bottom-left map — the mission panel takes top-left). */
   #minimap-wrap { position: absolute; left: 14px; bottom: 14px; width: 220px; }
   #minimap { width: 220px; height: 220px; border-radius: 50%; border: 3px solid rgba(255, 217, 77, 0.6); box-shadow: 0 4px 18px rgba(0,0,0,0.5); display: block; }
   #loc-label { font-size: 12px; font-weight: 700; margin-top: 6px; text-shadow: 0 1px 4px #000; }
   #hp-wrap { height: 8px; background: rgba(0,0,0,0.6); border-radius: 4px; margin-top: 4px; overflow: hidden; }
   #hp-bar { height: 100%; width: 100%; background: linear-gradient(90deg, #3ddc5a, #a8e063); }
-  /* Weapon bar, bottom-centre. */
-  #weapon-bar { position: absolute; left: 50%; bottom: 14px; transform: translateX(-50%); display: flex; gap: 6px; }
-  .wslot { width: 108px; padding: 6px 8px; background: rgba(16,12,28,0.75); border: 1px solid rgba(255,255,255,0.25); border-radius: 8px; font-size: 11px; }
-  .wslot.active { border-color: #ff8a3d; box-shadow: 0 0 0 2px rgba(255,138,61,0.5); background: rgba(60,30,10,0.85); }
-  .wslot.locked { opacity: 0.55; }
-  .wslot .wkey { display: inline-block; background: #ffd94d; color: #1c1c1c; font-weight: 800; border-radius: 4px; padding: 0 5px; margin-right: 5px; }
-  .wslot .wname { font-weight: 700; }
-  .wslot .wammo { float: right; color: #b8b0a0; }
-  /* Dialogue, above the weapon bar. */
-  #dialogue { position: absolute; left: 50%; bottom: 86px; transform: translateX(-50%); width: 560px; display: none; padding: 10px 14px; align-items: center; gap: 12px; }
+  /* Weapon slots, top-right below the cash cluster (round 8, exact
+     like IMG_9359; round 9: SIX square icon slots — the GARUDA rifle
+     joins the bar so key 4 shows an active slot): a weapon silhouette
+     in each, the key number top-left, ammo (or LOCKED) under the icon.
+     The selected slot gets an orange border + orange tint, and its
+     name sits in #weapon-name below it. */
+  #weapon-bar { position: absolute; right: 14px; top: 132px; display: flex; gap: 6px; }
+  #weapon-name { position: absolute; top: 202px; right: 154px; width: 64px; text-align: center; font-size: 12px; font-weight: 800; letter-spacing: 1px; color: #fff; text-shadow: 0 1px 4px #000; white-space: nowrap; }
+  /* Crew bar, bottom-CENTRE (round 8: moved from the bottom-left, like
+     the reference's bottom portrait row — centred, with the dialogue
+     above it). */
+  #crew-bar { position: absolute; left: 50%; transform: translateX(-50%); bottom: 14px; display: flex; gap: 6px; }
+  .crew-card { width: 84px; padding: 6px 4px 5px; background: rgba(16,12,28,0.75); border: 1px solid rgba(255,255,255,0.25); border-radius: 8px; text-align: center; }
+  .crew-card canvas { width: 56px; height: 56px; border-radius: 6px; }
+  .crew-card .cc-name { font-size: 11px; font-weight: 800; margin-top: 3px; }
+  .crew-card .cc-sub { font-size: 10px; color: #b8b0a0; }
+  .crew-card.hired { border-color: #7dff9a; }
+  .crew-card.hired .cc-sub { color: #7dff9a; font-weight: 700; }
+  /* Red HIT popup, like the reference combat shot. */
+  #hit-popup { position: absolute; left: 50%; top: 44%; transform: translateX(-50%); font-family: "Arial Black", sans-serif; font-size: 26px; color: #ff5a5a; text-shadow: 0 2px 8px #000; opacity: 0; transition: opacity 0.15s; pointer-events: none; }
+  #hit-popup.show { opacity: 1; }
+  .wslot { position: relative; width: 64px; height: 64px; padding: 4px 2px 3px; background: rgba(16,12,28,0.78); border: 1px solid rgba(255,255,255,0.28); border-radius: 9px; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+  .wslot.active { border: 2px solid #ff8a3d; box-shadow: 0 0 0 1px rgba(255,138,61,0.6); background: rgba(255,138,61,0.30); }
+  .wslot.locked { opacity: 0.6; }
+  .wslot .wkey { position: absolute; top: 2px; left: 5px; font-size: 10px; font-weight: 800; color: #ffd94d; }
+  .wslot svg { width: 46px; height: 26px; fill: #f2ead8; }
+  .wslot.locked svg { fill: #8a8a92; }
+  .wslot .wsub { font-size: 10px; font-weight: 700; color: #cfc8b8; margin-top: 3px; }
+  .wslot.locked .wsub { color: #9a9aa2; }
+  /* Dialogue, bottom-centre above the crew bar (round 8: moved from
+     above the old bottom-left crew bar, so it sits with the centred
+     portraits as one group; round 9: narrowed 560 -> 520px so its right
+     edge stops 26px short of the bottom-right radio panel — the two
+     used to touch in the combat shot). */
+  #dialogue { position: absolute; left: 50%; bottom: 128px; transform: translateX(-50%); width: 520px; display: none; padding: 10px 14px; align-items: center; gap: 12px; }
   #dialogue.show { display: flex; }
   #dialogue canvas { width: 64px; height: 64px; border-radius: 8px; flex: none; border: 2px solid rgba(255, 217, 77, 0.7); box-shadow: 0 0 0 1px rgba(0,0,0,0.6); background: #1c2438; }
   #dialogue .dlg-name { font-size: 13px; font-weight: 800; color: #ffd94d; }
   #dialogue .dlg-line { font-size: 14.5px; line-height: 1.35; margin-top: 2px; }
-  /* Speed + radio, bottom-right. */
-  #speed { position: absolute; right: 14px; bottom: 14px; text-align: right; text-shadow: 0 2px 6px #000; }
-  #speed .sp-num { font-family: "Arial Black", sans-serif; font-size: 44px; color: #fff; line-height: 1; }
-  #speed .sp-unit { font-size: 15px; color: #ffd94d; font-weight: 700; }
-  #speed .sp-car { font-size: 13px; font-weight: 700; }
-  #speed .sp-cond { font-size: 12px; color: #b8b0a0; }
-  #radio-line { position: absolute; right: 14px; bottom: 118px; font-size: 12.5px; font-weight: 700; color: #ff9ad5; text-shadow: 0 1px 4px #000; text-align: right; }
+  /* Speed + radio, bottom-right (round 8, exact like IMG_9359: radio
+     on top, then the car name + CONDITION bar, then the big KM/H +
+     orange gear chip, then a segmented rev bar under the number. The
+     speed panel is bigger now so the KM/H number dominates. Pixel
+     budget: speed ~132px tall (bottom 14-146), radio ~58px (bottom
+     154-212), KPD panel ends ~370 — no overlap. */
+  #speed { position: absolute; right: 14px; bottom: 14px; width: 340px; text-align: right; text-shadow: 0 2px 6px #000; }
+  #speed .sp-car { font-size: 16px; font-weight: 800; letter-spacing: 0.5px; }
+  #speed .sp-condrow { display: flex; align-items: center; justify-content: flex-end; gap: 8px; font-size: 11px; font-weight: 700; color: #b8b0a0; margin-top: 4px; }
+  #speed .sp-condbar { width: 170px; height: 8px; background: rgba(0,0,0,0.6); border-radius: 4px; overflow: hidden; }
+  #speed .sp-condbar div { height: 100%; background: linear-gradient(90deg, #3ddc5a, #a8e063); }
+  #speed .sp-condpct { color: #7dff9a; min-width: 34px; text-align: left; }
+  #speed .sp-big { margin-top: 2px; }
+  #speed .sp-num { font-family: "Arial Black", sans-serif; font-size: 72px; color: #fff; line-height: 1; }
+  #speed .sp-unit { font-size: 16px; color: #ffd94d; font-weight: 700; margin-left: 6px; }
+  #speed .sp-gear { display: inline-block; font-size: 13px; font-weight: 800; color: #1c1c1c; background: #ff8a3d; border-radius: 5px; padding: 2px 7px; margin-left: 8px; vertical-align: 8px; }
+  /* Segmented rev bar under the KM/H number (round 8, like the
+     reference's green-yellow-orange-red segmented strip): 14 segments,
+     lit ones coloured by band, unlit ones dim. */
+  #speed .sp-segbar { display: flex; gap: 3px; justify-content: flex-end; margin-top: 6px; }
+  #speed .sp-segbar i { width: 17px; height: 9px; border-radius: 2px; background: rgba(255,255,255,0.14); }
+  #speed .sp-segbar i.lit:nth-child(-n+7) { background: #3ddc5a; }
+  #speed .sp-segbar i.lit:nth-child(n+8):nth-child(-n+10) { background: #ffd94d; }
+  #speed .sp-segbar i.lit:nth-child(n+11):nth-child(-n+12) { background: #ff8a3d; }
+  #speed .sp-segbar i.lit:nth-child(n+13) { background: #ff2e2e; }
+  #radio-line { position: absolute; right: 14px; bottom: 154px; width: 340px; padding: 8px 12px; text-align: left; }
+  #radio-line .r-top { display: flex; align-items: center; gap: 7px; }
+  #radio-line .r-note { color: #ff9ad5; font-size: 15px; }
+  #radio-line .r-station { font-size: 13px; font-weight: 800; color: #ff9ad5; letter-spacing: 0.5px; }
+  #radio-line .r-eq { display: flex; align-items: flex-end; gap: 2px; height: 14px; margin-left: auto; }
+  /* Fixed bar heights, no animation: the screenshot must be byte-
+     deterministic across regenerations (an animated equalizer made
+     every run differ). */
+  #radio-line .r-eq i { width: 3px; background: #ff9ad5; border-radius: 1px; }
+  #radio-line .r-eq i:nth-child(1) { height: 6px; }
+  #radio-line .r-eq i:nth-child(2) { height: 12px; }
+  #radio-line .r-eq i:nth-child(3) { height: 8px; }
+  #radio-line .r-eq i:nth-child(4) { height: 14px; }
+  #radio-line .r-eq i:nth-child(5) { height: 9px; }
+  #radio-line .r-track { font-size: 12px; color: #f2ead8; margin-top: 3px; }
   /* Toasts, centre. */
   #toast { position: absolute; left: 50%; top: 32%; transform: translateX(-50%) scale(0.9); text-align: center; opacity: 0; transition: opacity 0.2s, transform 0.2s; text-shadow: 0 2px 8px #000; }
   #toast.show { opacity: 1; transform: translateX(-50%) scale(1); }
   #toast b { display: block; font-family: "Arial Black", sans-serif; font-size: 30px; color: #ffd94d; }
   #toast span { font-size: 15px; color: #fff; }
-  #help { position: absolute; left: 50%; bottom: 2px; transform: translateX(-50%); font-size: 11px; color: rgba(242,234,216,0.65); text-shadow: 0 1px 3px #000; white-space: nowrap; }
-  /* Map overlay: a transparent sunset veil over the live city. */
-  #map-overlay { position: absolute; inset: 0; display: none; background: linear-gradient(160deg, rgba(43,30,94,0.55), rgba(224,106,154,0.45)); }
+  #help { display: none; }
+  /* Map overlay: a transparent dusk veil over the live city (round 11:
+     warm neutral grey-brown — the round 10 dark-blue veil rgba(24,24,60)
+     -> rgba(64,64,116) still read mauve behind the map, together with the
+     violet fog. The colourful district grid itself is the map content and
+     stays as it is. */
+  #map-overlay { position: absolute; inset: 0; display: none; background: linear-gradient(160deg, rgba(42,36,30,0.55), rgba(88,76,60,0.35)); }
   #map-overlay.open { display: flex; }
   #map-left { flex: none; padding: 26px 10px 20px 26px; }
   #map-title { font-family: "Arial Black", sans-serif; font-size: 22px; color: #ffd94d; text-shadow: 0 2px 6px #000; }
   #map-sub { font-size: 12px; color: #fff; margin-bottom: 8px; text-shadow: 0 1px 3px #000; }
-  #map-canvas { width: 560px; height: 560px; border-radius: 12px; border: 2px solid rgba(255,217,77,0.6); }
-  #map-right { flex: 1; padding: 26px 26px 20px 18px; overflow-y: auto; }
-  #map-right h3 { margin: 0 0 8px; font-size: 14px; letter-spacing: 2px; color: #ffd94d; }
-  #story-list { display: flex; flex-direction: column; gap: 4px; }
-  .story-row { display: flex; gap: 8px; align-items: center; background: rgba(16,12,28,0.6); border-radius: 8px; padding: 3px 8px; font-size: 12.5px; }
-  .story-row canvas { width: 30px; height: 30px; border-radius: 6px; flex: none; }
-  .story-row b { display: block; font-size: 13px; }
-  .story-row span { color: #b8b0a0; font-size: 11.5px; }
+  #map-canvas { width: 500px; height: 500px; border-radius: 12px; border: 2px solid rgba(255,217,77,0.6); }
+  /* Portrait row at the bottom of the map screen (round 6, like the
+     reference's bottom portrait bar). */
+  #map-crew { display: flex; gap: 8px; margin-top: 10px; }
+  .map-crew-card { width: 76px; text-align: center; }
+  .map-crew-card canvas { width: 56px; height: 56px; border-radius: 8px; border: 2px solid rgba(255,217,77,0.5); }
+  .map-crew-card .mc-name { font-size: 11px; font-weight: 800; color: #fff; margin-top: 2px; text-shadow: 0 1px 3px #000; }
+  .map-crew-card .mc-role { font-size: 10px; color: #ffd94d; text-shadow: 0 1px 3px #000; }
+  /* Story progress ring (round 6, like the reference's 42% ring). */
+  #map-ring { display: flex; align-items: center; gap: 12px; margin-top: 10px; background: rgba(16,12,28,0.6); border-radius: 8px; padding: 8px 12px; }
+  #map-ring-fill { width: 72px; height: 72px; border-radius: 50%; flex: none; display: flex; align-items: center; justify-content: center; background: conic-gradient(#ffd94d 0deg, #ffd94d 151deg, rgba(255,255,255,0.15) 151deg, rgba(255,255,255,0.15) 360deg); }
+  #map-ring-fill span { width: 52px; height: 52px; border-radius: 50%; background: #1c2438; display: flex; align-items: center; justify-content: center; font-size: 15px; font-weight: 800; color: #ffd94d; }
+  #map-ring-txt { font-size: 12.5px; line-height: 1.6; color: #f2ead8; }
+  /* Map action buttons (round 6, like the reference's TUTUP + TITLE). */
+  #map-actions { display: flex; gap: 10px; margin-top: 10px; pointer-events: auto; }
+  #map-actions button { font-family: "Arial Black", sans-serif; font-size: 13px; padding: 10px 18px; border-radius: 999px; border: none; cursor: pointer; }
+  #map-close { background: #ff8a3d; color: #1c1c1c; }
+  #map-title-btn { background: rgba(16,12,28,0.8); color: #f2ead8; border: 1px solid rgba(255,255,255,0.4); }
+  #map-right { flex: 1; padding: 26px 26px 20px 18px; overflow: hidden; display: flex; flex-direction: column; }
+  #map-right h3 { margin: 0 0 5px; font-size: 14px; letter-spacing: 2px; color: #ffd94d; }
+  #story-list { display: flex; flex-direction: column; gap: 4px; flex: 1; overflow-y: auto; min-height: 0; }
+  .story-row { display: flex; gap: 8px; align-items: center; background: rgba(16,12,28,0.6); border-radius: 8px; padding: 2px 8px; font-size: 12px; }
+  .story-row canvas { width: 26px; height: 26px; border-radius: 6px; flex: none; }
+  .story-row b { display: block; font-size: 12.5px; }
+  .story-row span { color: #b8b0a0; font-size: 11px; }
   .story-row.active { border: 1px solid #ffd94d; }
   .story-row.done { opacity: 0.75; }
-  #map-legend { margin-top: 12px; font-size: 12px; line-height: 1.7; background: rgba(16,12,28,0.6); border-radius: 8px; padding: 8px 12px; }
-  #map-stats { margin-top: 12px; font-size: 12.5px; line-height: 1.6; background: rgba(16,12,28,0.6); border-radius: 8px; padding: 8px 12px; color: #ffd94d; font-weight: 600; }
+  /* Current job panel on the map screen (round 7, like the reference
+     map's CURRENT JOB box under the story list). */
+  #map-job { margin-top: 8px; font-size: 12.5px; line-height: 1.45; background: rgba(16,12,28,0.6); border-radius: 8px; padding: 6px 12px; }
+  #map-job b { color: #ffd94d; letter-spacing: 1px; font-size: 12px; }
+  #map-job .mj-name { font-size: 14px; font-weight: 800; color: #fff; }
+  #map-job .mj-meta { color: #ffd94d; font-weight: 700; }
+  #map-job .mj-brief { color: #b8b0a0; }
+  /* Legend, two columns (round 7, like the reference map's LEGEND). */
+  #map-legend { margin-top: 8px; font-size: 12px; line-height: 1.5; background: rgba(16,12,28,0.6); border-radius: 8px; padding: 6px 12px; }
+  #map-legend .lg-title { color: #ffd94d; font-weight: 800; letter-spacing: 2px; font-size: 12px; margin-bottom: 2px; }
+  #map-legend .lg-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; column-gap: 10px; }
+  #map-legend .lg-grid span { white-space: nowrap; }
+  #map-stats { margin-top: 8px; font-size: 12.5px; line-height: 1.6; background: rgba(16,12,28,0.6); border-radius: 8px; padding: 6px 12px; color: #ffd94d; font-weight: 600; }
   /* MISSION PASSED banner. */
   #passed-overlay { position: absolute; inset: 0; display: none; align-items: center; justify-content: center; }
   #passed-overlay.show { display: flex; }
@@ -130,12 +233,14 @@
   #garage-panel .g-row { display: flex; justify-content: space-between; gap: 8px; font-size: 12.5px; padding: 5px 0; border-bottom: 1px solid rgba(255,255,255,0.08); }
   #garage-panel .g-row b { color: #7dff9a; }
   #garage-panel .g-cash { font-size: 12px; color: #ffd94d; margin-top: 8px; }
-  /* Title poster. */
+  /* Title poster (round 6: big gold serif title like the reference's
+     poster style, orange MULAI button, controls bottom-left, credit
+     bottom-right — our own name KENCANA BAY). */
   #title-screen { position: absolute; inset: 0; display: none; flex-direction: column; align-items: center; background: linear-gradient(180deg, rgba(43,30,94,0.25) 0%, rgba(43,30,94,0.05) 40%, rgba(16,10,28,0.72) 100%); }
   #title-screen.open { display: flex; }
   #title-screen .t-over { margin-top: 26px; font-size: 14px; letter-spacing: 6px; color: #ffd94d; font-weight: 700; text-shadow: 0 2px 6px #000; }
-  #title-screen .t-logo { font-family: "Arial Black", sans-serif; font-size: 84px; line-height: 0.95; background: linear-gradient(180deg, #ffd94d, #ff2e63); -webkit-background-clip: text; background-clip: text; color: transparent; text-shadow: none; filter: drop-shadow(0 4px 12px rgba(0,0,0,0.6)); }
-  #title-screen .t-bay { font-family: "Arial Black", sans-serif; font-size: 30px; letter-spacing: 14px; color: #fff; text-shadow: 0 2px 8px #000; }
+  #title-screen .t-logo { font-family: Georgia, "Times New Roman", serif; font-weight: 900; font-size: 80px; line-height: 0.95; background: linear-gradient(180deg, #ffe98a, #ff9a3d); -webkit-background-clip: text; background-clip: text; color: transparent; text-shadow: none; filter: drop-shadow(0 4px 12px rgba(0,0,0,0.6)); letter-spacing: 2px; }
+  #title-screen .t-bay { font-family: Georgia, "Times New Roman", serif; font-weight: 700; font-size: 26px; letter-spacing: 16px; color: #fff; text-shadow: 0 2px 8px #000; margin-top: 4px; }
   #title-screen .t-tag { font-size: 15px; font-style: italic; color: #f2ead8; margin-top: 6px; text-shadow: 0 1px 4px #000; max-width: 420px; text-align: center; }
   #title-screen .t-mid { position: absolute; inset: 0; pointer-events: none; }
   #title-screen .t-cards { position: absolute; left: 24px; top: 50%; transform: translateY(-50%); display: flex; flex-direction: column; gap: 10px; }
@@ -147,11 +252,12 @@
   #title-screen .t-howto b { color: #ffd94d; letter-spacing: 1px; }
   #title-screen .t-buttons { display: flex; gap: 10px; margin-top: auto; pointer-events: auto; }
   #title-screen button { font-family: "Arial Black", sans-serif; font-size: 16px; padding: 12px 26px; border-radius: 999px; border: none; cursor: pointer; }
-  #btn-start { background: linear-gradient(180deg, #ffd94d, #ff9a3d); color: #1c1c1c; }
+  #btn-start { background: #ff8a3d; color: #1c1c1c; }
   #btn-continue { background: #2b6fd0; color: #fff; }
   #title-screen .t-ghost { background: rgba(16,12,28,0.8); color: #f2ead8; border: 1px solid rgba(255,255,255,0.4); }
   #title-screen .t-strip { margin: 14px 0 20px; font-size: 12.5px; letter-spacing: 1.5px; color: #ffd94d; font-weight: 700; text-shadow: 0 1px 4px #000; }
-  #title-screen .t-foot { font-size: 11px; color: rgba(242,234,216,0.6); margin-bottom: 14px; }
+  #title-screen .t-foot { position: absolute; right: 24px; bottom: 14px; font-size: 11px; color: rgba(242,234,216,0.6); text-align: right; line-height: 1.5; }
+  #title-screen .t-controls { position: absolute; left: 24px; bottom: 14px; font-size: 11px; color: rgba(242,234,216,0.7); text-shadow: 0 1px 3px #000; }
   /* Pause screen. */
   #pause-screen { position: absolute; inset: 0; display: none; align-items: center; justify-content: center; background: rgba(10,8,20,0.6); }
   #pause-screen.open { display: flex; }
@@ -174,11 +280,9 @@
   </div>
   <div id="kpd-panel" class="glass">
     <div class="k-title">KPD RESPONSE — AMAN</div>
-    <div class="k-stars">☆☆☆☆☆</div>
     <div class="k-units"><div class="k-row"><span>Tidak ada unit mengejar</span></div></div>
-    <div class="k-sight"></div>
   </div>
-  <div id="cash-line">$12.480 · REP 1320 · FIXER</div>
+  <div id="cash-line"><div class="c-day"><span class="c-daytxt">DAY 1</span><span class="c-clock">18:52</span></div><div class="c-cash">$12.480</div><div class="c-stars">☆☆☆☆☆</div><div class="c-sight"></div></div>
   <div id="stamp">KENCANA BAY · v8 · 19 NOV 2026</div>
   <div id="minimap-wrap">
     <canvas id="minimap" width="220" height="220"></canvas>
@@ -187,22 +291,29 @@
   </div>
   <div id="dialogue" class="glass"><canvas width="64" height="64"></canvas><div><div class="dlg-name"></div><div class="dlg-line"></div></div></div>
   <div id="weapon-bar"></div>
-  <div id="radio-line">GAMELAN FM 101.1 — Bonang Malam</div>
-  <div id="speed"><span class="sp-num">0</span> <span class="sp-unit">KM/H</span><div class="sp-car">GARUDA GT</div><div class="sp-cond">KONDISI 100%</div></div>
+  <div id="weapon-name"></div>
+  <div id="crew-bar"></div>
+  <div id="hit-popup"></div>
+  <div id="radio-line" class="glass"><div class="r-top"><span class="r-note">♪</span><span class="r-station">GAMELAN FM 101.1</span><span class="r-eq"><i></i><i></i><i></i><i></i><i></i></span></div><div class="r-track">Bonang Malam — Gamelan FM</div></div>
+  <div id="speed"><div class="sp-car">GARUDA GT</div><div class="sp-condrow"><span>CONDITION</span><div class="sp-condbar"><div id="cond-fill" style="width:100%"></div></div><span class="sp-condpct">100%</span></div><div class="sp-big"><span class="sp-num">0</span><span class="sp-unit">KM/H</span><span class="sp-gear">G1</span></div><div class="sp-segbar"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div></div>
   <div id="toast"></div>
   <div id="help">WASD jalan/kendara · E masuk/keluar mobil · J tembak · R reload · 0-5 senjata · Z/X/C kru · G garasi · M peta · T radio · P jeda</div>
 
   <div id="map-overlay">
     <div id="map-left">
-      <div id="map-title">PETA KENCANA — GPS AKTIF</div>
+      <div id="map-title">KENCANA BAY · CITY MAP</div>
       <div id="map-sub">Teluk Kencana · 1998 · Tekan M untuk menutup</div>
       <canvas id="map-canvas" width="560" height="560"></canvas>
+      <div id="map-crew"></div>
     </div>
     <div id="map-right">
       <h3>STORY</h3>
       <div id="story-list"></div>
-      <div id="map-legend">◈ Objective / Checkpoint &nbsp;·&nbsp; ● KPD / Polisi &nbsp;·&nbsp; ◆ Musuh / Gang<br>▲ Safehouse / Garasi &nbsp;·&nbsp; ★ Kru / Kontak &nbsp;·&nbsp; ⚑ Balapan &nbsp;·&nbsp; ✚ Senjata &nbsp;·&nbsp; ◐ Respray</div>
+      <div id="map-job"></div>
+      <div id="map-legend"><div class="lg-title">LEGEND</div><div class="lg-grid"><span>▲ You are here</span><span>★ Story contact</span><span>◈ Job objective</span><span>H Safehouse</span><span>✚ Weapons</span><span>◐ Respray</span><span>⚑ Street race</span><span>◆ Property</span></div></div>
       <div id="map-stats"></div>
+      <div id="map-ring"><div id="map-ring-fill"><span>42%</span></div><div id="map-ring-txt"></div></div>
+      <div id="map-actions"><button id="map-close">TUTUP [M]</button><button id="map-title-btn">TITLE</button></div>
     </div>
   </div>
 
@@ -222,9 +333,9 @@
   </div>
 
   <div id="title-screen">
-    <div class="t-over">TELUK KENCANA · 1998</div>
-    <div class="t-logo">KENCANA</div>
-    <div class="t-bay">BAY</div>
+    <div class="t-over">A CRIME STORY IN</div>
+    <div class="t-logo">KENCANA BAY</div>
+    <div class="t-bay">· 1998 ·</div>
     <div class="t-tag">Emas, bensin, dan pengkhianatan — seorang wheelman pulang ke Teluk Kencana.</div>
     <div class="t-mid">
       <div class="t-cards" id="t-cards"></div>
@@ -237,7 +348,8 @@
       <button id="btn-end" class="t-ghost">END GAME</button>
     </div>
     <div class="t-strip">12 STORY MISSIONS · POLICE PURSUIT &amp; HELICOPTER · CAR STEALING · ON-FOOT COMBAT · GARAGE UPGRADES · STREET RACES · CREW · RADIO · SAVES</div>
-    <div class="t-foot">Progress tersimpan otomatis · Kencana Bay, 1998 · v8</div>
+    <div class="t-controls">WASD GERAK · E MASUK MOBIL · J TEMBAK · 0–5 SENJATA · M PETA · T RADIO · G BENGKEL</div>
+    <div class="t-foot">KENCANA BAY 3D · KOTA KENCANA BAY · 1998<br>KARYA ORISINAL · DIBUAT UNTUK MAKE.FUN</div>
   </div>
 
   <div id="pause-screen"><div class="ps-box">
