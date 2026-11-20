@@ -24,6 +24,11 @@ export function createMissions() {
     playSeconds: 0,
     hired: { agus: false, bambang: false, ratna: false },
     unlockedWeapons: new Set([0, 1, 2]),
+    // Staging-only weapon locks (round 9): a shot can show a weapon as
+    // LOCKED on the bar WITHOUT touching `done` — so the mission panel
+    // keeps the true STORY % while the bar matches the reference shot.
+    // Never persisted by save(); load() always resets it to empty.
+    stagedWeaponLocks: new Set(),
     passed: null, // { name, pay, rep, unlocked } shown on the MISSION PASSED screen
     race: null, // { gate, time, best }
   };
@@ -86,6 +91,7 @@ export function createMissions() {
   }
 
   function weaponUnlocked(i) {
+    if (state.stagedWeaponLocks.has(i)) return false;
     const w = WEAPONS[i];
     return state.unlockedWeapons.has(i) || state.done >= w.unlock;
   }
@@ -106,6 +112,7 @@ export function createMissions() {
         playSeconds: save.playSeconds ?? 0, hired: save.hired ?? state.hired,
       });
       state.unlockedWeapons = new Set(save.unlockedWeapons ?? [0, 1, 2]);
+      state.stagedWeaponLocks = new Set(); // staging locks never carry over
     },
     save() {
       return {

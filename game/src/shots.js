@@ -7,6 +7,7 @@ import { THREE } from './three-shim.js';
 import { RACE_GATES } from './missions.js';
 import { GARAGE_POS } from './garage.js';
 import { CHARACTERS } from './pedestrians.js';
+import { buildBoxTruck, buildMotorcycle } from './vehicles.js';
 import { RADIO } from './config.js';
 
 // A session that has really been played, expressed through the same save
@@ -17,7 +18,13 @@ const PLAYED_SAVE = {
   takedowns: 14, carsStolen: 6, stunts: 2150,
   racesWon: 2, racesRun: 3, playSeconds: 3720,
   hired: { agus: true, bambang: false, ratna: true },
-  unlockedWeapons: [0, 1, 2, 3],
+  // Only fists / pistol / Kancil SMG unlocked at this point of the story
+  // (shotgun unlocks at mission 3, the GARUDA rifle at 5, the launcher
+  // at 9) — the chase/combat shots add a staging-only lock for the
+  // shotgun + launcher (see stagedWeaponLocks in missions.js), so the
+  // weapon bar's last slots read LOCKED like the reference chase shot
+  // WITHOUT lowering `done` — the mission panel keeps STORY 42%.
+  unlockedWeapons: [0, 1, 2],
 };
 
 function hudState(ctx, overrides = {}) {
@@ -52,6 +59,12 @@ function stageChase(ctx) {
   const s = ctx.state;
   loadPlayedSession(ctx);
   ctx.missions.state.index = 5; // Balapan Senja
+  // Staging-only lock (round 9): shotgun + launcher read LOCKED on the
+  // weapon bar like the reference chase shot, WITHOUT lowering `done` —
+  // the old `done = 2` override made the mission panel read STORY 17%
+  // while the map read 42%. `done` stays 5 here, so chase, combat and
+  // map all show the same STORY 42% (5/12 missions, REP 1320).
+  ctx.missions.state.stagedWeaponLocks = new Set([3, 5]);
   // The player drives east on the Alun-Alun main road (z = 60), mid-chase.
   s.player.x = -40;
   s.player.z = 60;
@@ -71,18 +84,42 @@ function stageChase(ctx) {
     t.heading = Math.PI / 2;
     t.mesh.rotation.y = Math.PI / 2;
   }
-  // Two KPD cars right behind, lights on — one of them alongside, ahead
-  // and to the right, so a pursuer is actually visible in the frame.
+  // A box truck and a motorcycle in the frame: swap the two nearest
+  // staged traffic cars for freshly built ones — same slots, same
+  // positions, only the mesh changes, so no gameplay value moves.
+  const swapTraffic = (i, mesh) => {
+    const t = ctx.traffic[i];
+    ctx.render.scene.remove(t.mesh);
+    mesh.position.copy(t.mesh.position);
+    mesh.rotation.y = t.mesh.rotation.y;
+    ctx.render.scene.add(mesh);
+    t.mesh = mesh;
+  };
+  swapTraffic(0, buildBoxTruck('#e8a33d'));
+  swapTraffic(1, buildMotorcycle());
+  // The motorcycle would sit in the box truck's lane and be hidden
+  // behind it from the chase camera — move it to the near lane, ahead
+  // and to the right, so it reads as its own vehicle. (Shot mode never
+  // runs the traffic loop, so this staged position is exactly what the
+  // screenshot shows.)
+  ctx.traffic[1].mesh.position.set(-18, 0, 66);
+  // Two KPD cars in the frame, lights on — one ahead on the left lane,
+  // one closer in the left-centre lane INSIDE the guardrails (z 52.8 /
+  // 67.2): the old second car sat at (-22, 47), beyond the north rail,
+  // and the rail cut across its lower body. At (-18, 56) the whole car
+  // — wheels, body, light bar — reads clear of the rail.
   ctx.police.setWanted(4, s.player);
   const cars = ctx.police.units.filter((u) => u.kind === 'car' && u.mesh.visible);
-  if (cars[0]) { cars[0].mesh.position.set(-68, 0, 56); cars[0].mesh.rotation.y = Math.PI / 2; cars[0].dist = 28; cars[0].status = 'MENGEJAR'; }
-  if (cars[1]) { cars[1].mesh.position.set(-22, 0, 47); cars[1].mesh.rotation.y = Math.PI / 2; cars[1].dist = 19; cars[1].status = 'MENGEJAR'; }
-  // Helicopter above and ahead, spotlight on the road — staged far
-  // enough ahead (38u, y 16) that it reads whole and small in the frame
-  // instead of dominating the sky, with the cone still on the road.
+  if (cars[0]) { cars[0].mesh.position.set(-8, 0, 50); cars[0].mesh.rotation.y = Math.PI / 2; cars[0].dist = 28; cars[0].status = 'MENGEJAR'; }
+  if (cars[1]) { cars[1].mesh.position.set(-18, 0, 56); cars[1].mesh.rotation.y = Math.PI / 2; cars[1].dist = 22; cars[1].status = 'MENGEJAR'; }
+  // Helicopter above and ahead, spotlight on the road — staged low and
+  // centred (y 11, z 42) so it reads whole, clear of the top edge and
+  // clear of the weapon bar at the top of the frame (round 7: moved
+  // north from z 52 so the body sits left of the six weapon slots),
+  // with the cone on the road.
   const heli = ctx.police.units.find((u) => u.kind === 'heli');
   if (heli) {
-    heli.mesh.position.set(-2, 16, 56);
+    heli.mesh.position.set(-2, 11, 42);
     heli.mesh.rotation.y = Math.PI;
     heli.dist = 38;
     heli.status = 'SPOTLIGHT';
@@ -110,6 +147,10 @@ function stageCombat(ctx) {
   const s = ctx.state;
   loadPlayedSession(ctx);
   ctx.missions.state.index = 8; // Heat Wave
+  // Same staging lock as the chase shot: shotgun + launcher LOCKED on
+  // the weapon bar, `done` stays 5 so the panel reads STORY 42% like
+  // the map (round 9: the old `done = 2` made it read 17% here).
+  ctx.missions.state.stagedWeaponLocks = new Set([3, 5]);
   ctx.render.setNight(true);
   ctx.world.setNight(true);
   s.night = true;
@@ -160,6 +201,15 @@ function stageCombat(ctx) {
     r.rotation.y = 0.8;
     ctx.render.scene.add(r);
   }
+  // Zebra crossing ahead of the shootout, on the road.
+  for (let i = 0; i < 5; i += 1) {
+    const stripe = new THREE.Mesh(
+      new THREE.BoxGeometry(1.4, 0.04, 10),
+      new THREE.MeshStandardMaterial({ color: '#f2f2f2', roughness: 0.9 }),
+    );
+    stripe.position.set(222 + i * 2.4, 0.08, -10);
+    ctx.render.scene.add(stripe);
+  }
   // Muzzle flash at the gun + a tracer to the nearest enemy + a damage number.
   // The flash is small (1.4u) with a starburst shape: the old 3u radial blob
   // covered the whole character.
@@ -191,6 +241,21 @@ function stageCombat(ctx) {
   ctx.police.setWanted(2, s.player);
   const cars = ctx.police.units.filter((u) => u.kind === 'car' && u.mesh.visible);
   if (cars[0]) { cars[0].mesh.position.set(186, 0, -26); cars[0].mesh.rotation.y = Math.PI / 2; cars[0].dist = 18; }
+  // Helicopter overhead to the right, spotlight on the road — the
+  // reference combat shot has one, and wanted 2 alone would hide it.
+  // Staged further out and lower than round 6 (x 226, y 5.5, z -8):
+  // at ~33u the 11.6u rotor spans ~250px, so the whole helicopter —
+  // body, tail, rotor — fits inside the frame, clear of the weapon bar
+  // (top) and the KPD panel (right), with the KPD decal still readable
+  // and the spotlight cone landing on the zebra crossing.
+  const heli = ctx.police.units.find((u) => u.kind === 'heli');
+  if (heli) {
+    heli.mesh.visible = true;
+    heli.mesh.position.set(226, 5.5, -8);
+    heli.mesh.rotation.y = Math.PI * 0.75;
+    heli.dist = 33;
+    heli.status = 'SPOTLIGHT';
+  }
   s.objective = { x: 240, z: -60 };
   s.weapon = 2;
   s.ammo[2] = 30;
@@ -200,6 +265,10 @@ function stageCombat(ctx) {
   const focus = { x: s.player.x, z: s.player.z, heading: s.player.heading, speed: 0 };
   ctx.render.snapCamera(focus);
   ctx.hud.setDialogue(CHARACTERS.ratna, 'Raka, gengnya di depan kasino — habisi mereka, lalu kabur lewat gang!');
+  // The red 'HIT! -12 HP' popup, like the reference combat shot: sticky,
+  // because a plain hitPopup hides after 900 ms while the shot page
+  // paints two slow SwiftShader frames before the screenshot is taken.
+  ctx.hud.hitPopup(12, true);
   return { focus, hudState: hudState(ctx) };
 }
 

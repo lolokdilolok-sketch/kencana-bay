@@ -12,10 +12,11 @@
 import { THREE, box, cylinder } from './three-shim.js';
 
 export const CHARACTERS = {
-  wheelman: { name: 'Raka', role: 'Wheelman', hair: 'black', shirt: '#e87f2e', shirtPat: '#ffd94d', pants: '#232c4a', skin: '#f2c184' },
+  wheelman: { name: 'Raka', role: 'Wheelman', hair: 'black', shirt: '#3d8a4b', shirtPat: '#ffd94d', pants: '#232c4a', skin: '#f2c184' },
   ratna: { name: 'Ratna', role: 'Fixer · Contacts', hair: 'ponytail', shirt: '#8a4bd0', shirtPat: '#ff9ad5', pants: '#2a2a33', skin: '#f7d0a8', earrings: true },
   agus: { name: 'Agus Prasetyo', role: 'Driver · Getaway', hair: 'buzz', shirt: '#3d6fb5', shirtPat: '#9ac2ff', pants: '#232c4a', skin: '#d9a06a', moustache: 'thin' },
   bambang: { name: 'Bambang', role: 'Mechanic · Bengkel', hair: 'bandana', shirt: '#4b7d4b', shirtPat: '#c9c9c9', pants: '#3a3a3a', skin: '#c68a52', moustache: 'thick', rolledSleeves: true },
+  slamet: { name: 'Slamet', role: 'Driver · Balapan', hair: 'black', shirt: '#e87fb5', shirtPat: '#ffd94d', pants: '#2a2a33', skin: '#d9a06a' },
   wanto: { name: 'Wanto', role: 'Komisaris KPD', hair: 'cap', shirt: '#2b4a8a', shirtPat: '#ffd94d', pants: '#1c2440', skin: '#e8b078' },
   enemy: { name: 'Geng Segara', role: 'Musuh', hair: 'spiky', shirt: '#c94b4b', shirtPat: '#5a1f1f', pants: '#2a2a2a', skin: '#b98a5a', scar: true },
   ped: { name: 'Warga', role: 'Pejalan kaki', hair: 'bun', shirt: '#7fb5d0', shirtPat: '#ffffff', pants: '#4a4a55', skin: '#e2ac7e' },
@@ -45,6 +46,10 @@ export function buildMinifig(def, scale = 1) {
     const shoe = box(0.16, 0.09, 0.3, '#1c1c1c');
     shoe.position.set(0, -0.8, 0.05);
     hip.add(shoe);
+    // White sole under the shoe, so the feet read at a glance.
+    const sole = box(0.17, 0.03, 0.32, '#f2f2f2');
+    sole.position.set(0, -0.855, 0.05);
+    hip.add(sole);
     hip.position.set(side * 0.11, 0.85, 0);
     return hip;
   }
@@ -68,6 +73,21 @@ export function buildMinifig(def, scale = 1) {
   const collar = box(0.24, 0.05, 0.03, def.shirtPat);
   collar.position.set(0, 1.42, 0.12);
   g.add(collar);
+  // Patterned shirt (round 7, like the reference character's patterned
+  // red shirt): a 2x2 motif of accent squares on the chest and two on
+  // the back, so the shirt reads as patterned cloth, not a flat print.
+  for (const px of [-0.09, 0.09]) {
+    for (const py of [1.06, 1.24]) {
+      const motif = box(0.08, 0.08, 0.015, def.shirtPat);
+      motif.position.set(px, py, 0.125);
+      g.add(motif);
+    }
+  }
+  for (const px of [-0.09, 0.09]) {
+    const motif = box(0.08, 0.08, 0.015, def.shirtPat);
+    motif.position.set(px, 1.15, -0.125);
+    g.add(motif);
+  }
   // Arms: shoulder pivot — upper arm (sleeve), forearm (skin), hand.
   // Rolled sleeves (Bambang the mechanic) show more forearm.
   function arm(side) {
@@ -102,18 +122,27 @@ export function buildMinifig(def, scale = 1) {
   head.position.y = 1.6;
   head.castShadow = true;
   g.add(head);
+  // Eyes + brows + mouth: a simple face, differentiated per character.
+  // Ratna: bigger eyes, thin arched brows, small smile. Enemy: small eyes,
+  // slanted angry brows, flat mouth. Bambang: thick brows, wide smile.
+  // Agus: flat thin mouth. Slamet: tidy brows, small smile.
+  const eyeR = def.hair === 'ponytail' ? 0.022 : def.hair === 'spiky' ? 0.015 : 0.018;
+  const browH = def.hair === 'bandana' ? 0.02 : def.hair === 'ponytail' ? 0.008 : 0.012;
   for (const sx of [-0.05, 0.05]) {
-    const eye = new THREE.Mesh(new THREE.SphereGeometry(0.018, 8, 6), dark);
+    const eye = new THREE.Mesh(new THREE.SphereGeometry(eyeR, 8, 6), dark);
     eye.position.set(sx, 1.62, 0.124);
     g.add(eye);
-    const brow = box(0.055, 0.012, 0.01, '#1c1c1c');
-    brow.position.set(sx, 1.665, 0.118);
+    const brow = box(0.055, browH, 0.01, '#1c1c1c');
+    brow.position.set(sx, def.hair === 'ponytail' ? 1.672 : 1.665, 0.118);
+    if (def.hair === 'spiky') brow.rotation.z = -Math.sign(sx) * 0.35; // angry slant
     g.add(brow);
   }
   const nose = box(0.03, 0.06, 0.03, def.skin);
   nose.position.set(0, 1.58, 0.128);
   g.add(nose);
-  const mouth = box(0.07, 0.012, 0.012, '#5a2a2a');
+  const mouthW = def.hair === 'bandana' ? 0.09 : def.hair === 'buzz' ? 0.07 : def.hair === 'spiky' ? 0.06 : 0.07;
+  const mouthH = def.hair === 'buzz' || def.hair === 'spiky' ? 0.008 : 0.012;
+  const mouth = box(mouthW, mouthH, 0.012, '#5a2a2a');
   mouth.position.set(0, 1.525, 0.12);
   g.add(mouth);
   // Hair / hat. The cap is tilted so the front hairline sits above the
@@ -294,13 +323,81 @@ export function portraitCanvas(def, size = 96) {
     x.fillStyle = '#c94b4b';
     x.fillRect(size * 0.26, size * 0.2, size * 0.48, size * 0.09);
   }
-  // Eyes + smile.
+  // Eyes — size and lashes differ per character.
+  const eyeR = def.hair === 'ponytail' ? size * 0.045 : def.hair === 'spiky' ? size * 0.028 : size * 0.035;
   x.fillStyle = '#1c1c1c';
-  x.beginPath(); x.arc(size * 0.42, size * 0.42, size * 0.035, 0, Math.PI * 2); x.fill();
-  x.beginPath(); x.arc(size * 0.58, size * 0.42, size * 0.035, 0, Math.PI * 2); x.fill();
-  x.strokeStyle = '#1c1c1c';
-  x.lineWidth = size * 0.03;
-  x.beginPath(); x.arc(size / 2, size * 0.46, size * 0.1, 0.15 * Math.PI, 0.85 * Math.PI); x.stroke();
+  for (const s of [-1, 1]) {
+    x.beginPath(); x.arc(size * (0.5 + s * 0.08), size * 0.42, eyeR, 0, Math.PI * 2); x.fill();
+    if (def.hair === 'ponytail') {
+      // lashes: two tiny strokes above each eye
+      x.strokeStyle = '#1c1c1c';
+      x.lineWidth = size * 0.012;
+      x.beginPath();
+      x.moveTo(size * (0.5 + s * 0.08) - size * 0.02, size * 0.42 - eyeR);
+      x.lineTo(size * (0.5 + s * 0.08) - size * 0.03, size * 0.42 - eyeR - size * 0.04);
+      x.moveTo(size * (0.5 + s * 0.08) + size * 0.02, size * 0.42 - eyeR);
+      x.lineTo(size * (0.5 + s * 0.08) + size * 0.03, size * 0.42 - eyeR - size * 0.04);
+      x.stroke();
+    }
+  }
+  // Brows — shape differs per character.
+  x.strokeStyle = HAIR_COLORS[def.hair] ?? '#1c1c1c';
+  if (def.hair === 'bandana') {
+    x.lineWidth = size * 0.04; // thick straight
+    x.beginPath();
+    x.moveTo(size * 0.36, size * 0.34);
+    x.lineTo(size * 0.47, size * 0.34);
+    x.moveTo(size * 0.53, size * 0.34);
+    x.lineTo(size * 0.64, size * 0.34);
+    x.stroke();
+  } else if (def.hair === 'ponytail') {
+    x.lineWidth = size * 0.014; // thin arched
+    x.beginPath();
+    x.arc(size * 0.42, size * 0.35, size * 0.055, Math.PI * 1.15, Math.PI * 1.85);
+    x.arc(size * 0.58, size * 0.35, size * 0.055, Math.PI * 1.15, Math.PI * 1.85);
+    x.stroke();
+  } else if (def.hair === 'spiky') {
+    x.lineWidth = size * 0.024; // slanted angry
+    x.beginPath();
+    x.moveTo(size * 0.37, size * 0.33);
+    x.lineTo(size * 0.47, size * 0.36);
+    x.moveTo(size * 0.63, size * 0.33);
+    x.lineTo(size * 0.53, size * 0.36);
+    x.stroke();
+  } else {
+    x.lineWidth = size * 0.02; // straight thin
+    x.beginPath();
+    x.moveTo(size * 0.37, size * 0.34);
+    x.lineTo(size * 0.46, size * 0.34);
+    x.moveTo(size * 0.54, size * 0.34);
+    x.lineTo(size * 0.63, size * 0.34);
+    x.stroke();
+  }
+  // Mouth — smile differs per character.
+  x.strokeStyle = '#6a3a2a';
+  if (def.hair === 'buzz' || def.hair === 'spiky') {
+    x.lineWidth = size * 0.02; // flat thin line
+    x.beginPath();
+    x.moveTo(size * 0.45, size * 0.56);
+    x.lineTo(size * 0.55, size * 0.56);
+    x.stroke();
+  } else if (def.hair === 'bandana') {
+    x.lineWidth = size * 0.02; // wide smile
+    x.beginPath();
+    x.arc(size / 2, size * 0.5, size * 0.11, Math.PI * 0.15, Math.PI * 0.85);
+    x.stroke();
+  } else if (def.hair === 'ponytail') {
+    x.lineWidth = size * 0.02; // small smile, pink lips
+    x.strokeStyle = '#e87fb5';
+    x.beginPath();
+    x.arc(size / 2, size * 0.52, size * 0.06, Math.PI * 0.15, Math.PI * 0.85);
+    x.stroke();
+  } else {
+    x.lineWidth = size * 0.02; // default smile
+    x.beginPath();
+    x.arc(size / 2, size * 0.46, size * 0.1, 0.15 * Math.PI, 0.85 * Math.PI);
+    x.stroke();
+  }
   if (def === CHARACTERS.wheelman) {
     x.fillStyle = '#111111';
     x.fillRect(size * 0.34, size * 0.38, size * 0.32, size * 0.07);

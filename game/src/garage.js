@@ -300,6 +300,66 @@ export function createGarage(scene) {
     tool.position.set(-14.55, 2.3 + i * 0.6, 3.6 + i * 1.2);
     room.add(tool);
   }
+  // Engine on a stand, foreground LEFT — the classic garage centrepiece
+  // that was missing: a block on an A-frame stand, valve cover, intake
+  // and pulley, with wrenches and an oil stain at its feet. It sits at
+  // (-2, 6.5), ~11u from the garage camera: far enough that the whole
+  // stand (base to valve cover) fits in the frame, left of the centred
+  // dialogue box and below the garage panel, facing the camera (the
+  // intake + pulley point at +x/+z, rotation 1.48). At its old spot
+  // (7, 5.5) it was 3u from the camera — huge, cut off by the bottom
+  // edge and half hidden behind the dialogue box.
+  const engineStand = new THREE.Group();
+  const standPost = box(0.16, 1.1, 0.16, '#333a44', { metal: 0.6, rough: 0.4 });
+  standPost.position.y = 0.55;
+  engineStand.add(standPost);
+  const standBase = box(0.9, 0.1, 0.9, '#333a44', { metal: 0.6, rough: 0.4 });
+  standBase.position.y = 0.05;
+  engineStand.add(standBase);
+  const standHead = box(0.5, 0.3, 0.3, '#c9a227', { metal: 0.6, rough: 0.4 });
+  standHead.position.set(0, 1.15, 0);
+  engineStand.add(standHead);
+  const block = box(0.9, 0.6, 0.7, '#2a2a30', { metal: 0.5, rough: 0.5 });
+  block.position.set(0, 1.5, 0);
+  engineStand.add(block);
+  const valveCover = box(0.7, 0.18, 0.5, '#c94b4b', { metal: 0.4, rough: 0.4 });
+  valveCover.position.set(0, 1.88, 0);
+  engineStand.add(valveCover);
+  const intake = box(0.5, 0.22, 0.4, '#c9ced6', { metal: 0.8, rough: 0.3 });
+  intake.position.set(0, 1.55, 0.45);
+  engineStand.add(intake);
+  for (let i = 0; i < 4; i += 1) {
+    const cyl = cylinder(0.09, 0.09, 0.3, '#444444', { metal: 0.7, rough: 0.4 });
+    cyl.position.set(-0.3 + i * 0.2, 1.95, 0);
+    engineStand.add(cyl);
+  }
+  const pulley = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.22, 0.22, 0.1, 16),
+    new THREE.MeshStandardMaterial({ color: '#c9ced6', roughness: 0.3, metalness: 0.8 }),
+  );
+  pulley.rotation.x = Math.PI / 2;
+  pulley.position.set(0, 1.5, 0.42);
+  engineStand.add(pulley);
+  engineStand.position.set(-2, 0, 6.5);
+  engineStand.rotation.y = 1.48;
+  room.add(engineStand);
+  // Wrenches scattered on the floor by the engine stand and the lift.
+  for (const [wx, wz, rot] of [[5.6, 4.6, 0.5], [6.2, 6.4, 1.2], [-4.8, 5.8, 0.9], [3.2, 6.2, 0.2]]) {
+    const wrench = box(0.5, 0.05, 0.12, '#c9ced6', { metal: 0.8, rough: 0.3 });
+    wrench.position.set(wx, 0.04, wz);
+    wrench.rotation.y = rot;
+    room.add(wrench);
+  }
+  // Oil stains under the engine stand and by the back car.
+  for (const [ox, oz, r] of [[-2, 6.5, 0.8], [-10, -3, 1.0]]) {
+    const stain = new THREE.Mesh(
+      new THREE.CircleGeometry(r, 14),
+      new THREE.MeshStandardMaterial({ color: '#1c1c22', roughness: 0.4, transparent: true, opacity: 0.7 }),
+    );
+    stain.rotation.x = -Math.PI / 2;
+    stain.position.set(ox, 0.02, oz);
+    room.add(stain);
+  }
   // Bambang at the bench.
   const bambang = buildMinifig(CHARACTERS.bambang, 1);
   bambang.group.position.set(-11, 0, -7.6);

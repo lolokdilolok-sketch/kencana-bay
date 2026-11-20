@@ -64,7 +64,7 @@ const trafficColors = ['#8a8f96', '#c94b4b', '#2b6fd0', '#e8a33d', '#3d8a4b', '#
 for (let i = 0; i < 14; i += 1) {
   const p = world.randomRoadPoint();
   const horizontal = Math.abs(p.z - Math.round(p.z / 120) * 120) < 1 || rand.chance(0.5);
-  const mesh = buildStreetCar(rand.pick(['sedan', 'sedan', 'taxi', 'van']), rand.pick(trafficColors));
+  const mesh = buildStreetCar(rand.pick(['sedan', 'sedan', 'taxi', 'van', 'truck', 'motorcycle']), rand.pick(trafficColors));
   mesh.position.set(p.x, 0, p.z);
   const heading = horizontal ? (rand.chance(0.5) ? Math.PI / 2 : -Math.PI / 2) : (rand.chance(0.5) ? 0 : Math.PI);
   mesh.rotation.y = heading;
@@ -440,6 +440,7 @@ function stepEnemies(dt) {
       audio.shot();
       if (Math.random() < 0.4) {
         state.player.hp = Math.max(0, state.player.hp - 6);
+        hud.hitPopup(6);
         hud.toast('TERTEMBAK!', 'Cari perlindungan');
       }
     }
@@ -796,6 +797,12 @@ function boot() {
   if (btnContinue) btnContinue.onclick = onStart;
   if (btnLoad) btnLoad.onclick = onStart;
   if (btnEnd) btnEnd.onclick = () => { saveGame(); window.location.reload(); };
+  // Crew bar (bottom-left) and the map action buttons (TUTUP / TITLE).
+  hud.buildCrewBar();
+  const btnMapClose = document.getElementById('map-close');
+  const btnMapTitle = document.getElementById('map-title-btn');
+  if (btnMapClose) btnMapClose.onclick = () => toggleMap();
+  if (btnMapTitle) btnMapTitle.onclick = () => { saveGame(); window.location.reload(); };
   // Debug handle for the automated playtest (state inspection only).
   window.__kencana = { state, missions, police, garage, world, render };
   announce('Kencana Bay. Tekan Spasi atau klik untuk mulai.');

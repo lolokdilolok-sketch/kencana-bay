@@ -14,7 +14,7 @@ const glassMat = new THREE.MeshStandardMaterial({
 /** Lighter glass for the Garuda's rear window, so the driver shows through. */
 const rearGlassMat = new THREE.MeshStandardMaterial({
   color: '#1a2a3a', roughness: 0.25, metalness: 0.1,
-  transparent: true, opacity: 0.45, depthWrite: false,
+  transparent: true, opacity: 0.3, depthWrite: false,
 });
 
 /** White text on a transparent background, for KPD decals and signs. */
@@ -45,10 +45,20 @@ function wheel(r = 0.46) {
   );
   rim.rotation.z = Math.PI / 2;
   g.add(rim);
+  const disc = new THREE.Mesh(
+    new THREE.CylinderGeometry(r * 0.5, r * 0.5, 0.05, 16),
+    new THREE.MeshStandardMaterial({ color: '#c9ced6', roughness: 0.3, metalness: 0.8 }),
+  );
+  disc.rotation.z = Math.PI / 2;
+  g.add(disc);
+  // Red brake caliper at the top of the disc, visible through the spokes.
+  const caliper = box(0.1, r * 0.4, 0.12, '#c94b4b');
+  caliper.position.set(0, r * 0.35, 0);
+  g.add(caliper);
   for (const fx of [-0.18, 0.18]) {
-    for (let i = 0; i < 5; i += 1) {
-      const a = (i / 5) * Math.PI * 2;
-      const spoke = box(0.05, r * 1.05, 0.12, '#c9ced6', { metal: 0.8, rough: 0.3 });
+    for (let i = 0; i < 7; i += 1) {
+      const a = (i / 7) * Math.PI * 2;
+      const spoke = box(0.045, r * 1.05, 0.12, '#c9ced6', { metal: 0.8, rough: 0.3 });
       spoke.position.set(fx, Math.cos(a) * r * 0.3, Math.sin(a) * r * 0.3);
       spoke.rotation.x = a;
       g.add(spoke);
@@ -106,26 +116,42 @@ export function buildSportsCar(color, opts = {}) {
   g.add(shield);
   // Arched roof: two panels meeting at a crown ridge above the cabin, so
   // the roof reads as a curve from behind instead of a flat board.
-  const roofFront = box(W * 0.8, 0.08, 0.95, color, { metal: 0.5, rough: 0.3 });
+  // Roof in a DEEPER shade of the body paint, low metalness (round 9):
+  // the roof panels face the sky, and at metal 0.5 they mirrored the
+  // pink sunset and read pale cream from behind instead of the body
+  // colour. Darkened + rougher, the roof keeps its gold from the chase
+  // camera. Round 10: even duller (metal 0.12, rough 0.68) and the
+  // crown ridge — the highest edge, where the sun highlight sat — gets
+  // its own darker, almost-matte material, so the roof reads evenly
+  // gold without a bright top line. Round 11: highlight killed outright —
+  // metal 0 and rough 0.92/0.95, so the panels are diffuse-only and the
+  // directional sun can no longer put a specular line on the top edge
+  // (round 10 still showed a very soft line at metal 0.12/0.08).
+  // Derived from `color`, so every paint keeps its own roof.
+  const roofColor = `#${new THREE.Color(color).multiplyScalar(0.6).getHexString()}`;
+  const roofOpts = { metal: 0, rough: 0.92 };
+  const ridgeColor = `#${new THREE.Color(color).multiplyScalar(0.45).getHexString()}`;
+  const ridgeOpts = { metal: 0, rough: 0.95 };
+  const roofFront = box(W * 0.8, 0.08, 0.95, roofColor, roofOpts);
   roofFront.position.set(0, 1.47, -L * 0.12 + 0.4);
   roofFront.rotation.x = 0.17;
   g.add(roofFront);
-  const roofRear = box(W * 0.8, 0.08, 0.95, color, { metal: 0.5, rough: 0.3 });
+  const roofRear = box(W * 0.8, 0.08, 0.95, roofColor, roofOpts);
   roofRear.position.set(0, 1.47, -L * 0.12 - 0.47);
   roofRear.rotation.x = -0.17;
   g.add(roofRear);
-  const ridge = box(W * 0.8, 0.05, 0.14, color, { metal: 0.5, rough: 0.3 });
+  const ridge = box(W * 0.8, 0.05, 0.14, ridgeColor, ridgeOpts);
   ridge.position.set(0, 1.55, -L * 0.12 - 0.03);
   g.add(ridge);
   // C-pillars + rear deck close the cabin from behind, so the rear view
   // reads as a coupe instead of an open tub.
   for (const sx of [-1, 1]) {
-    const pillar = box(0.09, 0.5, 0.12, color, { metal: 0.5, rough: 0.3 });
+    const pillar = box(0.09, 0.5, 0.12, roofColor, roofOpts);
     pillar.position.set(sx * W * 0.4, 1.18, -L * 0.3);
     pillar.rotation.x = -0.35;
     g.add(pillar);
   }
-  const deck = box(W * 0.86, 0.05, 0.6, color, { metal: 0.5, rough: 0.3 });
+  const deck = box(W * 0.86, 0.05, 0.6, roofColor, roofOpts);
   deck.position.set(0, 0.9, -L * 0.42);
   g.add(deck);
   for (const sx of [-1, 1]) {
@@ -135,7 +161,7 @@ export function buildSportsCar(color, opts = {}) {
     );
     sideGlass.position.set(sx * W * 0.42, 1.16, -L * 0.12);
     g.add(sideGlass);
-    const pillar = box(0.07, 0.55, 0.07, color, { metal: 0.5, rough: 0.3 });
+    const pillar = box(0.07, 0.55, 0.07, roofColor, roofOpts);
     pillar.position.set(sx * W * 0.4, 1.2, L * 0.14);
     pillar.rotation.x = 0.5;
     g.add(pillar);
@@ -165,27 +191,58 @@ export function buildSportsCar(color, opts = {}) {
   wheelRim.position.set(0.42, 1.06, L * 0.0);
   wheelRim.rotation.x = -0.5;
   g.add(wheelRim);
-  // Human driver, seated high enough that head and shoulders show through
-  // the rear glass from the chase camera, with a headrest behind him.
+  // Human driver, seated so head and shoulders show through the rear
+  // glass from the chase camera, with a headrest behind him — and a
+  // matching passenger headrest. He sits a touch lower now (y 0.16) so
+  // his head clears the headliner.
   if (opts.driver !== false) {
     const d = buildMinifig(CHARACTERS.wheelman, 0.72);
-    d.group.position.set(0.42, 0.24, -L * 0.14);
+    d.group.position.set(0.42, 0.16, -L * 0.14);
     d.group.rotation.y = 0;
     g.add(d.group);
-    const headrest = box(0.34, 0.24, 0.1, '#7a1f1f');
-    headrest.position.set(0.42, 1.32, -L * 0.14 - 0.22);
-    g.add(headrest);
-    for (const px of [-0.1, 0.1]) {
-      const post = box(0.04, 0.16, 0.04, '#1c1c1c');
-      post.position.set(0.42 + px, 1.22, -L * 0.14 - 0.22);
-      g.add(post);
+    for (const sx of [-0.42, 0.42]) {
+      const headrest = box(0.34, 0.24, 0.1, '#7a1f1f');
+      headrest.position.set(sx, 1.28, -L * 0.14 - 0.22);
+      g.add(headrest);
+      for (const px of [-0.1, 0.1]) {
+        const post = box(0.04, 0.16, 0.04, '#1c1c1c');
+        post.position.set(sx + px, 1.18, -L * 0.14 - 0.22);
+        g.add(post);
+      }
     }
   }
-  // Headlights, grille, chrome bumper, splitter.
+  // Hood shut lines: the panel gaps over the front wheels.
+  for (const sx of [-0.8, 0.8]) {
+    const seam = box(0.03, 0.02, L * 0.5, '#1c1c1c');
+    seam.position.set(sx, 0.88, L * 0.12);
+    seam.rotation.x = -0.06;
+    g.add(seam);
+  }
+  // Door shut lines + handles + side indicators, so the flanks read as
+  // real doors, not one smooth slab (round 7, like the reference car).
+  for (const sx of [-1, 1]) {
+    for (const dz of [0.62, -0.72]) {
+      const line = box(0.02, 0.42, 0.03, '#1c1c1c');
+      line.position.set(sx * (W / 2 + 0.01), 0.72, dz);
+      g.add(line);
+    }
+    const handle = box(0.04, 0.05, 0.22, '#d8d8d8', { metal: 0.85, rough: 0.25 });
+    handle.position.set(sx * (W / 2 + 0.02), 0.86, 0.1);
+    g.add(handle);
+    const indicator = box(0.03, 0.07, 0.14, '#ff8a3d', { glow: 0xff8a3d });
+    indicator.position.set(sx * (W / 2 + 0.02), 0.72, L * 0.3);
+    g.add(indicator);
+  }
+  // Headlights, grille, chrome bumper, splitter, fog lights.
   for (const sx of [-0.72, 0.72]) {
-    const light = box(0.42, 0.14, 0.08, '#fff8d0', { glow: 0xfff2b0 });
+    const light = box(0.5, 0.18, 0.08, '#fff8d0', { glow: 0xfff2b0 });
     light.position.set(sx, 0.62, L / 2 + 0.02);
     g.add(light);
+  }
+  for (const sx of [-0.85, 0.85]) {
+    const fog = box(0.14, 0.08, 0.04, '#fff8d0', { glow: 0xfff2b0 });
+    fog.position.set(sx, 0.44, L / 2 + 0.12);
+    g.add(fog);
   }
   const grille = box(0.9, 0.16, 0.06, '#1c1c1c');
   grille.position.set(0, 0.52, L / 2 + 0.02);
@@ -199,10 +256,46 @@ export function buildSportsCar(color, opts = {}) {
   const splitter = box(W * 0.9, 0.06, 0.5, '#1c1c1c');
   splitter.position.set(0, 0.36, L / 2 + 0.2);
   g.add(splitter);
-  // Full-width rear light bar, diffuser, dual exhausts.
-  const tail = box(W * 0.86, 0.12, 0.06, '#d21f2b', { glow: 0xd21f2b });
+  // Full-width rear light bar, chrome strip above it, reverse lights,
+  // trunk-lid seam, license plate, diffuser, dual exhausts. The tail bar
+  // is taller and the chrome strip thicker than round 6, and the plate
+  // is bigger (0.72u) with a dark border, so the rear details read from
+  // the chase camera instead of blurring into one gold slab.
+  const tail = box(W * 0.86, 0.18, 0.06, '#d21f2b', { glow: 0xd21f2b });
   tail.position.set(0, 0.72, -L / 2 - 0.02);
   g.add(tail);
+  const chrome = box(W * 0.86, 0.07, 0.03, '#d8d8d8', { metal: 0.85, rough: 0.25 });
+  chrome.position.set(0, 0.83, -L / 2 - 0.04);
+  g.add(chrome);
+  for (const sx of [-1, 1]) {
+    const rev = box(0.2, 0.12, 0.04, '#f2f2f2', { glow: 0xffffff });
+    rev.position.set(sx * (W * 0.86 / 2 - 0.12), 0.72, -L / 2 - 0.04);
+    g.add(rev);
+  }
+  // Trunk lid seam across the rear deck.
+  const lidSeam = box(W * 0.7, 0.015, 0.03, '#1c1c1c');
+  lidSeam.position.set(0, 0.93, -L * 0.42 + 0.28);
+  g.add(lidSeam);
+  // License plate: KB·1998 on white, dark border for contrast against
+  // the gold body.
+  const plateTex = canvasTexture(160, 44, (x, w, h) => {
+    x.fillStyle = '#1c1c1c';
+    x.fillRect(0, 0, w, h);
+    x.fillStyle = '#f2f2f2';
+    x.fillRect(3, 3, w - 6, h - 6);
+    x.fillStyle = '#1c1c1c';
+    x.font = 'bold 26px system-ui, sans-serif';
+    x.textAlign = 'center';
+    x.textBaseline = 'middle';
+    x.fillText('KB·1998', w / 2, h / 2 + 1);
+  });
+  const plate = new THREE.Mesh(
+    new THREE.PlaneGeometry(0.72, 0.2),
+    new THREE.MeshStandardMaterial({ map: plateTex, roughness: 0.5 }),
+  );
+  plate.position.set(0, 0.56, -L / 2 - 0.06);
+  plate.rotation.y = Math.PI;
+  g.add(plate);
   const diffuser = box(W * 0.7, 0.16, 0.3, '#1c1c1c');
   diffuser.position.set(0, 0.4, -L / 2 - 0.1);
   g.add(diffuser);
@@ -212,13 +305,14 @@ export function buildSportsCar(color, opts = {}) {
     ex.position.set(sx, 0.44, -L / 2 - 0.22);
     g.add(ex);
   }
-  // Big spoiler with white edges.
+  // Thin rear wing with white edges (round 7: slimmer than before, like
+  // the reference car's low rear wing).
   if (opts.spoiler !== false) {
-    const wing = box(W * 0.96, 0.07, 0.55, color, { metal: 0.5, rough: 0.3 });
+    const wing = box(W * 0.96, 0.05, 0.55, color, { metal: 0.5, rough: 0.3 });
     wing.position.set(0, 1.18, -L / 2 + 0.28);
     g.add(wing);
     for (const sx of [-W * 0.48, W * 0.48]) {
-      const edge = box(0.06, 0.18, 0.55, '#f5f5f0');
+      const edge = box(0.06, 0.14, 0.55, '#f5f5f0');
       edge.position.set(sx, 1.18, -L / 2 + 0.28);
       g.add(edge);
     }
@@ -257,13 +351,15 @@ export function buildSportsCar(color, opts = {}) {
  * sedan body) — pass { forceSedan: true } to keep a real sedan. */
 let sedanCount = 0;
 export function buildStreetCar(kind = 'sedan', color = '#8a8f96', opts = {}) {
+  if (kind === 'truck') return buildBoxTruck(color);
+  if (kind === 'motorcycle') return buildMotorcycle();
   if (kind === 'sedan' && !opts.forceSedan) {
     sedanCount += 1;
     if (sedanCount % 2 === 0) kind = 'hatchback';
   }
   const g = new THREE.Group();
   const hb = kind === 'hatchback';
-  const L = kind === 'van' ? 5.2 : hb ? 4.1 : 4.6;
+  const L = opts.length ?? (kind === 'van' ? 5.2 : hb ? 4.1 : 4.6);
   const W = 2.0;
   const bodyMat = new THREE.MeshStandardMaterial({ color, roughness: 0.4, metalness: 0.4 });
   const body = new THREE.Mesh(new THREE.BoxGeometry(W, 0.85, L), bodyMat);
@@ -307,6 +403,23 @@ export function buildStreetCar(kind = 'sedan', color = '#8a8f96', opts = {}) {
     wiper.rotation.x = -0.3;
     g.add(wiper);
   }
+  // Hood + trunk shut lines, side skirts, roof antenna fin, side indicators.
+  for (const sz of [1, -1]) {
+    const seam = box(W * 0.7, 0.015, 0.03, '#1c1c1c');
+    seam.position.set(0, 1.21, sz * L * 0.28);
+    g.add(seam);
+  }
+  for (const sx of [-1, 1]) {
+    const skirt = box(0.06, 0.1, L * 0.5, '#1c1c1c');
+    skirt.position.set(sx * (W / 2 + 0.02), 0.42, 0);
+    g.add(skirt);
+    const indicator = box(0.03, 0.06, 0.12, '#ff8a3d', { glow: 0xff8a3d });
+    indicator.position.set(sx * (W / 2 + 0.02), 1.05, 0.85);
+    g.add(indicator);
+  }
+  const fin = box(0.04, 0.12, 0.3, '#1c1c1c');
+  fin.position.set(0, 1.82, -0.6);
+  g.add(fin);
   // Door shut lines, handles, bumpers, grille, mirrors.
   for (const sx of [-1, 1]) {
     for (const dz of [0.55, -0.65]) {
@@ -359,31 +472,291 @@ export function buildStreetCar(kind = 'sedan', color = '#8a8f96', opts = {}) {
   return g;
 }
 
-/** A KPD patrol car: blue-white livery, KPD decals, push bar, red-blue light bar. */
-export function buildPoliceCar() {
-  const g = buildStreetCar('sedan', '#f2f2f2', { forceSedan: true });
-  const blue = box(2.02, 0.3, 4.62, '#2b6fd0', { metal: 0.3, rough: 0.4 });
-  blue.position.y = 0.62;
-  g.add(blue);
-  const decal = box(2.04, 0.34, 1.6, '#2b6fd0');
-  decal.position.set(0, 0.95, 0.4);
-  g.add(decal);
-  const bar = box(2.0, 0.1, 0.14, '#1c1c1c');
-  bar.position.set(0, 0.5, 2.32);
+/**
+ * A cab-over delivery truck, built like a real one: a cab with a sloped
+ * windshield, grille, bumper, mirrors and roof marker lights, a white
+ * cargo box with a blue stripe and a KENCANA EXPRESS logo, rear doors,
+ * six wheels. Faces +z like every other vehicle.
+ */
+export function buildBoxTruck(color = '#e8a33d') {
+  const g = new THREE.Group();
+  const W = 2.5;
+  // Chassis.
+  const chassis = box(W * 0.8, 0.3, 6.0, '#1c1c1c');
+  chassis.position.set(0, 0.45, 0);
+  g.add(chassis);
+  // Cargo box: white, blue stripe, logo on both flanks.
+  const cargo = new THREE.Mesh(
+    new THREE.BoxGeometry(W, 2.8, 4.4),
+    new THREE.MeshStandardMaterial({ color: '#f2f2f2', roughness: 0.5, metalness: 0.1 }),
+  );
+  cargo.position.set(0, 1.9, -1.2);
+  cargo.castShadow = true;
+  g.add(cargo);
+  const stripe = box(W + 0.04, 0.5, 4.44, '#2b6fd0');
+  stripe.position.set(0, 1.5, -1.2);
+  g.add(stripe);
+  // Logo texture drawn wide (512x192) so 'KENCANA EXPRESS' fits whole —
+  // the old 256-wide texture clipped both ends of the name.
+  const logoTex = canvasTexture(512, 192, (x, w, h) => {
+    x.clearRect(0, 0, w, h);
+    x.fillStyle = '#2b6fd0';
+    x.font = 'bold 48px system-ui, sans-serif';
+    x.textAlign = 'center';
+    x.textBaseline = 'middle';
+    x.fillText('KENCANA EXPRESS', w / 2, h / 2);
+  });
+  for (const sx of [-1, 1]) {
+    const logo = new THREE.Mesh(
+      new THREE.PlaneGeometry(3.4, 1.28),
+      new THREE.MeshStandardMaterial({ map: logoTex, transparent: true, roughness: 0.5 }),
+    );
+    logo.position.set(sx * (W / 2 + 0.02), 2.5, -1.2);
+    logo.rotation.y = sx * Math.PI / 2;
+    g.add(logo);
+  }
+  // Logo on the REAR doors too: the chase camera sees the truck's tail,
+  // not its flanks, so the flanks alone never read in the screenshot.
+  const rearLogo = new THREE.Mesh(
+    new THREE.PlaneGeometry(2.2, 0.82),
+    new THREE.MeshStandardMaterial({ map: logoTex, transparent: true, roughness: 0.5 }),
+  );
+  rearLogo.position.set(0, 2.5, -3.46);
+  rearLogo.rotation.y = Math.PI;
+  g.add(rearLogo);
+  // Rear doors: shut lines, handles, taillights.
+  for (const sx of [-0.55, 0.55]) {
+    const line = box(0.02, 2.4, 0.03, '#888888');
+    line.position.set(sx, 1.9, -3.42);
+    g.add(line);
+    const handle = box(0.14, 0.08, 0.04, '#333333');
+    handle.position.set(sx, 1.9, -3.44);
+    g.add(handle);
+    const tail = box(0.3, 0.2, 0.06, '#d21f2b', { glow: 0xd21f2b });
+    tail.position.set(sx * 1.8, 0.75, -3.44);
+    g.add(tail);
+  }
+  const rearBumper = box(W * 0.96, 0.2, 0.12, '#222831');
+  rearBumper.position.set(0, 0.5, -3.44);
+  g.add(rearBumper);
+  // Cab: box cab with a sloped windshield, grille, bumper, mirrors,
+  // door lines and roof marker lights.
+  const cab = new THREE.Mesh(
+    new THREE.BoxGeometry(W, 2.2, 1.8),
+    new THREE.MeshStandardMaterial({ color, roughness: 0.4, metalness: 0.4 }),
+  );
+  cab.position.set(0, 1.55, 1.9);
+  cab.castShadow = true;
+  g.add(cab);
+  const shield = new THREE.Mesh(
+    new THREE.BoxGeometry(W * 0.84, 0.06, 1.0),
+    glassMat,
+  );
+  shield.position.set(0, 1.95, 2.55);
+  shield.rotation.x = 0.45;
+  g.add(shield);
+  const grille = box(1.2, 0.4, 0.08, '#1c1c1c');
+  grille.position.set(0, 0.85, 2.82);
+  g.add(grille);
+  const bumper = box(W * 0.96, 0.24, 0.14, '#d8d8d8', { metal: 0.85, rough: 0.25 });
+  bumper.position.set(0, 0.5, 2.84);
+  g.add(bumper);
+  for (const sx of [-0.85, 0.85]) {
+    const light = box(0.34, 0.16, 0.08, '#fff8d0', { glow: 0xfff2b0 });
+    light.position.set(sx, 0.85, 2.82);
+    g.add(light);
+    const marker = box(0.12, 0.08, 0.05, '#ff8a3d', { glow: 0xff8a3d });
+    marker.position.set(sx * 0.9, 2.68, 2.78);
+    g.add(marker);
+  }
+  const markerMid = box(0.12, 0.08, 0.05, '#ff8a3d', { glow: 0xff8a3d });
+  markerMid.position.set(0, 2.68, 2.78);
+  g.add(markerMid);
+  for (const sx of [-1, 1]) {
+    const line = box(0.02, 1.0, 0.03, '#1c1c1c');
+    line.position.set(sx * (W / 2 + 0.01), 1.2, 1.3);
+    g.add(line);
+    const handle = box(0.04, 0.06, 0.24, '#222831');
+    handle.position.set(sx * (W / 2 + 0.02), 1.5, 1.5);
+    g.add(handle);
+    const mirror = box(0.06, 0.18, 0.2, '#1c1c1c');
+    mirror.position.set(sx * (W / 2 + 0.14), 2.0, 2.5);
+    g.add(mirror);
+  }
+  // Six wheels: one front axle, two rear axles.
+  for (const [wx, wz] of [[-1.05, 2.2], [1.05, 2.2], [-1.05, -1.8], [1.05, -1.8], [-1.05, -2.8], [1.05, -2.8]]) {
+    const wh = wheel(0.5);
+    wh.position.set(wx, 0.5, wz);
+    g.add(wh);
+  }
+  return g;
+}
+
+/**
+ * A motorcycle with a rider: torus tyres, disc rims, fuel tank, seat,
+ * tail, fork, handlebar with grips and mirrors, headlight, exhaust,
+ * and a seated rider with legs forward to the pegs and arms to the bars.
+ * Faces +z like every other vehicle.
+ */
+export function buildMotorcycle(color = '#c94b4b') {
+  const g = new THREE.Group();
+  function bikeWheel(z) {
+    const w = new THREE.Group();
+    const tire = new THREE.Mesh(
+      new THREE.TorusGeometry(0.34, 0.09, 10, 20),
+      new THREE.MeshStandardMaterial({ color: '#141414', roughness: 0.9 }),
+    );
+    tire.rotation.y = Math.PI / 2;
+    tire.castShadow = true;
+    w.add(tire);
+    const rim = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.22, 0.22, 0.08, 16),
+      new THREE.MeshStandardMaterial({ color: '#c9ced6', roughness: 0.3, metalness: 0.8 }),
+    );
+    rim.rotation.z = Math.PI / 2;
+    w.add(rim);
+    const hub = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.07, 0.07, 0.12, 10),
+      new THREE.MeshStandardMaterial({ color: '#333333', roughness: 0.5 }),
+    );
+    hub.rotation.z = Math.PI / 2;
+    w.add(hub);
+    w.position.set(0, 0.34, z);
+    return w;
+  }
+  g.add(bikeWheel(0.75), bikeWheel(-0.75));
+  const tank = box(0.42, 0.34, 0.7, color, { metal: 0.5, rough: 0.3 });
+  tank.position.set(0, 0.72, 0.15);
+  g.add(tank);
+  const seat = box(0.36, 0.12, 0.55, '#1c1c1c');
+  seat.position.set(0, 0.78, -0.45);
+  g.add(seat);
+  const tail = box(0.34, 0.1, 0.4, color, { metal: 0.5, rough: 0.3 });
+  tail.position.set(0, 0.82, -0.85);
+  tail.rotation.x = 0.15;
+  g.add(tail);
+  for (const sx of [-0.14, 0.14]) {
+    const fork = cylinder(0.035, 0.035, 0.85, '#c9ced6', { metal: 0.8, rough: 0.3 });
+    fork.position.set(sx, 0.62, 0.72);
+    fork.rotation.x = 0.35;
+    g.add(fork);
+  }
+  const bar = cylinder(0.03, 0.03, 0.62, '#1c1c1c');
+  bar.rotation.z = Math.PI / 2;
+  bar.position.set(0, 1.0, 0.42);
   g.add(bar);
-  for (const [sx, col] of [[-0.5, '#ff2e2e'], [0.5, '#2b6fd0']]) {
-    const lamp = box(0.5, 0.14, 0.3, col, { glow: col === '#ff2e2e' ? 0xff2e2e : 0x2b6fd0 });
-    lamp.position.set(sx, 1.82, -0.2);
+  for (const sx of [-0.31, 0.31]) {
+    const grip = cylinder(0.04, 0.04, 0.14, '#1c1c1c');
+    grip.rotation.z = Math.PI / 2;
+    grip.position.set(sx, 1.0, 0.42);
+    g.add(grip);
+    const mirror = box(0.1, 0.07, 0.03, '#1c1c1c');
+    mirror.position.set(sx, 1.12, 0.4);
+    g.add(mirror);
+  }
+  const head = new THREE.Mesh(
+    new THREE.CircleGeometry(0.12, 14),
+    new THREE.MeshBasicMaterial({ color: '#fff8d0' }),
+  );
+  head.position.set(0, 0.78, 0.82);
+  g.add(head);
+  const tailLight = box(0.2, 0.07, 0.04, '#d21f2b', { glow: 0xd21f2b });
+  tailLight.position.set(0, 0.84, -1.06);
+  g.add(tailLight);
+  const exhaust = cylinder(0.07, 0.07, 0.9, '#c9c9c9', { metal: 0.9, rough: 0.2 });
+  exhaust.rotation.x = Math.PI / 2;
+  exhaust.position.set(0.22, 0.42, -0.2);
+  g.add(exhaust);
+  // Rider: seated, legs forward to the pegs, arms forward to the bars.
+  const r = buildMinifig(CHARACTERS.ped, 0.85);
+  r.group.position.set(0, 0.12, -0.35);
+  r.legL.rotation.x = -1.25;
+  r.legR.rotation.x = -1.25;
+  r.armL.rotation.x = -1.0;
+  r.armR.rotation.x = -1.0;
+  g.add(r.group);
+  return g;
+}
+
+/** A KPD patrol car, like the reference photo (IMG_9359): a LONG low white
+ * sedan (5.2u) with a BLACK hood and trunk, a red+blue light bar on the
+ * roof, big red taillights, a black rear window, a rear plate and blue
+ * door badges with white KPD letters — no blue side stripe anymore. */
+export function buildPoliceCar() {
+  const L = 5.2;
+  const g = buildStreetCar('sedan', '#f2f2f2', { forceSedan: true, length: L });
+  // Black hood + black trunk panels on top of the white body.
+  const hood = box(1.7, 0.04, 1.4, '#141414', { metal: 0.4, rough: 0.4 });
+  hood.position.set(0, 1.22, L * 0.28);
+  g.add(hood);
+  const trunk = box(1.7, 0.04, 1.1, '#141414', { metal: 0.4, rough: 0.4 });
+  trunk.position.set(0, 1.22, -L * 0.28);
+  g.add(trunk);
+  // Black rear window: a solid black panel over the sloped rear glass,
+  // so the tail reads black glass from the chase camera.
+  const rearWin = box(1.5, 0.5, 0.04, '#0a0a0a', { metal: 0.2, rough: 0.25 });
+  rearWin.position.set(0, 1.52, -L * 0.29);
+  rearWin.rotation.x = -0.45;
+  g.add(rearWin);
+  // Push bar on the nose.
+  const bar = box(2.0, 0.1, 0.14, '#1c1c1c');
+  bar.position.set(0, 0.5, L / 2 + 0.02);
+  g.add(bar);
+  // Light bar on the roof: a black base + a red lamp (left) + a blue
+  // lamp (right). Unlit basic materials, so the red/blue read as pure
+  // saturated colour instead of washing out to peach under the bright
+  // sunset exposure (the old emissive lamps did).
+  const base = box(1.5, 0.1, 0.5, '#1c1c1c');
+  base.position.set(0, 1.84, -0.2);
+  g.add(base);
+  for (const [sx, col] of [[-0.38, '#ff2020'], [0.38, '#2266ff']]) {
+    const lamp = new THREE.Mesh(
+      new THREE.BoxGeometry(0.62, 0.2, 0.42),
+      new THREE.MeshBasicMaterial({ color: col }),
+    );
+    lamp.position.set(sx, 1.95, -0.2);
     g.add(lamp);
   }
-  // KPD door decals on both sides.
+  // Big red taillights, proud of the small stock ones (same unlit
+  // material, so they read red, not peach).
+  for (const sx of [-0.62, 0.62]) {
+    const tail = new THREE.Mesh(
+      new THREE.BoxGeometry(0.6, 0.22, 0.06),
+      new THREE.MeshBasicMaterial({ color: '#ff2020' }),
+    );
+    tail.position.set(sx, 0.8, -L / 2 - 0.05);
+    g.add(tail);
+  }
+  // Rear license plate: KPD·1998 on white, like the Garuda's KB·1998.
+  const plateTex = canvasTexture(160, 44, (x, w, h) => {
+    x.fillStyle = '#1c1c1c';
+    x.fillRect(0, 0, w, h);
+    x.fillStyle = '#f2f2f2';
+    x.fillRect(3, 3, w - 6, h - 6);
+    x.fillStyle = '#1c1c1c';
+    x.font = 'bold 24px system-ui, sans-serif';
+    x.textAlign = 'center';
+    x.textBaseline = 'middle';
+    x.fillText('KPD·1998', w / 2, h / 2 + 1);
+  });
+  const plate = new THREE.Mesh(
+    new THREE.PlaneGeometry(0.72, 0.2),
+    new THREE.MeshStandardMaterial({ map: plateTex, roughness: 0.5 }),
+  );
+  plate.position.set(0, 0.56, -L / 2 - 0.08);
+  plate.rotation.y = Math.PI;
+  g.add(plate);
+  // Blue door badges with white KPD letters on both sides.
   const kpdTex = textTexture('KPD', '#ffffff', 64);
   for (const sx of [-1, 1]) {
+    const badge = box(0.05, 0.5, 1.6, '#2b6fd0', { metal: 0.3, rough: 0.4 });
+    badge.position.set(sx * 1.02, 0.95, 0.3);
+    g.add(badge);
     const decal = new THREE.Mesh(
       new THREE.PlaneGeometry(1.2, 0.45),
       new THREE.MeshStandardMaterial({ map: kpdTex, transparent: true, roughness: 0.5 }),
     );
-    decal.position.set(sx * 1.03, 0.95, 0.4);
+    decal.position.set(sx * 1.06, 0.95, 0.3);
     decal.rotation.y = sx * Math.PI / 2;
     g.add(decal);
   }
@@ -445,10 +818,25 @@ export function buildHelicopter() {
   const seat2 = box(0.5, 0.5, 0.5, '#2b2b33');
   seat2.position.set(-0.45, -0.1, 1.2);
   g.add(seat2);
+  // Belly fairing: a wider lower fuselage, so the body reads as a real
+  // helicopter hull instead of a plain box.
+  const belly = box(2.6, 0.5, 1.6, '#e8e8e8', { metal: 0.3, rough: 0.4 });
+  belly.position.set(0, -0.75, 0.2);
+  g.add(belly);
   // Tail boom, fin, stabilizer, KPD decal.
   const boom = box(0.7, 0.7, 4.6, '#f2f2f2', { metal: 0.3, rough: 0.4 });
   boom.position.set(0, 0.35, -4.2);
   g.add(boom);
+  const boomTex = textTexture('KPD', '#2b6fd0', 48);
+  for (const sx of [-1, 1]) {
+    const decal = new THREE.Mesh(
+      new THREE.PlaneGeometry(1.0, 0.35),
+      new THREE.MeshStandardMaterial({ map: boomTex, transparent: true, roughness: 0.5 }),
+    );
+    decal.position.set(sx * 0.37, 0.5, -4.2);
+    decal.rotation.y = sx * Math.PI / 2;
+    g.add(decal);
+  }
   const fin = box(0.16, 1.6, 1.2, '#2b6fd0');
   fin.position.set(0, 1.1, -6.2);
   g.add(fin);
@@ -467,18 +855,30 @@ export function buildHelicopter() {
     holder.rotation.y = (i * Math.PI) / 2;
     holder.add(blade);
     blade.position.x = 2.9;
+    // Yellow tip cap, so the blade ends read from the ground.
+    const tip = box(0.3, 0.07, 0.36, '#ffd94d');
+    tip.position.set(5.4, 1.45, 0);
+    holder.add(tip);
     rotor.add(holder);
   }
   g.add(rotor);
   g.userData.rotor = rotor;
-  // Faint blur disc: at rest it reads as a spinning rotor.
+  // Blur disc: at rest it reads as a spinning rotor — stronger now, with
+  // a rim ring so the disc edge reads in daylight.
   const blur = new THREE.Mesh(
     new THREE.CircleGeometry(5.8, 32),
-    new THREE.MeshBasicMaterial({ color: '#888888', transparent: true, opacity: 0.07, side: THREE.DoubleSide, depthWrite: false }),
+    new THREE.MeshBasicMaterial({ color: '#888888', transparent: true, opacity: 0.18, side: THREE.DoubleSide, depthWrite: false }),
   );
   blur.rotation.x = -Math.PI / 2;
   blur.position.y = 1.5;
   g.add(blur);
+  const blurRim = new THREE.Mesh(
+    new THREE.RingGeometry(5.4, 5.8, 32),
+    new THREE.MeshBasicMaterial({ color: '#aaaaaa', transparent: true, opacity: 0.3, side: THREE.DoubleSide, depthWrite: false }),
+  );
+  blurRim.rotation.x = -Math.PI / 2;
+  blurRim.position.y = 1.5;
+  g.add(blurRim);
   // Tail rotor.
   const tailRotor = new THREE.Group();
   for (let i = 0; i < 2; i += 1) {

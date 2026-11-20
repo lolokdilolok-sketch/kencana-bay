@@ -14,12 +14,19 @@ export const WORLD = {
 };
 
 export const DISTRICTS = [
-  { id: 'segara', name: 'Pelabuhan Segara', short: 'SEGARA', x0: -330, z0: -330, x1: -110, z1: -110, color: '#5b7d8c', accent: '#7fb3c8', kind: 'port', facade: { cols: 3, litChance: 2, ground: 'roller' } },
-  { id: 'batik', name: 'Kampung Batik', short: 'BATIK', x0: -110, z0: -330, x1: 110, z1: -110, color: '#c98a4b', accent: '#e8b06a', kind: 'kampung', facade: { cols: 3, litChance: 2, ground: 'door' } },
-  { id: 'alun', name: 'Alun-Alun', short: 'ALUN-ALUN', x0: -110, z0: -110, x1: 110, z1: 110, color: '#8a7fd0', accent: '#b3a6ff', kind: 'downtown', facade: { cols: 5, litChance: 3, ground: 'shop' } },
-  { id: 'emas', name: 'Lorong Emas', short: 'LORONG EMAS', x0: 110, z0: -110, x1: 330, z1: 110, color: '#c9a227', accent: '#ffd94d', kind: 'casino', facade: { cols: 4, litChance: 4, ground: 'shop' } },
-  { id: 'pantai', name: 'Pantai Kidul', short: 'PANTAI KIDUL', x0: -330, z0: 110, x1: 110, z1: 330, color: '#e88ca0', accent: '#ffb3c2', kind: 'beach', facade: { cols: 4, litChance: 3, ground: 'shop' } },
-  { id: 'pasar', name: 'Pasar Senja', short: 'PASAR SENJA', x0: 110, z0: 110, x1: 330, z1: 330, color: '#d06a4b', accent: '#ff9a70', kind: 'market', facade: { cols: 4, litChance: 3, ground: 'shop' } },
+  // Bright, vivid district colours (round 7, like the reference map):
+  // saturated teal / orange / gold / coral, so the map mosaic reads
+  // bright instead of muted. Round 14: the two cells that read pink /
+  // purple (Alun-Alun violet, Pantai Kidul pink) are warm grey-brown /
+  // warm tan instead — the map stays bright and colourful from the
+  // other four cells, and the white district names still read on the
+  // warm fills.
+  { id: 'segara', name: 'Pelabuhan Segara', short: 'SEGARA', x0: -330, z0: -330, x1: -110, z1: -110, color: '#2f9ec4', accent: '#6fd3ef', kind: 'port', facade: { cols: 3, litChance: 4, ground: 'roller' } },
+  { id: 'batik', name: 'Kampung Batik', short: 'BATIK', x0: -110, z0: -330, x1: 110, z1: -110, color: '#f59a2e', accent: '#ffc65c', kind: 'kampung', facade: { cols: 3, litChance: 4, ground: 'door' } },
+  { id: 'alun', name: 'Alun-Alun', short: 'ALUN-ALUN', x0: -110, z0: -110, x1: 110, z1: 110, color: '#9a8a72', accent: '#c2b49a', kind: 'downtown', facade: { cols: 5, litChance: 7, ground: 'shop' } },
+  { id: 'emas', name: 'Lorong Emas', short: 'LORONG EMAS', x0: 110, z0: -110, x1: 330, z1: 110, color: '#e8b400', accent: '#ffe14d', kind: 'casino', facade: { cols: 4, litChance: 7, ground: 'shop' } },
+  { id: 'pantai', name: 'Pantai Kidul', short: 'PANTAI KIDUL', x0: -330, z0: 110, x1: 110, z1: 330, color: '#b08a6a', accent: '#d3b294', kind: 'beach', facade: { cols: 4, litChance: 5, ground: 'shop' } },
+  { id: 'pasar', name: 'Pasar Senja', short: 'PASAR SENJA', x0: 110, z0: 110, x1: 330, z1: 330, color: '#ff6a3d', accent: '#ffa07a', kind: 'market', facade: { cols: 4, litChance: 5, ground: 'shop' } },
 ];
 
 export const MISSIONS = [
@@ -41,6 +48,7 @@ export const CREW = [
   { key: 'Z', id: 'agus', name: 'Agus Prasetyo', role: 'Driver · Getaway', hire: 200, color: '#e8a33d', hair: 'buzz', shirt: '#3d6fb5' },
   { key: 'X', id: 'bambang', name: 'Bambang', role: 'Mechanic · Bengkel', hire: 350, color: '#c94b4b', hair: 'bandana', shirt: '#4b7d4b' },
   { key: 'C', id: 'ratna', name: 'Ratna', role: 'Fixer · Contacts', hire: 300, color: '#e87fb5', hair: 'ponytail', shirt: '#8a4bd0' },
+  { key: 'V', id: 'slamet', name: 'Slamet', role: 'Driver · Balapan', hire: 400, color: '#e87fb5', hair: 'black', shirt: '#e87fb5' },
 ];
 
 export const WEAPONS = [
@@ -92,17 +100,24 @@ export const PLAYER = {
 };
 
 export const PALETTE = {
-  sunsetSkyTop: '#2b1e5e',
-  sunsetSkyMid: '#e06a9a',
-  sunsetSkyLow: '#ff9a3d',
+  sunsetSkyTop: '#181842', // round 11: night blue — deep indigo above,
+  // pushed from the round 10 dusk violet #2f2f6b toward the night-highway
+  // reference (still dusk at the horizon, not full night)
+  sunsetSkyMid: '#3a2f47', // round 14: deep indigo-mauve, NOT orange —
+  // the horizon band is gone: the sky near the horizon now reads deep
+  // blue like the top, and the dusk warmth lives only in the clouds
+  // and the lit streets (was #7a4038, still a thin warm line)
+  sunsetSkyLow: '#4a3550', // round 14: deep dusk violet, not orange
+  // (the low band is only a sliver below the horizon now)
   nightSkyTop: '#050510',
   nightSkyMid: '#101a3a',
   nightSkyLow: '#1c2a55',
   sea: '#2b6f8e',
   sand: '#e8c98f',
-  road: '#33333d',
+  road: '#3c3c43', // darker, smoother asphalt (round 8, like the reference
+  // highway — the old #45454c read purple under the pink fog)
   roadLine: '#e8d44d',
-  sidewalk: '#8a8a92',
+  sidewalk: '#8a8578', // round 11: neutral warm grey (was purple-grey #8f8296 — the combat ground still read mauve)
   grass: '#4b7d3d',
   text: '#f2ead8',
   muted: '#b8b0a0',
