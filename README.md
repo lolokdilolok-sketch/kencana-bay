@@ -50,15 +50,28 @@ node serve.ts
 
 ## Screenshots
 
-1. **Chase** — the gold Garuda mid-pursuit on the Alun-Alun main road: traffic
-   ahead, two KPD cars behind, helicopter spotlight, pedestrians on the
-   sidewalks.
-2. **Combat** — a night shootout outside the casino in Lorong Emas, rain,
-   neon, muzzle flash and a tracer.
-3. **Garage** — inside Bengkel Bambang: the Garuda on the lift, stat panel,
-   prices, Bambang.
-4. **Map** — the GPS map after a played session: real stats (14 takedowns,
-   6 cars stolen, $2,150 stunts, 2 of 3 races won), route line, legend.
+1. **Chase** — the gold Garuda mid-pursuit on the Alun-Alun main road at
+   bright-blue 16:00 (round 17): traffic ahead, FOUR white KPD cars
+   ahead, the helicopter with its spotlight cone + light pool, a pink
+   scooter + rider on the right sidewalk, a crowd on the sidewalks,
+   dense palm rows on both sides, the ALUN-ALUN totem whole in frame,
+   and a "PANTAI KIDUL" district title card.
+2. **Combat** — a NIGHT shootout outside the casino in Lorong Emas (23:40,
+   round 20): big moon, the heli's huge spotlight cone + light pool, lit
+   windows, muzzle flashes and glowing tracer beams, enemies facing and
+   aiming back with red ground markers, the '-55' damage number clear of the
+   STOP sign, bystanders, planters + a barrier + two parked cars filling the
+   plaza, and the gold Garuda parked at the right of the frame in side profile.
+3. **Garage** — inside Bengkel Bambang: the Garuda on the lift, front
+   three-quarter, gold roof kept warm (not washed white by the lamps), the
+   BENGKEL BAMBANG sign whole in frame, stat panel, prices, Bambang at his
+   bench, a second mechanic at the car and a customer on the south-east
+   floor, toward the door.
+4. **Map** — the tile-grid GPS map after a played session (round 20):
+   coloured tiles per district, a purple GPS route with coloured
+   checkpoints, story missions + current job on the left, real stats
+   (14 takedowns, 6 cars stolen, $2,150 stunts, 2 of 3 races won) +
+   42% ring + legend on the right, crew bar at the bottom.
 
 ## Tech
 
@@ -72,3 +85,6 @@ node serve.ts
 ## License
 
 MIT
+
+<!-- Round 20: Garuda rebuilt as a FLAT WEDGE (belt 1.16, roof 1.49, crown 0, white corner tail lamps, small black wing, r 0.46 wheels at the flanks) + tile-grid GPS map + night combat 23:40 + dark asphalt + KENCANA title with SAVE button; screenshots re-rendered. -->
+<!-- Round 19: Garuda rebuilt from scratch on the crowned loft (integrated ducktail, swept sphere headlights, dark tan seats, bright chrome exhausts, flat arch rings) + SUV/pickup/minibus lofted; screenshots re-rendered. -->

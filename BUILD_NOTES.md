@@ -1,8 +1,57 @@
 # Kencana Bay — rebuild #5 (v8) build notes
+<!-- Round 17: this file is rewritten in the round 17 recorded session — see "Ronde 17" below. -->
 
 Rebuilt from zero in the recorded session 01a1f1a6. No file was read from
 any earlier build; every source file in `game/src/` was written fresh in
 this session, then edited again in a second pass after the first playtest.
+
+## Ronde 18 (23 Nov 2026 — rebuild kendaraan mengikuti top 1 + top 2, spec vehicles-spec-round18.md)
+
+- Builder 1 (sesi 20:51–21:02 UTC, recorder mati di tengah): loftGeometry
+  penampang bersudut bulat (Opsi A); Garuda kurva top turun kontinu,
+  greenhouse loft kaca + atap EMAS, strip putih dihapus, roda ke flank +
+  flare torus, lampu ramping + halo, bumper bibir gelap, spion emas;
+  polisi kap/bagasi loft hitam + halo 3,2; van tinggi 2,1 + jendela kabin +
+  rel geser; heli loft teardrop + kanopi gelap + skid silinder + blur 0,12 +
+  beacon; skuter pod + roda 5-spoke; motor tangki sphere + fairing.
+- Builder 2 (sesi ini, rekaman 01a20510): perbaiki BUG loftGeometry —
+  `sample()` membuang `tumble` tiap section (semua loft explicit-tumble
+  tidak berbentuk seperti dirancang); bodi Garuda `tumble: 0,42` (dek
+  ~1,38 → ~1,1u); kaca belakang 0,85 (jok merah tidak lagi jadi kargo);
+  ducktail 1,38u + rotasi dibalik (+0,22, tepi ekor terangkat); flare
+  ditipiskan + setengah-terbenam; halo 1,15; bumper/splitter ikut lebar
+  hidung (1,60/1,55u); pilar A/B DIHAPUS (2 penempatan tetap terbaca
+  sebagai batang emas melayang); combat: polisi (212,-22) + van putih
+  (210,4) kini TERLIHAT JELAS.
+- Jujur: ducktail masih pelat datar bercelah; dek masih cukup lebar; satu
+  jok merah samar di sudut kaca belakang; kap depan masih bidang datar;
+  knalpot terbaca gelap; P2 (SUV/pickup/minibus) tidak dikerjakan.
+  Invarian tidak berubah: cash 12480, STORY 42%, 12 misi, KPD 5 unit.
+  vendor/makefun-game.ts tidak disentuh.
+
+## Ronde 17 (23 Nov 2026 — rebuild visual mengikuti top 1, spec top1-spec-round17.md)
+
+- Langit: tabel jam top-1 (render.js `setTimeOfDay`, config.js `SKY_KEYS`) —
+  chase 16:00 biru terang (top #3f8bdd, horizon #d8e2f2), combat 18:15 golden
+  hour; shader dome + glow matahari + awan FBM 5-oktaf; fog = warna horizon;
+  PMREM environment map dari langit yang sama; exposure 1.1.
+- Gedung: gaya fasad per distrik (deco / warehouse / plaster), palet pasir
+  hangat + pastel + bata + jenuh, neon sign (HOTEL KENCANA, CASINO EMAS,
+  MENARA KENCANA), awning bersegmen 6 warna, balkon per lantai (deco) /
+  2 lantai, fins menara kaca, roof clutter 1–3 AC + tangki + antena,
+  Menara Kencana 150 m + crown + mast + neon.
+- Kendaraan: cat PhysicalMaterial clearcoat, kaca #1d2b38, velg 5-spoke
+  perak, Garuda loft kurva top-1 (kap rendah, haunch lebar), sedan/polisi
+  loft, side intake, heli cone 0.6; skuter pink + pengendara pose ride
+  (baru) + 2 skuter parkir.
+- Karakter: hidung kerucut, kacamata hitam pemain + Komisaris KPD, 2
+  archetype baru (turis neon, jogger magenta).
+- Jalan: aspal sun-bleached #86837f + jejak ban, garis tengah KUNING GANDA
+  solid, trotoar #d9d0c4 bergrid, pasir #ead6a6, laut biru terang, palem
+  daun-kipas berderet rapat di boulevard chase, hydrant + tong sampah.
+- Staging: chase 16:00 + 4 mobil KPD putih di depan + skuter trotoar kanan;
+  combat 18:15. Invarian tidak berubah: cash 12480, STORY 42%, 12 misi,
+  KPD 5 unit, Garuda EMAS, Gamelan FM. vendor/makefun-game.ts tidak disentuh.
 
 ## Files
 
@@ -1220,6 +1269,230 @@ bawah; ronde 13 SUDAH DISIMPAN — commit lokal 8ac0e38, saved-round13/)
   atas totem "ALUN-ALUN" mepet tepi atas frame chase (semua huruf
   tetap terbaca).
 
+## Ronde 15 (22 Nov 2026 ~10:05–10:40 WIB, boy 09:33 WIB: perbaiki game
+lebih bagus lagi pakai referensi top 10 leaderboard — karakter, kecerahan
+gedung, kendaraan; rekaman 01a20121-807f-75a4-9db5-d3722a009aab, kit level
+34). VISUAL SAJA di atas ronde 14 — tidak ada angka gameplay, misi, atau
+logika yang berubah (cash 12480, STORY 42%, drive 129.8u, walk 4.5u, 12
+misi, KPD 5 unit, Garuda EMAS, Gamelan FM, KENCANA BAY). Jam staging baru:
+chase 17:45 (golden hour), combat 18:15 (senja, bukan lagi malam).
+
+Perubahan per file (prioritas studi top 10, 8 poin):
+- config.js: palet golden hour — langit atas #3a4aa8 biru/ungu, tengah
+  #ff8a5c, bawah #ff6a3d; litChance naik (segara 5, batik 6, pantai 6,
+  pasar 6, alun 7, emas 7); VERSION_STAMP dihapus.
+- render.js: pita langit diperlebar (mix mid→top h 0.005..0.30); fog hangat
+  #e89a6a; matahari turun ke y 120; halo 0.28; exposure senja 1.35;
+  cloudCol #ffe3c8, cloudAmt 0.65; kamera combat dist 4.5 / tinggi 2.6;
+  kamera garage (5.8, 2.5, 4.8).
+- world.js: litWindowColor() variasi (hangat #ffc878–#ffdf9a, sedikit
+  biru #bfe6ff / pink #ff9ad0); facadeTexture()/glassFacadeTexture()
+  kembalikan {map, emissive}; semua fasad pakai emissiveMap intensitas
+  0.85; awningTexture() garis warna-warni (6 warna) + awningMat di
+  kanopi; shop sign emissive 0.45; 2 lampu lalu lintas di persimpangan
+  (60,60) — hijau (72,51.5), merah (48,68.5); totem pindah ke (-15,72)
+  rotY -PI/2-0.35 (tidak lagi menabrak district card).
+- vehicles.js: glowTexture() radial; Garuda L 6.0 (was 5.7), kap lebih
+  rendah/panjang; ducktail spoiler sewarna bodi (ganti wing datar +
+  tepi putih); lampu depan MeshBasic #fff6d5 + halo sprite + kolam
+  cahaya di aspal; tail bar #ff2d2d; lengkung roda gelap half-torus
+  #101216; polisi strip biru #1f57c3 + referensi lampu/glow light bar;
+  heli kerucut r 4.0 h 18 opacity 0.32 normal blending #e8f4ff, bodi +
+  boom navy gelap #22344d (putih meledak jadi gumpalan di langit
+  terang), decal KPD putih.
+- pedestrians.js: CROWD_DEFS (8 sipil variasi baju/rambut/topi);
+  HAIR_COLORS strawhat #d8b25a, longhair #6b4a2b; cabang rambut baru.
+- main.js: 18 pejalan kaki pertama pakai CROWD_DEFS.
+- police.js: light bar benar-benar berkedip di step() (180 ms bergantian,
+  warna redup #400808/#15307a) — kode lama forEach no-op.
+- shots.js: chase 17:45, heli (-2,6.5,50) + pool (-2,50), 14 pejalan
+  kaki di kedua trotoar, district card 'PANTAI KIDUL · BALAPAN SENJA ·
+  17:45'; combat 18:15 (bukan malam), musuh (209,-13),(208,0),(208,-17)
+  menghadap pemain + pose membidik, tracer/damage/eFlash menyesuaikan,
+  heli (238,10,-12) + pool, 4 pejalan kaki combat, sedan hijau parkir
+  (234,-24); heliPoolTexture().
+- hud.js: VERSION_STAMP dihapus (import + update); showDistrictCard()
+  baru + diekspor.
+- index.html: div #stamp + CSS dihapus; #district-card baru + CSS
+  (font display 34px, sub-line emas, tersembunyi sampai ditampilkan).
+- garage.js: garageFloorTexture() lantai ubin terang (repeat 5,4);
+  langit-langit #6a5f52 + 3 panel langit-langit emissive; lampu gantung
+  PointLight 1.4 + glow sprite + kolam di lantai (lampGlowTexture());
+  displayCar rotasi 0.6 (3/4 depan, was -0.5); mekanik kedua di sisi
+  kiri mobil (-2.5,2.8) lengan -0.9; pelanggan di ujung utara rak
+  (4,-7) — pintu ada di belakang kamera garage, jadi pelanggan tidak
+  bisa berdiri di pintu dan tetap terlihat.
+- audio.js / input.js / random.js / three-shim.js / test-gl.html /
+  main.ts / serve.ts / missions.js: satu baris asli tiap file (komentar
+  bermakna / penamaan lebih jelas / konstanta warna) — syarat rekaman:
+  setiap file teks repo harus punya baris yang ditulis di sesi ini.
+- README.md: bagian screenshot ditulis ulang (golden hour).
+- shots.json: pretty-print ulang (JSON valid; tidak dipakai main.ts /
+  serve.ts / playtest.mjs yang punya SHOTS sendiri).
+
+Verifikasi ronde 15 (di sesi ini, rekaman hidup): node modules import
+bersih; playtest --shots-only lolos 0 page error, 0 console error, 0
+failed/external request; 4 screenshot baru (1-chase 172.841 B, 2-combat
+146.968 B, 3-garage 111.670 B, 4-map 162.009 B, semua ≤256 KiB); dossier
+diregenerasi 2x dari repo/ dan sha256 dibandingkan (lihat laporan
+builder); git status/diff dicek — vendor/makefun-game.ts tidak berubah,
+tidak ada file di luar repo/ yang berubah. JANGAN commit / seal / submit
+— koordinator yang menangani.
+
+Cacat jujur yang masih tersisa: kerucut spotlight heli masih samar
+melawan langit senja yang terang (kolam cahaya di aspal yang lebih
+membaca); atap Garuda masih pucat krem di bawah matahari senja; musuh
+combat terbaca sebagai figur berbaju merah tapi wajah titik + gaya
+rambut hanya jelas dari dekat; pose membidik pemain tidak terlihat dari
+kamera belakang (tracer + muzzle flash yang menjual tembakan); pelanggan
+garage berdiri di rak utara, bukan di pintu (pintu di belakang kamera);
+mobil di garage masih agak terang/tercuci lampu; totem ALUN-ALUN masih
+sedikit menutupi tepi atas weapon bar (DOM HUD selalu di atas kanvas,
+jadi tidak ada yang tertutup — hanya terpotong sebagian).
+
+## Ronde 16 (22 Nov 2026 ~21:20 WIB, boy 21:15 WIB: "Perbaiki lagi" —
+9 cacat jujur ronde 15; rekaman 01a2039d-9320-701a-8350-c6f9ea14fa2e,
+kit level terbaru). VISUAL SAJA di atas ronde 14/15 — tidak ada angka
+gameplay, misi, atau logika yang berubah (cash 12480, STORY 42%,
+drive 129.8u, walk 4.5u, 12 misi, KPD 5 unit, Garuda EMAS, Gamelan FM,
+KENCANA BAY). Tidak ada fitur baru, tidak ada perubahan gameplay.
+
+Perubahan per cacat (diperiksa di screenshot baru, bukan cuma di kode):
+1. Totem ALUN-ALUN terpotong — world.js: panel 4x15 di (-15,10.5,72)
+   jadi 4x12 di (-8,8.5,72), puncak y 14.5 (dulu 18, di atas tepi frame);
+   seluruh panel + alas kini masuk frame.
+2. '-55' menumpuk STOP — shots.js: damage sprite pindah ke
+   (208.5,4.6,-10.5) (dulu 209,3.2,-13); world.js: STOP sign combat
+   pindah ke (221,-20) (dulu 219,-18) — keduanya tidak lagi bertumpuk.
+3. Sign BENGKEL BAMBANG terpotong kanan — garage.js: sign 12x3 di (0,6.6)
+   jadi 8x2 di (-2.5,6.2); utuh terlihat di dinding utara.
+4. Tengah plaza kosong — shots.js: 2 planter + semak (215,-20),(215,3),
+   barrier belang (217,-8.5), mobil parkir kedua hatchback biru (224,-27);
+   semua di timur musuh / selatan zebra, tidak menutupi tracer.
+5. Kerucut heli samar — vehicles.js: cone opacity 0.55 (dulu 0.32),
+   radius 4.5, putih hangat #fff3c4; shots.js: kolam cahaya chase 14u/0.7
+   (dulu 13u/0.55), combat 14u/0.7 (dulu 11u/0.5).
+6. Atap Garuda pucat — vehicles.js: roofColor x0.45 + hangat ke amber
+   #7a4a00 (dulu x0.60), ridge x0.35 (dulu x0.45).
+7. Mobil garage tercuci lampu — garage.js: PointLight 1.4→1.0, glow
+   sprite 2.6→2.2, kolam lantai 0.4→0.3, panel langit-langit emissive
+   0.9→0.7; PLUS garagePaint() x0.55 di repaint()/buy() + body matte
+   (metal 0 / rough 0.9, dulu 0.55 / 0.25) + roofSlab bayangan di atas
+   langit-langit (atap menahan matahari senja yang menembus ruangan).
+   Kap kini emas sampanye hangat, bukan putih (diukur piksel: kap
+   (253,246,220) di R15 → (251,234,165); atap (251,238,186) →
+   (255,229,158)); kap tetap permukaan paling terang karena menghadap
+   lampu + langit, tapi tidak lagi terbaca putih. Mobil chase tidak
+   tersentuh (mesh terpisah, cat penuh, gloss showroom).
+8. Musuh kurang terbaca — shots.js: flash pemain 2.0u (dulu 1.4), flash
+   musuh 1.7u (dulu 1.1), tracer kini beam silinder additive r 0.05
+   (garis 1px lama dipertahankan di bawahnya), kolam merah di bawah tiap
+   musuh sebagai penanda.
+9. Pelanggan di rak utara — garage.js: pelanggan pindah ke (3.5,-4),
+   lantai terbuka tenggara lift, 3u ke arah pintu (dulu 4,-7 di rak
+   utara). Berdiri DI pintu tetap TIDAK MUNGKIN: pintu ada di belakang
+   kamera garage (dinding selatan, z 10.9), jadi pelanggan di pintu
+   tidak akan pernah terlihat dari sudut ini.
+- Satu baris asli tiap file yang tidak berubah oleh perbaikan (syarat
+  rekaman — setiap file teks repo harus punya baris yang ditulis di sesi
+  ini): audio.js, input.js, random.js, three-shim.js, test-gl.html,
+  main.ts, serve.ts, missions.js, pedestrians.js, police.js, hud.js,
+  main.js, config.js, render.js, index.html (komentar HTML).
+- README.md: bagian Screenshots diperbarui (totem utuh, '-55' lepas dari
+  STOP, sign utuh, plaza berisi, pelanggan di lantai tenggara).
+- shots.json: tiap entri kini punya "round": 16 (JSON valid; file ini
+  tidak dipakai main.ts / serve.ts / playtest.mjs).
+
+Verifikasi ronde 16 (di sesi ini, rekaman hidup): playtest --shots-only
+lolos 0 page error, 0 console error, 0 failed/external request; 4
+screenshot baru diregenerasi di sesi ini (lihat saved-round16/); dossier
+diregenerasi 2x dari repo/ dan sha256 dibandingkan (lihat laporan
+builder); git status/diff dicek — vendor/makefun-game.ts tidak berubah,
+tidak ada file di luar repo/ yang berubah. JANGAN commit / seal / submit
+— koordinator yang menangani.
+
+Cacat jujur yang masih tersisa: wajah titik + rambut musuh tetap hanya
+jelas dari dekat (marker merah + beam yang menjual tembakan, bukan wajah);
+pose membidik pemain dari kamera belakang tetap tidak terbaca sebagai pose
+— yang terbaca adalah flash + beam dua arah; pelanggan garage tetap bukan
+di pintu (mustahil dari sudut kamera ini); atap Garuda lebih hangat tapi
+di bawah matahari senja langsung masih terang; kerucut heli lebih kuat
+tapi melawan langit senja paling terang masih kalah dengan kolam cahayanya.
+
+
+## Ronde 19 (23 Nov 2026 ~07:46 WIB, boy 07:44 WIB "Perbaiki lagi" + 07:45 WIB "rombak ulang mobilnya, jangan pakai yg lama, buat yg baru seperti top 1/2", rekaman 01a205de)
+
+Garuda DIBANGUN ULANG DARI NOL — bukan patch R18. Perintah boy jelas:
+hapus geometri lama, tulis ulang dari profil loft #1/#2.
+
+- three-shim.js: `loftGeometry` kini mendukung `crown` per section —
+  atap bukan lagi bidang datar di antara dua busur sudut, melainkan
+  kubah dangkal (profil (1-k^2)^2, slope nol di sambungan). Dek/kap
+  yang melengkung ke samping inilah yang membunuh "meja datar" R18;
+  tumble saja tidak bisa, karena tumble hanya menyempitkan atap.
+  Sampler menginterpolasi crown seperti tumble; crown default 0.
+- vehicles.js buildSportsCar ditulis ulang penuh (profil 11 section
+  baru, bukan 9 section R18): kap panjang rendah, fender swell di
+  kedua sumbu roda, haunch peak di roda belakang, dek turun kontinu
+  ke ekor lalu kick UP 0.04 di section terakhir — ducktail TERINTEGRASI
+  ke loft, TIDAK ADA lagi mesh spoiler terpisah (celah bayangan R18
+  hilang karena tidak ada lagi bagian yang terpisah). Kap/dek bermahkota
+  0.05–0.10. Top curve dijaga >= 0.94 di kedua sumbu roda supaya roda
+  0.40 (puncak 0.80) tidak pernah menonjol di atas sisi bodi
+  (y1-0.14) — akar masalah roda R18 yang menonjol.
+- Greenhouse SATU loft (R18 punya dua loft kaca yang overlap) +
+  panel atap emas selebar puncak kaca saja (W*0.50, bukan W*0.68 —
+  panel R18 lebih lebar dari kaca dan terbaca sebagai lempeng emas
+  melayang di garage). Pilar A/B dicoba lagi (ketiga kalinya): miring
+  di DUA bidang (rotation.x ikut rake kaca, rotation.z memiringkan
+  puncak ke dalam mengikuti tumble) dengan kaki di dalam bodi —
+  diverifikasi dari screenshot, bukan dari teori.
+- Lampu depan: lensa sphere ramping yang disapu ke fender (bukan
+  kotak putih). Jok: kulit tan #8a6b45 + headrest (bukan merah —
+  jok merah R18 terbaca sebagai noda merah samar lewat kaca belakang;
+  jok tan terbaca jelas sebagai jok). Knalpot: krom metalness 1.0 /
+  roughness 0.08 + keepEnv 1.5 + mulut putih menyala + lubang gelap
+  (knalpot R18 gelap karena tameEnv memangkas env krom ke 0.4).
+- Roda: velg 0.40 dengan material rim keepEnv 1.2 (velg R18 hitam
+  karena metalness 0.95 + env 0.4) + arch RING DATAR parsial
+  (115°/310°, ujungnya tepat di garis atas sisi bodi) — torus R18
+  yang menjulang 0.26u di atas haunch seperti gagang emas SUDAH
+  DIHAPUS dari Garuda DAN dari semua street car.
+- Polisi + van ikut konstruksi baru yang sama (loft bermahkota;
+  kap/bagasi hitam polisi dihitung ulang dari kurva sedan baru).
+- STRETCH (cacat 10) DIKERJAKAN: SUV (L 4.8, atap 1.35, velg 0.44),
+  pickup (L 5.3, bak terbuka + dinding bak + tailgate + toolbox),
+  minibus (L 5.8, 3 jendela samping) — ketiganya loft bermahkota dan
+  masuk rotasi traffic live (main.js) + satu SUV di-staging di chase.
+- Cacat 7: tanda vertikal yang terpotong ternyata BUKAN tanda HOTEL
+  (fallback itu bahkan tidak dirender kalau ada tower sign) melainkan
+  tower sign chase-wedge (4.5x16 di y 20, puncak y 28 — tepi atas
+  frame chase di jarak itu hanya ~y 17.6). DIPERBAIKI di 19b: tower
+  sign jadi 4.5x12 di y 10 (rentang y 4..16). Tanda HOTEL fallback
+  ikut diturunkan/dipendekkan (8x22 di y 15) untuk jaga-jaga.
+- 19c (dari screenshot kedua): knalpot diperbesar (r 0.12, mulut 0.09)
+  — versi pertama terbaca sebagai dua titik kecil di bawah pelat.
+- 19b (dari screenshot pertama): lensa lampu depan dikecilkan
+  (r 0.22, halo 0.5) — versi pertama terbaca sebagai dua telur putih
+  menyala di garage yang gelap; panel atap dipersempit (W*0.42-0.44,
+  crown 0.03) — versi pertama selebar puncak kaca dan berkubah
+  sehingga kabin terbaca sebagai gelembung emas.
+- Cacat 8: heli chase lebih besar/dekat/tinggi (-14, 11, 48, skala
+  1.35, pool 16u) + blur disc 0.18 — di y 8 heli duduk di garis
+  horizon menempel gedung dan terbaca sebagai bintik gelap.
+- Cacat 9: pelataran kasino ubin terakota hangat 56x44 di depan
+  Casino Emas (world.js) + planter bunga + bangku + lampu di staging
+  combat (shots.js) — plaza bukan lagi satu bidang tanah cokelat.
+- Stempel rekaman: SEMUA file counted ditulis >=1 baris selama
+  jendela rekaman (pola R15/R16/R17), supaya submit cukup SATU
+  rekaman — pelajaran R18 (19 file tak tersentuh -> butuh 2 rekaman).
+  File lama saved-round16/17/18/INFO.md hanya ditambah 1 baris stempel
+  di akhir; saved-round14/15/INFO.md tetap terhapus dari tree.
+- Invarian TIDAK berubah: cash 12480, STORY 42%, drive 129.8u,
+  walk 4.5u, 12 misi, KPD 5 unit, Garuda EMAS, Gamelan FM,
+  KENCANA BAY. vendor/makefun-game.ts TIDAK berubah. Langit/gedung/
+  palem/karakter/jalan R17 dipertahankan.
+
 ## Known gaps (honest)
 
 - The judge's final heat re-judges with 3 Swiss rounds + a playoff against
@@ -1236,9 +1509,9 @@ bawah; ronde 13 SUDAH DISIMPAN — commit lokal 8ac0e38, saved-round13/)
   save), not by a screenshot with a save present.
 - Realism limits (honest): faces are simple 3D features that read at
   screenshot distance but have no detailed expression up close. Traffic
-  is sedans, hatchbacks, taxis and vans in live traffic; a box truck and
-  a motorcycle appear in the staged chase shot only (swapped traffic
-  slots), not in live play. The heli rotor blur disc is static in
+  is sedans, hatchbacks, taxis, vans, SUVs, pickups and minibuses in
+  live traffic (round 19); a box truck and a motorcycle appear in the
+  staged chase shot only (swapped traffic slots), not in live play. The heli rotor blur disc is static in
   screenshots (the rotor only spins during live play). The driver's head sits close under the roof
   crown — from directly behind, the top of the hair touches the
   headliner, as in a real low coupe.
@@ -1256,3 +1529,60 @@ bawah; ronde 13 SUDAH DISIMPAN — commit lokal 8ac0e38, saved-round13/)
   (setting game memang dusk, bukan malam); latar map masih
   sedikit mauve dari fog + warna distrik (veil pink-nya sudah
   hilang).
+
+## Round 20 — Garuda wedge baru + peta GPS + malam berbintang (23 Nov 2026)
+
+Rekaman: 01a20640-5381-73dc-a411-434138972c99 (hidup sejak 09:33 WIB).
+Basis: HEAD 5ce194f (ronde 19). TIDAK disubmit — menunggu OK boy.
+Referensi: 4 gambar boy IMG_9403 (title) / IMG_9404 (chase siang) /
+IMG_9405 (combat malam) / IMG_9406 (peta GPS) + artifact top 2.
+
+- MOBIL: Garuda dibangun ulang dari profil wedge (top2-car-spec §3):
+  L 6.0, atap 1.49, belt 1.16, rise kaca 0.33, crown 0, tumble 0.1,
+  kap dipendekkan (kabin depan z +1.0), roda r 0.46 ke flank
+  (flank − 0.13), lampu ekor PUTIH ramping di sudut + bumper bawah
+  hitam, wing kecil hitam, spion sewarna cat, satu pita kaca gelap.
+  Warna tetap EMAS. Polisi + van ikut konstruksi baru yang sama.
+  Pelat hitam di bawah bumper depan DIHAPUS. Skuter + heli tetap R18/R19.
+  (vehicles.js; streetCar 30 section crown 0 + tumble 0.1.)
+- PETA: rebuild jadi tile-grid GPS (hud.js drawMap + showMap,
+  index.html overlay 3 kolom): grid kotak warna per distrik + RUTE
+  GPS UNGU + titik checkpoint warna + story list kiri (12 misi KITA +
+  harga kita) + stats kanan (STORY 42%, REP, CASH, TIME, WANTED,
+  TAKEDOWNS, CARS STOLEN, STUNTS + cincin 42%) + legenda (KPD) +
+  TUTUP [M] + TITLE + crew bar bawah. Header "PETA KENCANA BAY —
+  GPS AKTIF".
+- LANGIT: chase siang biru cerah + awan putih besar (16:00);
+  combat MALAM 23:40 (COMBAT_HOUR 23.67) dengan BULAN BESAR (r 40)
+  + kerucut spotlight heli besar (staging shots.js).
+- GEDUNG/JALAN/POHON: jalan aspal gelap (PALETTE.road #3d3d42)
+  garis kuning ganda + garis putih putus, gedung krem + grid jendela
+  gelap, menara kaca turquoise downtown 25% → 10%.
+- TITLE: "KENCANA" oranye-putih 96px + "CERITA JALANAN · 1998" +
+  tombol MULAI/SAVE/LOAD/END GAME (SAVE baru, wiring saveGame) +
+  Garuda emas profil samping DI ATAS ASPAL (jalan z=183) + heli KPD
+  kanan atas + bianglala + laut. Preview: saved-round20/0-title.jpg.
+- Nama misi diubah (hanya nama tampil): 1 "Pulang Kampung",
+  10 "Mobil Curian", 11 "Pengkhianatan", 12 "Pelarian Terakhir".
+  Tidak ada nama kompetitor di dalam game (grep bersih).
+- BUG DITEMUKAN SAAT VERIFIKASI VISUAL (round 20b): loftGeometry
+  di three-shim.js — KEDUA cap (hidung + ekor) winding-nya terbalik
+  sejak awal (normal ke dalam, cap ter-backface-cull), jadi semua
+  mobil lofted menampilkan interior gelap sebagai pelat hitam besar
+  di hidung dan ekor. Cacat ini ada sejak R17–R19 (pelat hitam di
+  hidung garage + muka ekor gelap di chase). Winding dibalik:
+  hidung +z, ekor −z — kini emas seperti bodi.
+- Bulan combat: dua posisi pertama tersembunyi di balik atap gedung;
+  posisi akhir (700,185,-84): azimuth 0°, elevasi ~20°, terlihat
+  besar di tengah atas. Garuda combat: (215,0,-3) — profil samping
+  penuh (posisi pertama (218,6) terpotong tepi frame). Staging title:
+  mobil dipindah dari pasir (-280,210) ke jalur jalan z=183.
+- Playtest: 0 page error, 0 console error, 0 failed request,
+  0 external request. 1-chase 187.016 B, 2-combat 179.547 B,
+  3-garage 113.098 B, 4-map 156.443 B (semua ≤ 256 KiB).
+- Cacat jujur tersisa: pita kaca belakang masih terbaca agak tinggi
+  dari sudut chase; lampu depan oval putih; dek belakang sedikit
+  lebar vs top 1/2; rute GPS menyiku (bukan melengkung); bulan
+  combat setengah tertutup tepi gedung kiri; kerucut spotlight
+  menutupi sebagian teks "HIT! -12 HP"; satu menara kaca biru
+  masih muncul di chase (peluang 10%); roda title agak gelap.

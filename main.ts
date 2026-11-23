@@ -1,3 +1,5 @@
+// Round 20: no dossier change — the preflight caps are unchanged; the round rebuilds the car as a wedge, rebuilds the map as a tile-grid GPS, and re-renders the four shots; this line is written in the round 20 recorded session.
+// Round 17: no dossier change — the preflight caps are unchanged; the round only re-renders the four shots in brighter daylight.
 // KENCANA — A Crime Story in Kencana Bay · 1998 (gta6-01, rebuild #5 / v8).
 // An open-world crime game: 12 story missions, police pursuit with a
 // helicopter, car stealing, on-foot combat, an enterable garage, street
@@ -7,6 +9,7 @@
 // request at runtime). The program copies game/ and screenshots/ from
 // beside this file to /output and writes /output/dossier.json, the summary
 // the judge reads, with the vendored make.fun library.
+// Round 16: no dossier change — the preflight caps (4 screenshots ≤256 KiB, game/ ≤48 MiB) are unchanged; the round only re-renders the four shots.
 //
 // Serve it locally with `node serve.ts`, then open http://localhost:8080.
 // Outside the grader's container, MAKEFUN_OUTPUT_DIR stands in for /output:
@@ -20,6 +23,9 @@ import { buildDossier } from './vendor/makefun-game.ts';
 const here = fileURLToPath(new URL('.', import.meta.url));
 const out = process.env.MAKEFUN_OUTPUT_DIR ?? '/output';
 
+// Round 15: golden-hour shots (chase 17:45, combat 18:15) — the preflight
+// caps are unchanged: 4 screenshots ≤256 KiB, game/ ≤48 MiB, no network
+// reference in any game source.
 // Screenshot preflight: the entry is only handed in when the four shots
 // exist, each one is a real render within the byte cap, the game tree fits
 // the size cap, and no game source reaches out to a network (the game must

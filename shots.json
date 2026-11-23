@@ -1,1 +1,22 @@
-[{"name":"1-chase.jpg","query":"?shot=chase&seed=1"},{"name":"2-combat.jpg","query":"?shot=combat&seed=1"},{"name":"3-garage.jpg","query":"?shot=garage&seed=1"},{"name":"4-map.jpg","query":"?shot=map&seed=1"}]
+[
+  {
+    "name": "1-chase.jpg",
+    "query": "?shot=chase&seed=1",
+    "round": 20
+  },
+  {
+    "name": "2-combat.jpg",
+    "query": "?shot=combat&seed=1",
+    "round": 20
+  },
+  {
+    "name": "3-garage.jpg",
+    "query": "?shot=garage&seed=1",
+    "round": 20
+  },
+  {
+    "name": "4-map.jpg",
+    "query": "?shot=map&seed=1",
+    "round": 20
+  }
+]

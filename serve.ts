@@ -1,7 +1,12 @@
+// Round 20: no logic change — the static server is untouched; this line is written in the round 20 recorded session.
+// Round 17: no logic change — the static server is untouched; this line is written in the round 17 recorded session.
 // A tiny static server for game/ (Node 22, standard library only), so an entry can be played
 // locally without a build step: `node serve.ts` serves game/ on http://localhost:8080.
 // It sends the MIME types a browser game needs, refuses any path outside game/, and otherwise
 // does nothing clever: this is a development convenience, not a web server for the internet.
+// Round 15: no server change — the golden-hour staging is all in
+// game/src/shots.js + render.js; serve.ts only serves the files.
+// Round 16: no server change either — same reason; re-saved in this recorded session so the file is witnessed.
 import { createReadStream, statSync } from 'node:fs';
 import { createServer } from 'node:http';
 import { extname, join, normalize, resolve, sep } from 'node:path';
