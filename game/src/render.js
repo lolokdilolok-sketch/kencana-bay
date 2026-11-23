@@ -1,4 +1,4 @@
-// Round 21 reseal — intake repair: cameras, sky and lights untouched, no logic change; this line is written in the round 21 reseal recorded session (01a206af-459d-70b9-900e-33e388ceab71).
+// Round 22 reseal — garage camera closer (car fills more of the frame); sky, lights and all other cameras untouched; this line is written in the round 22 reseal recorded session (01a2092d-3178-7290-b1e2-da8c5e84af71).
 // Round 20: no logic change — cameras, sky and lights untouched except the bigger moon (combat night), more day clouds (chase noon) and the title camera's side-profile angle; this line is written in the round 20 recorded session.
 // Drawing only: the Three.js scene, the sun, the sky and the cameras.
 // The HUD is DOM (hud.js); this module paints the 3D world and moves the
@@ -339,8 +339,16 @@ export function createRender(canvas, worldGroup) {
       // of the frame — the round 14 shot had it small and side-on.
       // Round 15d: closer still (5.8 / 2.5 / 4.8) — the first round 15
       // render still had the car small in the middle of the room.
-      wantPos = new THREE.Vector3(f.x + 5.8, 2.5, f.z + 4.8);
-      wantLook = new THREE.Vector3(f.x - 1, 1.6, f.z - 1);
+      // Round 22: closer again (4.6 / 2.2 / 3.8) — the round-21 shot
+      // STILL had the car small in the middle of the room, with empty
+      // floor in the foreground and empty green wall above. The car
+      // now fills ~40% more of the frame; the lift + the new posters +
+      // the second lamp row stay in frame behind it. Round 22b: lower
+      // (1.9, was 2.2; look y 1.3, was 1.5) — from the higher angle
+      // the smooth gold hood dominated the front and the nose read as
+      // a mound; lower shows more front face, less hood top.
+      wantPos = new THREE.Vector3(f.x + 4.6, 1.9, f.z + 3.8);
+      wantLook = new THREE.Vector3(f.x - 0.5, 1.3, f.z - 0.5);
     } else if (camMode === 'map') {
       wantPos = new THREE.Vector3(f.x, 260, f.z + 60);
       wantLook = new THREE.Vector3(f.x, 0, f.z);

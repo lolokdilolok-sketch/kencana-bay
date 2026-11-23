@@ -1,4 +1,4 @@
-// Round 21 reseal — intake repair: vehicle builders untouched, no logic change; this line is written in the round 21 reseal recorded session (01a206af-459d-70b9-900e-33e388ceab71).
+// Round 22 reseal — Garuda front + rear caps rebuilt (white full-width tail bar, gold ducktail, bigger silver wheels out to the flanks, slimmer glass, sharper lower nose, thin corner headlights); this line is written in the round 22 reseal recorded session (01a2092d-3178-7290-b1e2-da8c5e84af71).
 // Every vehicle is built from boxes and one lofted body: the Garuda GT is a
 // low, wide sports car with a closed glass cabin and a human driver visible
 // inside; traffic, taxis and KPD cars are real-looking sedans and vans with
@@ -97,16 +97,26 @@ function wheel(r = 0.46) {
   // Round 19: one shared rim material with keepEnv 1.2 — the R18 rim
   // was metalness 0.95 capped at env 0.4, so it rendered nearly black
   // and the wheels read as black discs with a gold ring in the garage.
-  const rimMat = new THREE.MeshStandardMaterial({ color: '#d8dbe2', roughness: 0.25, metalness: 0.95 });
+  // Round 22d: emissive '#e8ebf0' × 0.35 — the v3 title wheels were
+  // STILL dark discs: the title flank gets no direct sun and a
+  // diffuse-only rim goes dark there, whatever the metalness. A small
+  // emissive lifts the shaded face to light grey in every scene; the
+  // sun-lit chase side just reads a touch brighter. Spokes share this
+  // material now (was a separate box() metal material).
+  const rimMat = new THREE.MeshStandardMaterial({ color: '#e8ebf0', roughness: 0.45, metalness: 0.25, emissive: '#e8ebf0', emissiveIntensity: 0.35 });
   rimMat.userData.keepEnv = 1.2;
+  // Round 22: a BIGGER bright rim (0.72r, was 0.66r) + a wider disc
+  // (0.56r, was 0.5r) — the old rim was a small silver dot inside a
+  // big black tyre, so the wheels read as dark discs from the chase
+  // camera. The spokes below are thicker for the same reason.
   const rim = new THREE.Mesh(
-    new THREE.CylinderGeometry(r * 0.66, r * 0.66, 0.34, 24),
+    new THREE.CylinderGeometry(r * 0.72, r * 0.72, 0.34, 24),
     rimMat,
   );
   rim.rotation.z = Math.PI / 2;
   g.add(rim);
   const disc = new THREE.Mesh(
-    new THREE.CylinderGeometry(r * 0.5, r * 0.5, 0.05, 16),
+    new THREE.CylinderGeometry(r * 0.56, r * 0.56, 0.05, 16),
     rimMat,
   );
   disc.rotation.z = Math.PI / 2;
@@ -118,9 +128,13 @@ function wheel(r = 0.46) {
   for (const fx of [-0.18, 0.18]) {
     for (let i = 0; i < 5; i += 1) {
       const a = (i / 5) * Math.PI * 2;
-      const spoke = box(0.05, r * 1.05, 0.12, '#d8dbe2', { metal: 0.95, rough: 0.25 });
-      spoke.material.userData.keepEnv = 1.2;
-      spoke.position.set(fx, Math.cos(a) * r * 0.3, Math.sin(a) * r * 0.3);
+      // Round 22: thicker spokes (0.07 wide, 1.15r long, was 0.05 /
+      // 1.05r) — the old hairline spokes vanished at screenshot
+      // distance and the wheel read as a plain dark disc.
+      // Round 22d: spokes use the shared rimMat (emissive lift) so
+      // they read silver on the shaded title flank too.
+      const spoke = new THREE.Mesh(new THREE.BoxGeometry(0.07, r * 1.15, 0.14), rimMat);
+      spoke.position.set(fx, Math.cos(a) * r * 0.32, Math.sin(a) * r * 0.32);
       spoke.rotation.x = a;
       g.add(spoke);
     }
@@ -167,8 +181,13 @@ export function buildSportsCar(color, opts = {}) {
     { z: L * 0.10, w: 2.45, y0: 0.22, y1: 1.16, tumble: 0.10, crown: 0 }, // cowl, flat
     { z: L * 0.167, w: 2.40, y0: 0.22, y1: 1.16, tumble: 0.10, crown: 0 }, // cabin front (hood starts here)
     { z: L * 0.30, w: 2.30, y0: 0.22, y1: 1.05, tumble: 0.10, crown: 0 }, // hood falling
-    { z: L * 0.433, w: 2.10, y0: 0.22, y1: 0.85, tumble: 0.10, crown: 0 },
-    { z: L / 2, w: 1.70, y0: 0.30, y1: 0.70, tumble: 0.10, crown: 0 }, // pointed low nose
+    { z: L * 0.433, w: 2.05, y0: 0.22, y1: 0.80, tumble: 0.10, crown: 0 },
+    // Round 22: a LOWER, SHARPER nose (tip y1 0.62, was 0.70; width
+    // 1.55, was 1.70) — the old nose was a tall blunt blob in the
+    // garage 3/4-front shot, with the headlights reading as two white
+    // ovals on it. Ratios stay top-2: L/W 2.31 (6.0/2.6 with the wider
+    // haunch), roof/L 0.249, glass rise 0.33.
+    { z: L / 2, w: 1.55, y0: 0.30, y1: 0.62, tumble: 0.10, crown: 0 }, // pointed low nose
   ];
   // Half-width of the lofted body at z (linear between sections) — door
   // lines, handles, intakes, skirts and mirrors sit ON the flank, not
@@ -205,21 +224,24 @@ export function buildSportsCar(color, opts = {}) {
   // (crown 0) only as wide as the glass top — the R19 domed panel read
   // as a gold bubble; now the gold is a flat strip with dark glass
   // showing on both sides of it, like the top-2 cars.
+  // Round 22: a SLIMMER dark glass strip (W*0.72, was W*0.80) — the
+  // old 2.0u-wide glasshouse read as one big black slab from the
+  // front, and its rear slope was a black wall above the gold deck.
+  // The gold roof panel is WIDER now (W*0.66, was W*0.58) so it
+  // follows the greenhouse as a real gold roof, not a thin strip.
   const glassSecs = [
-    { z: L * 0.178, w: W * 0.80, y0: 1.08, y1: 1.30, tumble: 0.10, crown: 0 }, // windshield base
-    { z: L * 0.12, w: W * 0.80, y0: 1.08, y1: 1.49, tumble: 0.10, crown: 0 }, // windshield top (flat roof starts)
-    { z: -L * 0.233, w: W * 0.80, y0: 1.08, y1: 1.49, tumble: 0.10, crown: 0 }, // flat roof ends
-    { z: -L * 0.278, w: W * 0.76, y0: 1.08, y1: 1.30, tumble: 0.10, crown: 0 }, // rear glass meets the deck
+    { z: L * 0.178, w: W * 0.72, y0: 1.08, y1: 1.30, tumble: 0.10, crown: 0 }, // windshield base
+    { z: L * 0.12, w: W * 0.72, y0: 1.08, y1: 1.49, tumble: 0.10, crown: 0 }, // windshield top (flat roof starts)
+    { z: -L * 0.233, w: W * 0.72, y0: 1.08, y1: 1.49, tumble: 0.10, crown: 0 }, // flat roof ends
+    { z: -L * 0.278, w: W * 0.68, y0: 1.08, y1: 1.30, tumble: 0.10, crown: 0 }, // rear glass meets the deck
   ];
   const glasshouse = new THREE.Mesh(loftGeometry(glassSecs), glassMat);
   glasshouse.castShadow = true;
   g.add(glasshouse);
-  // Round 20: the roof panel is FLAT (crown 0, was 0.03) and NARROW
-  // (W*0.58, so its top chord is ~0.95u — a gold strip, not a slab).
   const roofSecs = [
-    { z: L * 0.12, w: W * 0.58, y0: 1.46, y1: 1.51, tumble: 0.05, crown: 0 },
-    { z: 0, w: W * 0.58, y0: 1.46, y1: 1.51, tumble: 0.05, crown: 0 },
-    { z: -L * 0.233, w: W * 0.58, y0: 1.46, y1: 1.51, tumble: 0.05, crown: 0 },
+    { z: L * 0.12, w: W * 0.66, y0: 1.46, y1: 1.51, tumble: 0.05, crown: 0 },
+    { z: 0, w: W * 0.66, y0: 1.46, y1: 1.51, tumble: 0.05, crown: 0 },
+    { z: -L * 0.233, w: W * 0.66, y0: 1.46, y1: 1.51, tumble: 0.05, crown: 0 },
   ];
   const roofPanel = new THREE.Mesh(loftGeometry(roofSecs), bodyMat);
   roofPanel.castShadow = true;
@@ -230,14 +252,16 @@ export function buildSportsCar(color, opts = {}) {
   // inside the bodywork, emerging through the glass at mid-height.
   // Windshield slope: run 0.35 for rise 0.19 -> rotation.x -0.50;
   // rear slope: run 0.27 for drop 0.19 -> rotation.x +0.61.
+  // Round 22: pillars move in with the slimmer glass (x ±0.74, was
+  // ±0.82), so they sit on the glass edge instead of floating outside it.
   for (const sx of [-1, 1]) {
     const pillarA = box(0.07, 0.5, 0.07, color, { metal: 0.5, rough: 0.3 });
-    pillarA.position.set(sx * 0.82, 1.30, L * 0.148);
+    pillarA.position.set(sx * 0.74, 1.30, L * 0.148);
     pillarA.rotation.x = -0.50;
     pillarA.rotation.z = sx * 0.28;
     g.add(pillarA);
     const pillarB = box(0.07, 0.5, 0.07, color, { metal: 0.5, rough: 0.3 });
-    pillarB.position.set(sx * 0.82, 1.30, -L * 0.255);
+    pillarB.position.set(sx * 0.74, 1.30, -L * 0.255);
     pillarB.rotation.x = 0.61;
     pillarB.rotation.z = sx * 0.28;
     g.add(pillarB);
@@ -301,21 +325,23 @@ export function buildSportsCar(color, opts = {}) {
     indicator.position.set(sx * (flankAt(L * 0.3) + 0.01), 0.95, L * 0.3);
     g.add(indicator);
   }
-  // Headlights: SWEPT LENSES, on the low nose (round 20) — the lens
-  // sits at y 0.62, just under the nose top line (0.70 at the tip),
-  // so the lamp reads as a slim slit on the wedge nose, not a blob.
-  for (const sx of [-0.55, 0.55]) {
+  // Headlights: THIN corner slits (round 22 — 0.42 x 0.12, top-2
+  // recipe) on the lowered nose, with glow sprites. The round-20
+  // sphere lenses (scaled balls) read as two big white ovals on the
+  // bulbous nose in the garage shot; flat boxes sit flush in the
+  // nose face instead. They sit at the corners (x ±0.72, just under
+  // the nose top line 0.62 at the tip).
+  for (const sx of [-0.72, 0.72]) {
     const lens = new THREE.Mesh(
-      new THREE.SphereGeometry(0.22, 18, 12),
+      new THREE.BoxGeometry(0.42, 0.12, 0.08),
       new THREE.MeshBasicMaterial({ color: '#fff6d5' }),
     );
-    lens.scale.set(0.9, 0.28, 0.5);
-    lens.position.set(sx, 0.62, L / 2 - 0.05);
-    lens.rotation.y = -sx * 0.28;
+    lens.position.set(sx, 0.55, L / 2 - 0.02);
+    lens.rotation.y = -sx * 0.22;
     g.add(lens);
-    const halo = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTexture(), transparent: true, opacity: 0.5, depthWrite: false }));
-    halo.scale.set(0.8, 0.8, 1);
-    halo.position.set(sx, 0.62, L / 2 + 0.25);
+    const halo = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTexture(), transparent: true, opacity: 0.55, depthWrite: false }));
+    halo.scale.set(1.0, 1.0, 1);
+    halo.position.set(sx, 0.55, L / 2 + 0.25);
     g.add(halo);
   }
   // Round 15: the headlight beams pool on the asphalt ahead (additive
@@ -335,20 +361,14 @@ export function buildSportsCar(color, opts = {}) {
       g.add(pool);
     }
   }
-  for (const sx of [-0.60, 0.60]) {
-    const fog = new THREE.Mesh(
-      new THREE.SphereGeometry(0.08, 12, 8),
-      new THREE.MeshBasicMaterial({ color: '#fff8d0' }),
-    );
-    fog.scale.set(1, 0.6, 0.6);
-    fog.position.set(sx, 0.38, L / 2 + 0.06);
-    g.add(fog);
-  }
-  const grille = box(0.9, 0.10, 0.06, '#1c1c1c');
-  grille.position.set(0, 0.42, L / 2 + 0.02);
+  // Round 22: the fog spheres are GONE — two extra white blobs under
+  // the nose only added to the bulbous front. The grille is slimmer
+  // (0.7 wide, was 0.9) on the lowered nose.
+  const grille = box(0.7, 0.10, 0.06, '#1c1c1c');
+  grille.position.set(0, 0.40, L / 2 + 0.02);
   g.add(grille);
   const emblem = box(0.12, 0.12, 0.04, '#ffd94d', { metal: 0.8, rough: 0.25 });
-  emblem.position.set(0, 0.50, L / 2 + 0.04);
+  emblem.position.set(0, 0.48, L / 2 + 0.04);
   g.add(emblem);
   // Round 20: the bumper is a SLIM dark lip under the nose (y 0.34),
   // and the black plate under the front bumper is GONE — the R19
@@ -357,28 +377,32 @@ export function buildSportsCar(color, opts = {}) {
   const bumper = box(1.60, 0.10, 0.12, '#17181c');
   bumper.position.set(0, 0.34, L / 2 + 0.04);
   g.add(bumper);
-  // Tail (round 20): the thick RED bar is GONE — the top-2 / reference
-  // tail is two slim WHITE lamps at the rear corners + a black bumper
-  // below, on the near-vertical tail face (y 0.29..1.03). White reverse
-  // lights flank the plate, a slim dark diffuser + chrome twin
-  // exhausts underneath, like before.
+  // Tail (round 22): a FULL-WIDTH WHITE tail light bar across the
+  // near-vertical tail face (y 0.29..1.03) — the round-20 two corner
+  // lamps were small white strips on a flat gold wall, so the rear
+  // still read as a blank gold slab from the chase camera. One
+  // continuous 1.90u bar (top-2 / reference recipe) breaks the wall
+  // up, with a glow sprite at each end. No thick red bar anywhere.
+  const tailBar = new THREE.Mesh(
+    new THREE.BoxGeometry(1.90, 0.12, 0.06),
+    new THREE.MeshBasicMaterial({ color: '#fff6d5' }),
+  );
+  tailBar.position.set(0, 0.98, -L / 2 - 0.02);
+  g.add(tailBar);
   for (const sx of [-1, 1]) {
-    const corner = new THREE.Mesh(
-      new THREE.BoxGeometry(0.5, 0.10, 0.06),
-      new THREE.MeshBasicMaterial({ color: '#fff6d5' }),
-    );
-    corner.position.set(sx * 0.82, 0.98, -L / 2 - 0.02);
-    g.add(corner);
-    const glow = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTexture(), color: '#fff6d5', transparent: true, opacity: 0.5, depthWrite: false }));
-    glow.scale.set(1.0, 1.0, 1);
-    glow.position.set(sx * 0.82, 0.98, -L / 2 - 0.18);
+    const glow = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTexture(), color: '#fff6d5', transparent: true, opacity: 0.55, depthWrite: false }));
+    glow.scale.set(1.2, 1.2, 1);
+    glow.position.set(sx * 0.88, 0.98, -L / 2 - 0.18);
     g.add(glow);
     const rev = box(0.18, 0.10, 0.04, '#f2f2f2', { glow: 0xffffff });
     rev.position.set(sx * 0.55, 0.62, -L / 2 - 0.04);
     g.add(rev);
   }
-  const tailBumper = box(W * 0.68, 0.12, 0.12, '#17181c');
-  tailBumper.position.set(0, 0.34, -L / 2 - 0.04);
+  // Round 22: the black lower bumper lip is WIDER (W*0.82, was
+  // W*0.68) and a touch taller, so the tail face ends in a dark base
+  // instead of floating gold above the diffuser.
+  const tailBumper = box(W * 0.82, 0.14, 0.12, '#17181c');
+  tailBumper.position.set(0, 0.32, -L / 2 - 0.04);
   g.add(tailBumper);
   // Round 19: NO trunk lid seam — the R18 seam was a flat bar across a
   // crowned deck (buried in the middle, floating at the edges). The
@@ -436,44 +460,47 @@ export function buildSportsCar(color, opts = {}) {
     bore.rotation.y = Math.PI;
     g.add(bore);
   }
-  // Round 20: a SMALL BLACK rear wing (the reference car's wing) —
-  // a thin flat blade on two short feet at the very tail edge, where
-  // the deck is 1.03 high. It is a wing, not a ducktail: the deck
-  // itself stays flat, the blade sits just above it on its feet.
-  const wing = box(1.80, 0.05, 0.28, '#141414', { metal: 0.3, rough: 0.5 });
-  wing.position.set(0, 1.10, -L * 0.487);
-  wing.rotation.x = -0.08;
+  // Round 22: a GOLD DUCKTAIL spoiler on the top edge of the tail
+  // (body colour, 1.90u wide) — the round-20 small black wing read as
+  // a dark plank floating above the gold deck from the chase camera,
+  // and the top-1 cars run a body-colour ducktail lip. The blade sits
+  // just above the deck (1.03) on two short gold feet, tilted up at
+  // the tail edge like a kicked-up lip.
+  const wing = box(1.90, 0.06, 0.34, color, { metal: 0.5, rough: 0.3 });
+  wing.position.set(0, 1.07, -L * 0.487);
+  wing.rotation.x = -0.10;
   g.add(wing);
   for (const sx of [-0.6, 0.6]) {
-    const foot = box(0.05, 0.07, 0.05, '#141414');
-    foot.position.set(sx, 1.05, -L * 0.487);
+    const foot = box(0.05, 0.07, 0.05, color, { metal: 0.5, rough: 0.3 });
+    foot.position.set(sx, 1.02, -L * 0.487);
     g.add(foot);
   }
-  // Wheels OUT to the flank: r 0.46 (round 20 — was 0.40), wheelbase
-  // 3.6u (61% of the length, like the top-2), outer tyre face just
-  // proud of the flank (x = flank - 0.13, top-2 recipe), under a FLAT
-  // body-colour arch ring + a dark wheel well. The tyre top (0.92)
-  // sits well below the flat belt (1.16), so no wheel can poke above
-  // the body's side top.
+  // Wheels OUT to the flank (round 22): r 0.48 (was 0.46) — diameter
+  // 0.96 = 0.64 of the 1.49 roof, the top-2 ratio — wheelbase 3.6u
+  // (61% of the length), outer tyre face just proud of the flank
+  // (x = flank - 0.10, was -0.13), under a FLAT body-colour arch ring
+  // + a dark wheel well. The tyre top (0.96) still sits well below
+  // the flat belt (1.16). The well is tighter now (r + 0.03, was
+  // +0.07) so it no longer swallows the rim in a big black disc.
   for (const wz of [L * 0.3, -L * 0.3]) {
     const flank = flankAt(wz);
-    const wx = flank - 0.13;
+    const wx = flank - 0.10;
     for (const sx of [-1, 1]) {
-      const wh = wheel(0.46);
-      wh.position.set(sx * wx, 0.46, wz);
+      const wh = wheel(0.48);
+      wh.position.set(sx * wx, 0.48, wz);
       g.add(wh);
       const well = new THREE.Mesh(
-        new THREE.CircleGeometry(0.53, 20, 0, Math.PI),
+        new THREE.CircleGeometry(0.51, 20, 0, Math.PI),
         new THREE.MeshBasicMaterial({ color: '#050506', side: THREE.DoubleSide }),
       );
-      well.position.set(sx * (flank - 0.02), 0.46, wz);
+      well.position.set(sx * (flank - 0.02), 0.48, wz);
       well.rotation.y = sx * Math.PI / 2;
       g.add(well);
       const arch = new THREE.Mesh(
-        new THREE.RingGeometry(0.48, 0.55, 24, 1, (115 * Math.PI) / 180, (310 * Math.PI) / 180),
+        new THREE.RingGeometry(0.50, 0.57, 24, 1, (115 * Math.PI) / 180, (310 * Math.PI) / 180),
         bodyMat,
       );
-      arch.position.set(sx * (flank + 0.002), 0.46, wz);
+      arch.position.set(sx * (flank + 0.002), 0.48, wz);
       arch.rotation.y = sx * Math.PI / 2;
       g.add(arch);
     }

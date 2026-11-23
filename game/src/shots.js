@@ -1,4 +1,4 @@
-// Round 21 reseal — intake repair: the four screenshot scenes are staged the same way, no logic change; this line is written in the round 21 reseal recorded session (01a206af-459d-70b9-900e-33e388ceab71).
+// Round 22 reseal — chase: heli BIGGER + closer with a visible spotlight cone + light pool on the road, KPD roadblock + distant fireball; combat: enemies bigger/closer, plaza filled, HIT text bigger; garage: camera closer via render.js; this line is written in the round 22 reseal recorded session (01a2092d-3178-7290-b1e2-da8c5e84af71).
 // The four screenshot scenes. Each one stages a real, playable situation
 // from a fixed seed — a busy noon chase, a NIGHT shootout, the garage
 // interior, and the map after a played session — then the page paints it
@@ -105,6 +105,10 @@ function stageChase(ctx) {
   // the new lofted SUV reads in the chase frame, not only in the
   // traffic rotation.
   swapTraffic(2, buildStreetCar('suv', '#c94b4b'));
+  // Round 22 (P1): a PICKUP in the traffic ahead too (slot 3) — SUV +
+  // pickup + van (combat) + box truck now all read as traffic variety,
+  // like the top-10 chase shots' mixed traffic.
+  swapTraffic(3, buildStreetCar('pickup', '#2b6fd0'));
   // The motorcycle would sit in the box truck's lane and be hidden
   // behind it from the chase camera — move it to the near lane, ahead
   // and to the right, so it reads as its own vehicle. (Shot mode never
@@ -123,8 +127,82 @@ function stageChase(ctx) {
   const cars = ctx.police.units.filter((u) => u.kind === 'car' && u.mesh.visible);
   if (cars[0]) { cars[0].mesh.position.set(-8, 0, 50); cars[0].mesh.rotation.y = Math.PI / 2; cars[0].dist = 28; cars[0].status = 'MENGEJAR'; }
   if (cars[1]) { cars[1].mesh.position.set(-18, 0, 56); cars[1].mesh.rotation.y = Math.PI / 2; cars[1].dist = 22; cars[1].status = 'MENGEJAR'; }
-  if (cars[2]) { cars[2].mesh.position.set(86, 0, 57); cars[2].mesh.rotation.y = Math.PI / 2; cars[2].dist = 120; cars[2].status = 'MENGEJAR'; }
-  if (cars[3]) { cars[3].mesh.position.set(98, 0, 63); cars[3].mesh.rotation.y = Math.PI / 2; cars[3].dist = 132; cars[3].status = 'MENGEJAR'; }
+  // Round 22: the two far KPD cars form a ROADBLOCK across the road
+  // ahead (top-2 chase composition) — parked diagonally across the
+  // lanes at (52, 56) and (62, 64), 90-100u ahead of the player, with
+  // striped barricades between them (below). The first two cars keep
+  // chasing from behind the player.
+  if (cars[2]) { cars[2].mesh.position.set(52, 0, 56); cars[2].mesh.rotation.y = Math.PI / 2 + 0.55; cars[2].dist = 92; cars[2].status = 'ROADBLOCK'; }
+  if (cars[3]) { cars[3].mesh.position.set(62, 0, 64); cars[3].mesh.rotation.y = Math.PI / 2 - 0.5; cars[3].dist = 102; cars[3].status = 'ROADBLOCK'; }
+  // Round 22: striped roadblock barricades on the road between the
+  // two roadblock cars — white boards with orange stripes + dark legs,
+  // 3u wide so they read at ~100u from the chase camera.
+  const barricadeAt = (x, z, rot) => {
+    const b = new THREE.Group();
+    const board = new THREE.Mesh(
+      new THREE.BoxGeometry(3.0, 0.7, 0.18),
+      new THREE.MeshStandardMaterial({ color: '#f2f2f2', roughness: 0.7 }),
+    );
+    board.position.y = 0.75;
+    board.castShadow = true;
+    b.add(board);
+    for (let i = 0; i < 3; i += 1) {
+      const stripe = new THREE.Mesh(
+        new THREE.BoxGeometry(0.85, 0.72, 0.2),
+        new THREE.MeshStandardMaterial({ color: '#e87a1a', roughness: 0.7 }),
+      );
+      stripe.position.set(-1.0 + i * 1.0, 0.75, 0);
+      stripe.rotation.z = 0.5;
+      b.add(stripe);
+    }
+    for (const lx of [-1.2, 1.2]) {
+      const leg = new THREE.Mesh(
+        new THREE.BoxGeometry(0.18, 0.75, 0.8),
+        new THREE.MeshStandardMaterial({ color: '#2a2a33', roughness: 0.8 }),
+      );
+      leg.position.set(lx, 0.37, 0);
+      b.add(leg);
+    }
+    b.position.set(x, 0, z);
+    b.rotation.y = rot;
+    ctx.render.scene.add(b);
+  };
+  barricadeAt(47, 60, 0.15);
+  barricadeAt(57, 58, -0.1);
+  barricadeAt(67, 61, 0.1);
+  // Round 22e: moved to (-10, 50) — the v4 spot (55, 50) failed too:
+  // the ball hid behind the white box truck (-12, 60) and the smoke
+  // behind the ALUN-ALUN gantry board (20, 60). (-10, 50) is on the
+  // north sidewalk 40u from the camera, framed BETWEEN the palms at
+  // (-20, 51) and (0, 51), clear of the gantry (30u east), the STOP
+  // sign (-30, 51) and every HUD panel. Closer, so the ball is back
+  // to r 2.6 and the glow to 12u (20u would wash out half the frame
+  // at this range).
+  const fireball = new THREE.Mesh(
+    new THREE.SphereGeometry(2.6, 14, 10),
+    new THREE.MeshBasicMaterial({ color: '#ff7a1a' }),
+  );
+  fireball.position.set(-10, 2.2, 50);
+  ctx.render.scene.add(fireball);
+  const fireGlow = new THREE.Sprite(new THREE.SpriteMaterial({ map: heliPoolTexture(), color: '#ff9a3d', transparent: true, opacity: 0.85, depthWrite: false }));
+  fireGlow.scale.set(12, 12, 1);
+  fireGlow.position.set(-10, 2.8, 50);
+  ctx.render.scene.add(fireGlow);
+  for (let i = 0; i < 3; i += 1) {
+    const puff = new THREE.Mesh(
+      new THREE.SphereGeometry(2.0 - i * 0.2, 10, 8),
+      new THREE.MeshStandardMaterial({ color: '#66666e', roughness: 1, transparent: true, opacity: 0.85 }),
+    );
+    puff.position.set(-10 + i * 0.9, 7 + i * 2.5, 50 - i * 0.6);
+    ctx.render.scene.add(puff);
+  }
+  const scorch = new THREE.Mesh(
+    new THREE.CircleGeometry(3.4, 16),
+    new THREE.MeshBasicMaterial({ color: '#1c1c1c', transparent: true, opacity: 0.8 }),
+  );
+  scorch.rotation.x = -Math.PI / 2;
+  scorch.position.set(-10, 0.08, 50);
+  ctx.render.scene.add(scorch);
   // Helicopter above and ahead, spotlight on the road — staged low and
   // to the north side (round 15c: x -2, y 6.5, z 50 — over the road it
   // sat dead-centre in front of the gantry board; on the north side it
@@ -135,26 +213,39 @@ function stageChase(ctx) {
   // whole against the hotel towers instead of the bright sky.
   const heli = ctx.police.units.find((u) => u.kind === 'heli');
   if (heli) {
-    // Round 19: BIGGER + CLOSER + HIGHER (was -10, 8, 46, scale 1) —
-    // at 8u the heli sat on the horizon line against the buildings and
-    // read as a dark speck; at (-14, 11, 48) scaled 1.35 it sits ~12°
-    // above the horizon against the SKY, and the rotor blur disc reads.
-    heli.mesh.position.set(-14, 11, 48);
+    // Round 22: BIGGER + CLOSER + OVER THE ROAD (was -14, 11, 48,
+    // scale 1.35) — at (-14, 11, 48) the heli hovered over the north
+    // sidewalk and its cone (0.35 opacity, white on bright-blue sky)
+    // was invisible, so the chase shot had NO spotlight cone at all:
+    // the signature top-10 chase element was missing. Now at
+    // (-24, 10, 55), scale 1.5, over the road's north lane, with the
+    // cone widened + brightened (opacity 0.55) and the light pool ON
+    // the asphalt under it — the cone lands on the road in frame.
+    heli.mesh.position.set(-24, 10, 55);
     heli.mesh.rotation.y = Math.PI;
-    heli.mesh.scale.set(1.35, 1.35, 1.35);
-    heli.dist = 34;
+    heli.mesh.scale.set(1.5, 1.5, 1.5);
+    heli.dist = 26;
     heli.status = 'SPOTLIGHT';
+    const cone = heli.mesh.userData.cone;
+    if (cone) {
+      cone.scale.set(1.4, 1.2, 1.4);
+      // Round 22b: opacity 0.48 (was 0.55) — the first render's cone
+      // was a solid white funnel that whitened out the district card's
+      // gold sub-line; it still reads as a searchlight at 0.48.
+      cone.material.opacity = 0.48;
+    }
     // Round 15: a pool of light on the asphalt under the heli, where
     // its spotlight cone lands — the cone alone is too faint to read
     // as a pool on the road from the chase camera. Round 16: 14u,
     // opacity 0.7 (was 13u / 0.55) — the pool must read as a lit patch
-    // against the bright dusk asphalt, not a faint smudge.
+    // against the bright dusk asphalt, not a faint smudge. Round 22:
+    // 18u, on the road under the heli at (-24, 55).
     const pool = new THREE.Mesh(
-      new THREE.PlaneGeometry(16, 16),
+      new THREE.PlaneGeometry(18, 18),
       new THREE.MeshBasicMaterial({ map: heliPoolTexture(), transparent: true, opacity: 0.7, blending: THREE.AdditiveBlending, depthWrite: false }),
     );
     pool.rotation.x = -Math.PI / 2;
-    pool.position.set(-14, 0.09, 48);
+    pool.position.set(-24, 0.09, 55);
     ctx.render.scene.add(pool);
   }
   // Pedestrians on the sidewalks (round 15: a crowd, not 3 figures —
@@ -239,13 +330,15 @@ function stageCombat(ctx) {
   ctx.playerFig.armL.rotation.x = -1.2;
   // Three enemies ahead, close enough to read as a real threat. Round
   // 15c: closer still (was 12–16u, read as specks) — 9–13u, so faces,
-  // red shirts and aiming poses read in the frame.
+  // red shirts and aiming poses read in the frame. Round 22: closer
+  // STILL (6–8u from the player) + 25% BIGGER — the round-21 shot
+  // still had them small and plain in the middle of the frame.
   ctx.spawnEnemies(226, -8, 3);
   const e0 = ctx.enemies[0];
   const e1 = ctx.enemies[1];
-  if (e0) { e0.x = 209; e0.z = -13; e0.hp = 100; e0.fig.group.position.set(209, 0, -13); }
-  if (e1) { e1.x = 208; e1.z = 0; e1.hp = 100; e1.fig.group.position.set(208, 0, 0); }
-  if (ctx.enemies[2]) { ctx.enemies[2].x = 208; ctx.enemies[2].z = -17; ctx.enemies[2].hp = 100; ctx.enemies[2].fig.group.position.set(208, 0, -17); }
+  if (e0) { e0.x = 206.5; e0.z = -12.5; e0.hp = 100; e0.fig.group.position.set(206.5, 0, -12.5); e0.fig.group.scale.setScalar(1.25); }
+  if (e1) { e1.x = 206; e1.z = -1; e1.hp = 100; e1.fig.group.position.set(206, 0, -1); e1.fig.group.scale.setScalar(1.25); }
+  if (ctx.enemies[2]) { ctx.enemies[2].x = 206.5; ctx.enemies[2].z = -17.5; ctx.enemies[2].hp = 100; ctx.enemies[2].fig.group.position.set(206.5, 0, -17.5); ctx.enemies[2].fig.group.scale.setScalar(1.25); }
   // Round 15: the enemies face the wheelman and aim back at him —
   // facing + aiming pose, so the shootout reads both ways even before
   // the tracers. (spawnEnemies leaves random headings and hanging arms.)
@@ -276,6 +369,51 @@ function stageCombat(ctx) {
   };
   barrelAt(209, -7, '#2b6fd0');
   barrelAt(206.5, -12.5, '#c94b4b');
+  // Round 22: fill the DEAD MIDDLE of the plaza — the round-21 shot
+  // still read as an empty brown tile grid between the player and the
+  // enemies. A second crate stack + two more barrels west of the
+  // shootout line, a parked motorcycle east of the enemies, and a
+  // market stall with a striped awning on the south-west corner —
+  // all clear of the player, the enemies and both tracer lines.
+  crateAt(204, -6, 1.2, '#6b4f2a');
+  crateAt(204.4, -5.7, 0.8, '#8a6b3d');
+  crateAt(205.3, -5.1, 0.6, '#c94b4b');
+  barrelAt(205, -20, '#e8a33d');
+  barrelAt(205.8, -20.6, '#2b6fd0');
+  const parkedBike = buildMotorcycle('#2b6fd0');
+  parkedBike.position.set(214, 0, -12);
+  parkedBike.rotation.y = Math.PI / 2 + 0.4;
+  ctx.render.scene.add(parkedBike);
+  const stall = new THREE.Group();
+  const stallCounter = new THREE.Mesh(new THREE.BoxGeometry(2.4, 1.1, 1.2), propMat('#8a6b3d'));
+  stallCounter.position.y = 0.55;
+  stallCounter.castShadow = true;
+  stall.add(stallCounter);
+  for (let i = 0; i < 3; i += 1) {
+    const goods = new THREE.Mesh(
+      new THREE.BoxGeometry(0.6, 0.3, 0.9),
+      propMat(['#e84a5f', '#ffd94d', '#3d8a4b'][i]),
+    );
+    goods.position.set(-0.7 + i * 0.7, 1.25, 0);
+    stall.add(goods);
+  }
+  for (const [px, pz] of [[-1.1, -0.5], [1.1, -0.5], [-1.1, 0.5], [1.1, 0.5]]) {
+    const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 2.2, 6), propMat('#2a2a33'));
+    pole.position.set(px, 1.1, pz);
+    stall.add(pole);
+  }
+  const awning = new THREE.Mesh(new THREE.BoxGeometry(2.8, 0.08, 1.6), propMat('#e84a5f'));
+  awning.position.y = 2.25;
+  awning.rotation.x = 0.12;
+  awning.castShadow = true;
+  stall.add(awning);
+  const awningStripe = new THREE.Mesh(new THREE.BoxGeometry(2.8, 0.09, 0.5), propMat('#f2f2f2'));
+  awningStripe.position.set(0, 2.27, -0.5);
+  awningStripe.rotation.x = 0.12;
+  stall.add(awningStripe);
+  stall.position.set(203, 0, -19);
+  stall.rotation.y = 0.5;
+  ctx.render.scene.add(stall);
   for (const [rx, rz, rs] of [[205, -14.5, 0.5], [205.8, -13.8, 0.35], [204.5, -14.2, 0.42]]) {
     const r = new THREE.Mesh(new THREE.BoxGeometry(rs, rs * 0.6, rs), propMat('#55555e'));
     r.position.set(rx, rs * 0.3, rz);
@@ -375,32 +513,37 @@ function stageCombat(ctx) {
   flash.scale.set(2.0, 2.0, 1);
   flash.position.set(201.2, 1.35, -9);
   ctx.render.scene.add(flash);
+  // Round 22: the tracer now ends at the CLOSER e0 (206.5, -12.5),
+  // not the old (209, -13).
   const tracerGeo = new THREE.BufferGeometry();
-  tracerGeo.setAttribute('position', new THREE.Float32BufferAttribute([201.2, 1.35, -9, 209, 1.4, -13], 3));
+  tracerGeo.setAttribute('position', new THREE.Float32BufferAttribute([201.2, 1.35, -9, 206.5, 1.4, -12.5], 3));
   const tracer = new THREE.Line(tracerGeo, new THREE.LineBasicMaterial({ color: '#ffe9a0', transparent: true, opacity: 0.9 }));
   ctx.render.scene.add(tracer);
-  ctx.render.scene.add(beam([201.2, 1.35, -9], [209, 1.4, -13], '#ffe9a0', 0.05));
+  ctx.render.scene.add(beam([201.2, 1.35, -9], [206.5, 1.4, -12.5], '#ffe9a0', 0.05));
   // Round 16: the damage number moved up + toward the camera-side
   // (was 209, 3.2, -13) — at (209, 3.2, -13) it sat directly over the
   // big STOP sign at the forecourt crossing and the two overlapped.
+  // Round 22: bigger (scale 5 x 2.5, was 4 x 2) + re-aimed at e0.
   const dmg = damageSprite('-55', '#ffd94d');
-  dmg.position.set(208.5, 4.6, -10.5);
+  dmg.scale.set(5, 2.5, 1);
+  dmg.position.set(206, 4.8, -11);
   ctx.render.scene.add(dmg);
   // Return fire from the second enemy: his own flash + a red tracer back
   // at the wheelman, so the shootout reads both ways. Round 15c: the
   // flash sits at the second enemy's gun (208, 0) — he moved closer.
   // Round 16: flash 1.7u (was 1.1) + a red beam, same readability fix.
+  // Round 22: e1 moved to (206, -1), so his gun is at (205.3, -0.7).
   const eFlash = new THREE.Sprite(new THREE.SpriteMaterial({
     map: flashTexture(), transparent: true, depthTest: false,
   }));
   eFlash.scale.set(1.7, 1.7, 1);
-  eFlash.position.set(207.3, 1.35, -0.7);
+  eFlash.position.set(205.3, 1.35, -0.7);
   ctx.render.scene.add(eFlash);
   const eTracerGeo = new THREE.BufferGeometry();
-  eTracerGeo.setAttribute('position', new THREE.Float32BufferAttribute([207.3, 1.35, -0.7, 201, 1.3, -9], 3));
+  eTracerGeo.setAttribute('position', new THREE.Float32BufferAttribute([205.3, 1.35, -0.7, 201, 1.3, -9], 3));
   const eTracer = new THREE.Line(eTracerGeo, new THREE.LineBasicMaterial({ color: '#ff9a70', transparent: true, opacity: 0.9 }));
   ctx.render.scene.add(eTracer);
-  ctx.render.scene.add(beam([207.3, 1.35, -0.7], [201, 1.3, -9], '#ff9a70', 0.05));
+  ctx.render.scene.add(beam([205.3, 1.35, -0.7], [201, 1.3, -9], '#ff9a70', 0.05));
   // Round 16: a red glow pool under each enemy — from the rear camera
   // their faces + hair are small, so each shooter gets a ground marker
   // that reads as a threat even at 9-13u.
@@ -474,7 +617,9 @@ function stageCombat(ctx) {
   }
   // Round 15: bystanders on the casino forecourt sidewalks + a parked
   // car, so the plaza is a street with people, not an empty field.
-  const combatPeds = [[196, -22], [206, 2], [222, -24], [230, 4]];
+  // Round 22: two more bystanders (a fleeing one by the STOP sign, one
+  // ducking by the van) — the plaza's south edge was still empty.
+  const combatPeds = [[196, -22], [206, 2], [222, -24], [230, 4], [218, -18], [200, 6]];
   for (let i = 0; i < combatPeds.length && 12 + i < ctx.peds.length; i += 1) {
     const p = ctx.peds[12 + i];
     p.x = combatPeds[i][0];

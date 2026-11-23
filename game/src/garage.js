@@ -1,4 +1,4 @@
-// Round 21 reseal — intake repair: garage interior untouched, no logic change; this line is written in the round 21 reseal recorded session (01a206af-459d-70b9-900e-33e388ceab71).
+// Round 22 reseal — garage staging: posters + a second tool board on the north/west walls, a second row of hanging lamps with glow, more floor props (crates + drum) so the upper walls and foreground floor stop reading empty; this line is written in the round 22 reseal recorded session (01a2092d-3178-7290-b1e2-da8c5e84af71).
 // Round 20: no logic change — the garage interior is untouched; the display cars just get the new round-20 wedge builder from vehicles.js; this line is written in the round 20 recorded session.
 // Round 17: no logic change — the garage interior keeps the round 16 fixes; the display cars just get the new clearcoat paint from vehicles.js; this line is written in the round 17 recorded session.
 // The enterable garage: Bengkel Bambang. A real room in the same scene, far
@@ -243,6 +243,52 @@ export function createGarage(scene) {
       room.add(tyre);
     }
   }
+  // Round 22: two POSTERS on the north wall, so the upper wall stops
+  // reading as empty green — a gold GARUDA GT poster left of the
+  // neon sign and a red TUNE UP poster right of it, both above the
+  // benches/shelf and clear of the clock (0, 4.4) and the sign itself.
+  const posterTexture = (title, sub, bg, fg) => canvasTexture(256, 320, (x, w, h) => {
+    x.fillStyle = bg;
+    x.fillRect(0, 0, w, h);
+    x.strokeStyle = fg;
+    x.lineWidth = 8;
+    x.strokeRect(6, 6, w - 12, h - 12);
+    x.fillStyle = fg;
+    x.font = 'bold 44px system-ui, sans-serif';
+    x.textAlign = 'center';
+    x.fillText(title, w / 2, 90);
+    x.font = 'bold 22px system-ui, sans-serif';
+    x.fillText(sub, w / 2, 130);
+    x.fillStyle = 'rgba(255,255,255,0.85)';
+    x.fillRect(28, 170, w - 56, 90);
+    x.fillStyle = '#1c1c1c';
+    x.font = 'bold 18px system-ui, sans-serif';
+    x.fillText('BENGKEL BAMBANG', w / 2, 200);
+    x.fillText('SEJAK 1998', w / 2, 226);
+  });
+  for (const [px, tex] of [
+    [-6.8, posterTexture('GARUDA GT', 'EMAS KENCANA', '#c9a227', '#1c1c1c')],
+    [6.5, posterTexture('TUNE UP', 'MESIN · CAT · ARMOUR', '#8a2b2b', '#f2f2f2')],
+  ]) {
+    const poster = new THREE.Mesh(
+      new THREE.PlaneGeometry(3.0, 3.75),
+      new THREE.MeshStandardMaterial({ map: tex, roughness: 0.8 }),
+    );
+    poster.position.set(px, 4.2, -10.7);
+    room.add(poster);
+  }
+  // Round 22: a second TOOL BOARD on the west wall (the first pegboard
+  // is at z 5; this one is at z -3, behind the back car from the
+  // camera but visible left of the lift) — board + wrenches + spanners
+  // in a row, so the west wall is not one bare green slab.
+  const board2 = box(0.15, 2.4, 4.5, '#4a3a2a', { rough: 0.9 });
+  board2.position.set(-14.7, 3.2, -3);
+  room.add(board2);
+  for (let i = 0; i < 5; i += 1) {
+    const tool = box(0.2, 0.55, 0.3, ['#c94b4b', '#2b6fd0', '#e8a33d', '#888888', '#3d8a4b'][i]);
+    tool.position.set(-14.55, 2.6 + (i % 2) * 0.7, -4.6 + i * 0.85);
+    room.add(tool);
+  }
   // Hanging lamps.
   const glowTex = lampGlowTexture();
   for (const lx of [-6, 0, 6]) {
@@ -282,6 +328,64 @@ export function createGarage(scene) {
     pool.position.set(lx, 0.03, 0);
     room.add(pool);
   }
+  // Round 22: a SECOND row of hanging lamps over the north half of the
+  // room (z -6) — the round-21 shot's north wall was lit only by the
+  // ceiling panels, and the back car sat in gloom. Two lamps with glow
+  // sprites + floor pools, and one shared PointLight between them (the
+  // room already has three PointLights; a fourth shared one is enough).
+  const pl2 = new THREE.PointLight(0xffe9a0, 0.8, 22, 1);
+  pl2.position.set(0, 6.0, -6);
+  room.add(pl2);
+  for (const lx of [-6, 6]) {
+    const cord = cylinder(0.04, 0.04, 1.6, '#222222');
+    cord.position.set(lx, 7.2, -6);
+    room.add(cord);
+    const lamp = new THREE.Mesh(
+      new THREE.SphereGeometry(0.4, 10, 8),
+      new THREE.MeshBasicMaterial({ color: '#ffe9a0' }),
+    );
+    lamp.position.set(lx, 6.3, -6);
+    room.add(lamp);
+    const shade = new THREE.Mesh(
+      new THREE.ConeGeometry(0.7, 0.6, 12, 1, true),
+      new THREE.MeshStandardMaterial({ color: '#2b6f4b', roughness: 0.6, side: THREE.DoubleSide }),
+    );
+    shade.position.set(lx, 6.6, -6);
+    room.add(shade);
+    const lampGlow = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTex, transparent: true, depthWrite: false }));
+    lampGlow.scale.set(2.2, 2.2, 1);
+    lampGlow.position.set(lx, 6.3, -6);
+    room.add(lampGlow);
+    const pool = new THREE.Mesh(
+      new THREE.PlaneGeometry(7, 7),
+      new THREE.MeshBasicMaterial({ map: glowTex, transparent: true, opacity: 0.3, blending: THREE.AdditiveBlending, depthWrite: false }),
+    );
+    pool.rotation.x = -Math.PI / 2;
+    pool.position.set(lx, 0.03, -6);
+    room.add(pool);
+  }
+  // Round 22: more FLOOR props in the foreground south-east corner,
+  // which read as empty tiles in the round-21 shot — a crate stack, an
+  // oil drum and a loose wheel rim, all clear of the car, the lift,
+  // the dialogue box and the garage panel. Round 22b: the first spots
+  // (8.5, 7) / (10.5, 4.5) were BEHIND the garage camera (at 4.6,
+  // 3.8, looking north-west), so the first render showed none of
+  // them. Now they sit east of the lift, in the frame's foreground
+  // right: (5.2, -0.5), (6.0, -1.2) and the drum at (6.8, 0.8).
+  const gc1 = box(0.8, 0.8, 0.8, '#8a6b3d', { rough: 0.85 });
+  gc1.position.set(5.2, 0.4, -0.5);
+  gc1.rotation.y = 0.3;
+  gc1.castShadow = true;
+  room.add(gc1);
+  const gc2 = box(0.6, 0.6, 0.6, '#6b4f2a', { rough: 0.85 });
+  gc2.position.set(6.0, 0.3, -1.2);
+  gc2.rotation.y = 0.7;
+  gc2.castShadow = true;
+  room.add(gc2);
+  const gdrum = cylinder(0.45, 0.45, 1.1, '#2b6fd0', { metal: 0.4, rough: 0.5 });
+  gdrum.position.set(6.8, 0.55, 0.8);
+  gdrum.castShadow = true;
+  room.add(gdrum);
   // Oil stains + floor markings.
   for (const [ox, oz] of [[-4, 4], [5, -5], [8, 5]]) {
     const stain = new THREE.Mesh(

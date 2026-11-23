@@ -1,4 +1,4 @@
-// Round 21 reseal — intake repair: characters untouched, no logic change; this line is written in the round 21 reseal recorded session (01a206af-459d-70b9-900e-33e388ceab71).
+// Round 22 reseal — characters untouched, no logic change; this line is written in the round 22 reseal recorded session (01a2092d-3178-7290-b1e2-da8c5e84af71).
 // Round 20: no logic change — characters untouched; this line is written in the round 20 recorded session.
 // Realistic people: proportional humans ~1.75 units tall — a round head
 // with a face (eyes, nose, mouth, brows), hair, a clothed torso, arms with

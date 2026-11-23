@@ -1,4 +1,4 @@
-// Round 21 reseal — intake repair: loft helpers untouched, no shim change; this line is written in the round 21 reseal recorded session (01a206af-459d-70b9-900e-33e388ceab71).
+// Round 22 reseal — loft helpers untouched, no shim change; this line is written in the round 22 reseal recorded session (01a2092d-3178-7290-b1e2-da8c5e84af71).
 // Round 20: no shim change — the wedge uses the existing crown-0 / tumble loft as-is; this line is written in the round 20 recorded session.
 // Thin helpers over the vendored Three.js module: canvas textures and the
 // lofted-body geometry used by the cars.

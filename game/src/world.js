@@ -1,4 +1,4 @@
-// Round 21 reseal — intake repair: city, districts and landmarks untouched, no logic change; this line is written in the round 21 reseal recorded session (01a206af-459d-70b9-900e-33e388ceab71).
+// Round 22 reseal — second neon sign (BAR EMAS) on the casino front, the title-shot street lamp behind the hero car removed, forecourt tiles get a checker shade so the combat plaza is not one flat brown field; this line is written in the round 22 reseal recorded session (01a2092d-3178-7290-b1e2-da8c5e84af71).
 // The city of Teluk Kencana: six districts on a road grid, a sea to the west,
 // a beach to the south, and landmarks in every district. Buildings are real
 // facades — canvas textures with window grids, frames, lit glass, AC units,
@@ -405,6 +405,17 @@ function tileTexture(base) {
   return canvasTexture(128, 128, (x, w, h) => {
     x.fillStyle = base;
     x.fillRect(0, 0, w, h);
+    // Round 22: a checker shade — alternate 16px tiles a touch darker
+    // / lighter, so a big tiled floor (the casino forecourt) reads as
+    // laid tiles, not one flat brown field. The forecourt is the whole
+    // middle of the combat shot; the flat brown grid was its dead space.
+    for (let r = 0; r < 8; r += 1) {
+      for (let c = 0; c < 8; c += 1) {
+        if ((r + c) % 2 === 0) continue;
+        x.fillStyle = 'rgba(0,0,0,0.10)';
+        x.fillRect(c * 16, r * 16, 16, 16);
+      }
+    }
     x.strokeStyle = 'rgba(0,0,0,0.35)';
     x.lineWidth = 3;
     for (let r = 0; r < 8; r += 1) {
@@ -1687,6 +1698,22 @@ export function createWorld(seed = 1) {
   casinoSign.position.set(240, 32, -26.5);
   group.add(casinoSign);
   neonSigns.push(casinoSign);
+  // Round 22: a SECOND neon sign on the casino's front face (BAR EMAS,
+  // teal) — the combat shot's second light source. It sits low on the
+  // front wall at (216, 8), left of the big red sign, so it reads in
+  // the combat frame without colliding with the vertical CASINO sign
+  // at (228, 7.5) or the CASINO EMAS sign at (240, 32).
+  const barSign = new THREE.Mesh(
+    new THREE.PlaneGeometry(14, 3),
+    new THREE.MeshBasicMaterial({ map: neonSignTexture('BAR EMAS', '#19d3c5', 512, 96), toneMapped: false }),
+  );
+  // Round 22b: y 8 (was 14) — at y 14 the sign sat ~25 deg above the
+  // combat camera's axis and was cut by the frame's top edge, so the
+  // first render showed no second neon at all. At y 8 it reads on the
+  // casino's front wall, clear of the vertical CASINO sign (x 225.5+).
+  barSign.position.set(216, 8, -26.5);
+  group.add(barSign);
+  neonSigns.push(barSign);
   // Round 14: a tall vertical CASINO sign on the casino's south face,
   // for the combat shot — the camera sits at (193.5, 3.1, -12.2) and
   // the sign at (228, 7.5, -26.9) projects to (275, 166) with ~48px
@@ -2051,6 +2078,13 @@ export function createWorld(seed = 1) {
       pool.rotation.x = -Math.PI / 2;
       pool.position.set(r + 9, 0.07, v);
       group.add(pool);
+      // Round 22: skip the ONE lamp at (-280, 189) (r 180, v -280) —
+      // it stands 6u behind the title hero car at (-280, 183), and
+      // from the title camera its dark pole crosses the gold Garuda
+      // from the roof to the bottom of the frame. One lamp missing on
+      // a 600u road is invisible in play; the pole across the car is
+      // not.
+      if (r === 180 && v === -280) continue;
       const lamp2 = streetLamp();
       lamp2.position.set(v, 0, r + 9);
       group.add(lamp2);

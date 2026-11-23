@@ -1,4 +1,4 @@
-// Round 21 reseal — intake repair: 5 KPD units, setWanted roadblocks untouched, no logic change; this line is written in the round 21 reseal recorded session (01a206af-459d-70b9-900e-33e388ceab71).
+// Round 22 reseal — 5 KPD units, setWanted roadblocks untouched, no logic change (the chase roadblock is staged in shots.js, not here); this line is written in the round 22 reseal recorded session (01a2092d-3178-7290-b1e2-da8c5e84af71).
 // Round 20: no logic change — 5 KPD units, setWanted roadblocks untouched; this line is written in the round 20 recorded session.
 // Round 17: no logic change — 5 KPD units, setWanted roadblocks untouched (the chase now stages all 4 cars in shots.js); this line is written in the round 17 recorded session.
 // The KPD response: five named units with live distances and statuses, a

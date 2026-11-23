@@ -1,4 +1,4 @@
-// Round 21 reseal — intake repair: boot + main loop untouched, no logic change; this line is written in the round 21 reseal recorded session (01a206af-459d-70b9-900e-33e388ceab71).
+// Round 22 reseal — boot + main loop untouched, no logic change; this line is written in the round 22 reseal recorded session (01a2092d-3178-7290-b1e2-da8c5e84af71).
 // Round 20: title heli staging + SAVE button + police.reset() on start (so the title heli never leaks into play); mission 1 is 'Pulang Kampung' now; this line is written in the round 20 recorded session.
 // Boot and the one loop: input every frame, the world advances in fixed
 // 1/60 s steps, the renderer paints. Screens: title, play, map, garage,
@@ -776,11 +776,16 @@ function boot() {
   // of asphalt like the reference title screen.
   state.car.mesh.position.set(-280, 0, 183);
   state.car.mesh.rotation.y = Math.PI / 2 + 0.5;
-  state.player.x = -277;
-  state.player.z = 186;
+  // Round 22e: the wheelman steps 3u toward the nose, beside the
+  // driver's door (-280.4, 178.6, was -283, 180) — at (-283, 180) he
+  // stood squarely in front of the REAR wheel and hid it (the v4
+  // zoom: front wheel reads silver, rear wheel is Raka). Still 4.4u
+  // from the car centre, inside the 5u enter radius.
+  state.player.x = -280.4;
+  state.player.z = 178.6;
   state.player.heading = Math.PI / 2;
-  playerFig.group.position.set(-277, 0, 186);
-  playerFig.group.rotation.y = Math.PI / 2;
+  playerFig.group.position.set(-280.4, 0, 178.6);
+  playerFig.group.rotation.y = Math.PI / 4;
   // Round 20: the KPD heli hovers in the title sky (upper-centre in
   // the side-profile shot), like the reference title screen. police
   // .step() never runs on the title screen, so it stays put; startGame()

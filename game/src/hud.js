@@ -1,4 +1,4 @@
-// Round 21 reseal — intake repair: HUD + tile-grid GPS map untouched, no logic change; this line is written in the round 21 reseal recorded session (01a206af-459d-70b9-900e-33e388ceab71).
+// Round 22 reseal — the map's district labels + grid letters now draw AFTER the GPS route (they used to sit under it, so the purple route + the "5" row number crossed out "PANTAI KIDUL" at the left edge); this line is written in the round 22 reseal recorded session (01a2092d-3178-7290-b1e2-da8c5e84af71).
 // Round 20: the map is a TILE-GRID GPS now (ref-round20.md §4) — coloured tiles per district, a PURPLE GPS route with coloured checkpoints, district labels + sub-labels; this line is written in the round 20 recorded session.
 // The HUD: DOM panels over the 3D canvas, drawn like the top entries —
 // a mission panel, a KPD response panel with five NAMED units + distances +
@@ -185,28 +185,10 @@ export function createHud(world) {
     for (let r = 0; r <= rows; r += 1) {
       mapCtx.beginPath(); mapCtx.moveTo(0, r * TILE + 0.5); mapCtx.lineTo(W, r * TILE + 0.5); mapCtx.stroke();
     }
-    // District names + sub-labels, top-left of each block.
-    mapCtx.textAlign = 'left';
-    for (const d of DISTRICTS) {
-      const x = toX(d.x0) + 10;
-      const y = toZ(d.z0) + 20;
-      mapCtx.font = 'bold 13px system-ui';
-      mapCtx.fillStyle = 'rgba(0,0,0,0.45)';
-      mapCtx.fillText(d.name.toUpperCase(), x + 1, y + 1);
-      mapCtx.fillStyle = '#ffffff';
-      mapCtx.fillText(d.name.toUpperCase(), x, y);
-      mapCtx.font = '10px system-ui';
-      mapCtx.fillStyle = 'rgba(255,255,255,0.85)';
-      mapCtx.fillText(TILE_SUB[d.id] || '', x, y + 14);
-    }
-    // Grid A–F / 1–6, gold and bold like the reference map's grid.
-    mapCtx.fillStyle = '#ffd94d';
-    mapCtx.font = 'bold 12px system-ui';
-    mapCtx.textAlign = 'center';
-    for (let i = 0; i < 6; i += 1) {
-      mapCtx.fillText('ABCDEF'[i], toX(-330 + i * 110 + 55), 12);
-      mapCtx.fillText(String(i + 1), 10, toZ(-330 + i * 110 + 55) + 4);
-    }
+    // Round 22: the district labels + grid letters moved to AFTER the
+    // GPS route below — they used to draw here, UNDER the route, so
+    // the purple route line + the "5" row number crossed out
+    // "PANTAI KIDUL" at the left edge of the map shot.
     // GPS route: player -> nearest road x -> nearest road z -> objective,
     // so every leg runs along a road (purple, with a dark outline).
     const routePts = (p, o) => {
@@ -257,6 +239,30 @@ export function createHud(world) {
     mapCtx.lineWidth = 1.5;
     mapCtx.stroke();
     mapCtx.restore();
+    // Round 22: district names + sub-labels + grid letters draw LAST
+    // (over the route, the checkpoints and the player arrow) — the
+    // text must never sit under the purple GPS line again.
+    mapCtx.textAlign = 'left';
+    for (const d of DISTRICTS) {
+      const x = toX(d.x0) + 10;
+      const y = toZ(d.z0) + 20;
+      mapCtx.font = 'bold 13px system-ui';
+      mapCtx.fillStyle = 'rgba(0,0,0,0.45)';
+      mapCtx.fillText(d.name.toUpperCase(), x + 1, y + 1);
+      mapCtx.fillStyle = '#ffffff';
+      mapCtx.fillText(d.name.toUpperCase(), x, y);
+      mapCtx.font = '10px system-ui';
+      mapCtx.fillStyle = 'rgba(255,255,255,0.85)';
+      mapCtx.fillText(TILE_SUB[d.id] || '', x, y + 14);
+    }
+    // Grid A–F / 1–6, gold and bold like the reference map's grid.
+    mapCtx.fillStyle = '#ffd94d';
+    mapCtx.font = 'bold 12px system-ui';
+    mapCtx.textAlign = 'center';
+    for (let i = 0; i < 6; i += 1) {
+      mapCtx.fillText('ABCDEF'[i], toX(-330 + i * 110 + 55), 12);
+      mapCtx.fillText(String(i + 1), 10, toZ(-330 + i * 110 + 55) + 4);
+    }
     // Bottom strip.
     mapCtx.fillStyle = 'rgba(16,12,28,0.85)';
     mapCtx.fillRect(0, H - 22, W, 22);
