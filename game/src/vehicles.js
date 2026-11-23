@@ -1,3 +1,4 @@
+// Round 21 reseal — intake repair: vehicle builders untouched, no logic change; this line is written in the round 21 reseal recorded session (01a206af-459d-70b9-900e-33e388ceab71).
 // Every vehicle is built from boxes and one lofted body: the Garuda GT is a
 // low, wide sports car with a closed glass cabin and a human driver visible
 // inside; traffic, taxis and KPD cars are real-looking sedans and vans with

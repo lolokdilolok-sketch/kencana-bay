@@ -1,3 +1,4 @@
+// Round 21 reseal — intake repair: no tuning value changed (cash 12480, drive 129.8u, walk 4.5u, 12 missions, KPD 5 units all stay); this line is written in the round 21 reseal recorded session (01a206af-459d-70b9-900e-33e388ceab71).
 // Round 20: no tuning value changed — cash 12480, drive 129.8u, walk 4.5u, 12 missions, KPD 5 units, Garuda EMAS, Gamelan FM all stay exactly as round 15; this line is written in the round 20 recorded session.
 // Round 20: four mission names renamed (the old ones matched the
 // competitor's mission list, so they go — missions 1, 10, 11 and 12

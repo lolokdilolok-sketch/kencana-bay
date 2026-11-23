@@ -1,3 +1,4 @@
+// Round 21 reseal — intake repair: city, districts and landmarks untouched, no logic change; this line is written in the round 21 reseal recorded session (01a206af-459d-70b9-900e-33e388ceab71).
 // The city of Teluk Kencana: six districts on a road grid, a sea to the west,
 // a beach to the south, and landmarks in every district. Buildings are real
 // facades — canvas textures with window grids, frames, lit glass, AC units,

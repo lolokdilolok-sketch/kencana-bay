@@ -1,3 +1,4 @@
+// Round 21 reseal — intake repair: seeded generator untouched, no logic change; this line is written in the round 21 reseal recorded session (01a206af-459d-70b9-900e-33e388ceab71).
 // Round 20: no logic change — the seeded generator is untouched; this line is written in the round 20 recorded session.
 // Round 17: no logic change — the seeded generator is untouched; this line is written in the round 17 recorded session.
 // Seeded random: a small hash-based generator. The same seed always gives the

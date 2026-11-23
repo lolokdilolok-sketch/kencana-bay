@@ -1,3 +1,4 @@
+// Round 21 reseal — intake repair: garage interior untouched, no logic change; this line is written in the round 21 reseal recorded session (01a206af-459d-70b9-900e-33e388ceab71).
 // Round 20: no logic change — the garage interior is untouched; the display cars just get the new round-20 wedge builder from vehicles.js; this line is written in the round 20 recorded session.
 // Round 17: no logic change — the garage interior keeps the round 16 fixes; the display cars just get the new clearcoat paint from vehicles.js; this line is written in the round 17 recorded session.
 // The enterable garage: Bengkel Bambang. A real room in the same scene, far

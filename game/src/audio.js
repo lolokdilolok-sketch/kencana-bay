@@ -1,3 +1,4 @@
+// Round 21 reseal — intake repair: radio + engine synth untouched, no logic change; this line is written in the round 21 reseal recorded session (01a206af-459d-70b9-900e-33e388ceab71).
 // Round 20: no logic change — radio + engine synth untouched; this line is written in the round 20 recorded session.
 // Round 17: no logic change — the radio + engine synth are untouched; this line is written in the round 17 recorded session.
 // Sound only: a WebAudio synth. No audio files, no network. The radio is a

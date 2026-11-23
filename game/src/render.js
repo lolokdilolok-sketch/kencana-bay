@@ -1,3 +1,4 @@
+// Round 21 reseal — intake repair: cameras, sky and lights untouched, no logic change; this line is written in the round 21 reseal recorded session (01a206af-459d-70b9-900e-33e388ceab71).
 // Round 20: no logic change — cameras, sky and lights untouched except the bigger moon (combat night), more day clouds (chase noon) and the title camera's side-profile angle; this line is written in the round 20 recorded session.
 // Drawing only: the Three.js scene, the sun, the sky and the cameras.
 // The HUD is DOM (hud.js); this module paints the 3D world and moves the

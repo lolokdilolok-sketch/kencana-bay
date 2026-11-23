@@ -1,3 +1,4 @@
+// Round 21 reseal — intake repair: boot + main loop untouched, no logic change; this line is written in the round 21 reseal recorded session (01a206af-459d-70b9-900e-33e388ceab71).
 // Round 20: title heli staging + SAVE button + police.reset() on start (so the title heli never leaks into play); mission 1 is 'Pulang Kampung' now; this line is written in the round 20 recorded session.
 // Boot and the one loop: input every frame, the world advances in fixed
 // 1/60 s steps, the renderer paints. Screens: title, play, map, garage,

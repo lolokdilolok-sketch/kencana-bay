@@ -1,3 +1,4 @@
+// Round 21 reseal — intake repair: the four screenshot scenes are staged the same way, no logic change; this line is written in the round 21 reseal recorded session (01a206af-459d-70b9-900e-33e388ceab71).
 // The four screenshot scenes. Each one stages a real, playable situation
 // from a fixed seed — a busy noon chase, a NIGHT shootout, the garage
 // interior, and the map after a played session — then the page paints it

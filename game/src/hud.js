@@ -1,3 +1,4 @@
+// Round 21 reseal — intake repair: HUD + tile-grid GPS map untouched, no logic change; this line is written in the round 21 reseal recorded session (01a206af-459d-70b9-900e-33e388ceab71).
 // Round 20: the map is a TILE-GRID GPS now (ref-round20.md §4) — coloured tiles per district, a PURPLE GPS route with coloured checkpoints, district labels + sub-labels; this line is written in the round 20 recorded session.
 // The HUD: DOM panels over the 3D canvas, drawn like the top entries —
 // a mission panel, a KPD response panel with five NAMED units + distances +
