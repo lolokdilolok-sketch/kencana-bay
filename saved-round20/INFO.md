@@ -82,3 +82,4 @@ TIDAK disubmit — menunggu OK boy dari 4 screenshot + preview title.
   plaza masih dominan ubin terakota.
 
 > Round 21 reseal note (23 Nov 2026, rekaman 01a206af-459d-70b9-900e-33e388ceab71): arsip ronde 20 ini DIPERTAHANKAN apa adanya — 5 JPG di sini tidak diubah; ronde 21 reseal hanya memperbaiki intake (main.ts ditulis ulang, screenshot diregenerasi ke saved-round21/, semua file teks distempel). Konten game sama dengan ronde 20.
+> Round 22 reseal note (23 Nov 2026, rekaman 01a2092d-3178-7290-b1e2-da8c5e84af71): arsip ini tetap DIPERTAHANKAN apa adanya — 5 JPG tidak diubah; ronde 22 adalah ronde perbaikan visual (Garuda, staging chase/combat/garage, label peta), screenshot barunya ada di saved-round22/.
