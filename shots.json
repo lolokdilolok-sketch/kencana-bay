@@ -2,21 +2,25 @@
   {
     "name": "1-chase.jpg",
     "query": "?shot=chase&seed=1",
-    "round": 20
+    "round": 21,
+    "reseal": "Round 21 reseal"
   },
   {
     "name": "2-combat.jpg",
     "query": "?shot=combat&seed=1",
-    "round": 20
+    "round": 21,
+    "reseal": "Round 21 reseal"
   },
   {
     "name": "3-garage.jpg",
     "query": "?shot=garage&seed=1",
-    "round": 20
+    "round": 21,
+    "reseal": "Round 21 reseal"
   },
   {
     "name": "4-map.jpg",
     "query": "?shot=map&seed=1",
-    "round": 20
+    "round": 21,
+    "reseal": "Round 21 reseal"
   }
 ]

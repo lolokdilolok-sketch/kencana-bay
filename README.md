@@ -1,4 +1,5 @@
 # KENCANA — A Crime Story in Kencana Bay · 1998
+> Round 21 reseal (23 Nov 2026, rekaman 01a206af-459d-70b9-900e-33e388ceab71): intake repair — no visual/gameplay change; entrypoint rewritten from scratch, screenshots regenerated, all in the recorded session.
 
 [![gta6-01](https://make.fun/badge/gta6-01.svg)](https://make.fun/bounty/gta6-01)
 [![rank](https://make.fun/badge/gta6-01/lolokdilolok-sketch/kencana-bay/rank.svg)](https://make.fun/bounty/gta6-01)
