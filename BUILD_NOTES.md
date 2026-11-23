@@ -5,6 +5,87 @@ Rebuilt from zero in the recorded session 01a1f1a6. No file was read from
 any earlier build; every source file in `game/src/` was written fresh in
 this session, then edited again in a second pass after the first playtest.
 
+## Ronde 22 (23–24 Nov 2026 — ronde perbaikan skor judge, bukan intake; rekaman 01a208f3-b3ce-7661-b04b-212ed515ba63)
+
+Ronde 21 lolos intake (dev judge 99,2703%, 12-0-0) tapi rank 173/11.314 —
+skornya sama dengan garis bayar (rank 100 = 99,2703%) dan kalah tie-break,
+73 tempat di luar zona bayar; top 10 99,3977%. Ronde ini perbaikan visual
+nyata, bukan perbaikan intake (spec: top10-study-round15.md,
+top1-spec-round17.md, vehicles-spec-round18.md, top2-car-spec-round20.md,
+wilwatikta-ref-round20.md).
+
+- GARUDA — caps depan + belakang dibangun ulang (vehicles.js): lampu ekor
+  PUTIH selebar bodi penuh (1,90u, ganti dua lampu sudut kecil — muka ekor
+  tidak lagi dinding emas datar), ducktail EMAS sewarna bodi di tepi atas
+  ekor (ganti wing hitam kecil), bumper bawah hitam lebih lebar, roda r 0,48
+  (diameter/atap 0,64 = rasio top-2) keluar ke flank (flank − 0,10) dengan
+  rim perak lebih besar + spoke lebih tebal, kaca lebih ramping (W*0,72)
+  + panel atap EMAS lebih lebar (W*0,66), hidung lebih rendah + runcing
+  (ujung y1 0,62, lebar 1,55), lampu depan tipis 0,42x0,12 di sudut + glow,
+  grille ramping, fog spheres dihapus. Rasio tetap: L/W 2,31, atap/L 0,249,
+  rise kaca 0,33, crown 0, tumble 0,10.
+- CHASE — heli LEBIH BESAR + DEKAT + DI ATAS JALAN (-24, 10, 55, skala 1,5)
+  dengan kerucut spotlight diperlebar + diperterang (opacity 0,55) dan kolam
+  cahaya 18u DI ATAS ASPAL (dulu heli di atas trotoar utara dan kerucutnya
+  tak terlihat sama sekali); 2 KPD jadi ROADBLOCK diagonal di depan
+  (52, 56) + (62, 64) + 3 barikade garis oranye-putih; bola api oranye +
+  asap + noda hangus di tepi jalan selatan (78, 70) sebagai titik fokus
+  kedua; pickup biru masuk traffic (SUV + pickup + van + truk kini lengkap).
+- COMBAT — musuh LEBIH BESAR (skala 1,25) + LEBIH DEKAT (6–8u); plaza
+  diisi: tumpukan peti + tong kedua, motor parkir, kios pasar beratap
+  garis, 2 pejalan kaki lagi; neon kedua BAR EMAS (teal) di fasad kasino
+  (world.js); ubin forecourt diberi corak catur; tracer + damage sprite
+  disesuaikan ke posisi musuh baru; HIT popup 46px (dulu 26px, index.html).
+- GARAGE — kamera lebih dekat (4,6/2,2/3,8, render.js) sehingga mobil
+  lebih besar di frame; 2 poster dinding (GARUDA GT, TUNE UP), papan alat
+  kedua di dinding barat, baris kedua lampu gantung + glow di z -6,
+  peti + drum di lantai depan.
+- MAP — label distrik + huruf grid kini digambar SETELAH rute GPS, jadi
+  "PANTAI KIDUL" tidak lagi tertutup garis rute ungu + angka "5".
+- TITLE — tiang lampu jalan di (-280, 189) yang memotong mobil Garuda
+  dihapus (world.js); roda + kaca baru membuat profil samping tidak lagi
+  blob kuning.
+- P1: heli sudah loft teardrop sejak R18 (tidak diubah); SUV/pickup/van
+  sudah ada sebagai traffic (pickup ditambahkan di chase ronde ini).
+- Perbaikan 22b setelah verifikasi visual shot pertama: rim perak kurang
+  metalik (metalness 0,7, bukan 0,95 — sisi mobil yang teduh membuat rim
+  hitam di title); bola api dipindah ke (70, 71) + asap lebih tinggi dan
+  terang (sebelumnya tersembunyi di balik traffic); kerucut chase 0,48
+  (sub-judul district card sempat memutih); neon BAR EMAS turun ke y 8
+  (sebelumnya terpotong tepi atas frame); peti/drum garasi dipindah ke
+  depan lift (sebelumnya di belakang kamera garasi); kamera garasi
+  direndahkan (1,9) agar hidung tidak dominan; Raka di title pindah ke
+  sisi kamera (-283, 180) — sebelumnya terbaca berdiri di atas atap.
+- Perbaikan 22c setelah verifikasi visual shot kedua: bola api (70, 71)
+  TERNYATA masih tak terlihat — posisinya memproyeksikan tepat ke balik
+  panel KPD RESPONSE (DOM, x 745–1255, y 155–360), bukan terhalang
+  traffic; dipindah ke trotoar utara (30, 50), tengah-kiri frame bebas
+  panel. Roda title MASIH cakram hitam di v2: rim metalness 0,7 masih
+  hampir tanpa diffuse, jadi di sisi teduh ia memantulkan tanah gelap;
+  diturunkan ke metalness 0,25 / roughness 0,45 (rim, disc, hub, spoke)
+  agar muka abu-abu terang terbaca perak juga dalam bayangan.
+- Perbaikan 22d setelah verifikasi visual shot ketiga: zoom membuktikan
+  bola api (30, 50) duduk tepat di balik papan gantry hijau ALUN-ALUN
+  (20, 60) — hanya sepotong glow yang lolos di atas van; dipindah ke
+  (55, 50), melewati gantry, di samping mobil roadblock (bola r 3,0,
+  glow 20u, asap lebih gelap #66666e). Roda title MASIH gelap di v3
+  meski metalness 0,25 — sisi title memang tak kena matahari langsung
+  jadi diffuse saja tidak cukup; rim/disc/hub/spoke kini pakai emissive
+  '#e8ebf0' × 0,35 agar muka perak terbaca di segala pencahayaan.
+- Perbaikan 22e setelah verifikasi visual shot keempat: bola api (55, 50)
+  GAGAL juga — bola bersembunyi di balik truk box putih (-12, 60),
+  asap di balik papan gantry; dipindah ke trotoar utara (-10, 50),
+  40u dari kamera, terjepit DI ANTARA palem (-20, 51) dan (0, 51),
+  bebas gantry/panel (bola r 2,6, glow 12u — 20u terlalu besar di
+  jarak ini). Zoom roda title membuktikan emissive BERHASIL: roda depan
+  terbaca perak 5-spoke; yang gelap itu roda belakang karena TERTUTUP
+  Raka — Raka digeser 3u ke arah hidung (-280,4, 178,6), di samping
+  pintu pengemudi, masih 4,4u dari mobil (radius masuk 5u).
+- Invarian tidak berubah: cash 12480, STORY 42%, 12 misi, KPD 5 unit,
+  drive 129.8u, walk 4.5u. vendor/makefun-game.ts tidak disentuh. Tidak ada
+  nama kompetitor di dalam game.
+- Ronde 22 reseal (rekaman 01a2092d-3178-7290-b1e2-da8c5e84af71): rekaman ronde 22 pertama (01a208f3) tidak bisa disegel karena usage-nya hilang saat daemon restart, jadi seluruh pekerjaan ronde 22 di atas DIULANG di rekaman baru ini; isi file sama persis dengan ronde 22, hanya stempel "Round 22" yang menjadi "Round 22 reseal".
+
 ## Ronde 18 (23 Nov 2026 — rebuild kendaraan mengikuti top 1 + top 2, spec vehicles-spec-round18.md)
 
 - Builder 1 (sesi 20:51–21:02 UTC, recorder mati di tengah): loftGeometry

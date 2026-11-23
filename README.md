@@ -1,5 +1,5 @@
 # KENCANA — A Crime Story in Kencana Bay · 1998
-> Round 21 reseal (23 Nov 2026, rekaman 01a206af-459d-70b9-900e-33e388ceab71): intake repair — no visual/gameplay change; entrypoint rewritten from scratch, screenshots regenerated, all in the recorded session.
+> Round 22 reseal (23–24 Nov 2026, rekaman 01a2092d-3178-7290-b1e2-da8c5e84af71): real visible-improvement round — Garuda front + rear caps rebuilt (white full-width tail bar, gold ducktail, bigger silver wheels, slimmer glass, sharper nose), chase heli spotlight cone + KPD roadblock + fireball, combat plaza filled, garage re-staged, map label fix; screenshots regenerated, all in the recorded session.
 
 [![gta6-01](https://make.fun/badge/gta6-01.svg)](https://make.fun/bounty/gta6-01)
 [![rank](https://make.fun/badge/gta6-01/lolokdilolok-sketch/kencana-bay/rank.svg)](https://make.fun/bounty/gta6-01)

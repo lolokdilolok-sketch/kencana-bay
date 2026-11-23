@@ -1,4 +1,4 @@
-// Round 21 reseal — intake repair: the static server is untouched, no logic change; this line is written in the round 21 reseal recorded session (01a206af-459d-70b9-900e-33e388ceab71).
+// Round 22 reseal — the static server is untouched, no logic change; this line is written in the round 22 reseal recorded session (01a2092d-3178-7290-b1e2-da8c5e84af71).
 // Round 20: no logic change — the static server is untouched; this line is written in the round 20 recorded session.
 // Round 17: no logic change — the static server is untouched; this line is written in the round 17 recorded session.
 // A tiny static server for game/ (Node 22, standard library only), so an entry can be played
