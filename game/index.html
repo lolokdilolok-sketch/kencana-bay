@@ -1,5 +1,5 @@
 <!doctype html>
-<!-- Round 21 reseal — intake repair: no markup change; this line is written in the round 21 reseal recorded session (01a206af-459d-70b9-900e-33e388ceab71) -->
+<!-- Round 22 reseal — HIT popup much bigger (46px, was 26px) so it reads in the combat shot; this line is written in the round 22 reseal recorded session (01a2092d-3178-7290-b1e2-da8c5e84af71) -->
 <!-- Round 20: the map overlay is a 3-column GPS screen now (header + story | tile grid | stats + legend), the title reads KENCANA (orange-white) with a SAVE button; this line is written in the round 20 recorded session -->
 <!-- Round 19: no markup change — the rebuilt vehicles and new staging are all in game/src; this line is written in the round 19 recorded session -->
 <!-- Round 17: no markup change — the bright-blue 16:00 sky, clearcoat cars and new staging are all in game/src; this line is written in the round 17 recorded session -->
@@ -109,7 +109,7 @@
   .crew-card.hired { border-color: #7dff9a; }
   .crew-card.hired .cc-sub { color: #7dff9a; font-weight: 700; }
   /* Red HIT popup, like the reference combat shot. */
-  #hit-popup { position: absolute; left: 50%; top: 44%; transform: translateX(-50%); font-family: "Arial Black", sans-serif; font-size: 26px; color: #ff5a5a; text-shadow: 0 2px 8px #000; opacity: 0; transition: opacity 0.15s; pointer-events: none; }
+  #hit-popup { position: absolute; left: 50%; top: 40%; transform: translateX(-50%); font-family: "Arial Black", sans-serif; font-size: 46px; letter-spacing: 2px; color: #ff5a5a; text-shadow: 0 2px 0 #7a0e0e, 0 4px 12px #000; opacity: 0; transition: opacity 0.15s; pointer-events: none; }
   #hit-popup.show { opacity: 1; }
   .wslot { position: relative; width: 64px; height: 64px; padding: 4px 2px 3px; background: rgba(16,12,28,0.78); border: 1px solid rgba(255,255,255,0.28); border-radius: 9px; display: flex; flex-direction: column; align-items: center; justify-content: center; }
   .wslot.active { border: 2px solid #ff8a3d; box-shadow: 0 0 0 1px rgba(255,138,61,0.6); background: rgba(255,138,61,0.30); }
