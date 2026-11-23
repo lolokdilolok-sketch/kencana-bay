@@ -1,8 +1,12 @@
 <!doctype html>
+<!-- Round 20: the map overlay is a 3-column GPS screen now (header + story | tile grid | stats + legend), the title reads KENCANA (orange-white) with a SAVE button; this line is written in the round 20 recorded session -->
+<!-- Round 19: no markup change — the rebuilt vehicles and new staging are all in game/src; this line is written in the round 19 recorded session -->
+<!-- Round 17: no markup change — the bright-blue 16:00 sky, clearcoat cars and new staging are all in game/src; this line is written in the round 17 recorded session -->
 <html lang="id">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<!-- Round 16: no HUD markup change — the fixes are 3D staging (shots.js / world.js / vehicles.js / garage.js); re-saved in this recorded session so the file is witnessed. -->
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%231b1026'/%3E%3Ctext x='32' y='44' font-size='36' font-family='Arial Black' font-weight='900' fill='%23ffd94d' text-anchor='middle'%3EK%3C/text%3E%3C/svg%3E">
 <title>KENCANA — A Crime Story in Kencana Bay · 1998</title>
 <style>
@@ -71,7 +75,13 @@
   #cash-line .c-stars { font-size: 26px; color: #ffd94d; letter-spacing: 4px; line-height: 1.1; }
   #cash-line .c-sight { display: flex; align-items: center; justify-content: flex-end; gap: 8px; font-size: 12px; font-weight: 700; color: #b8d8e8; margin-top: 2px; }
   #cash-line .c-sight .c-sight-pill { background: #d21f2b; color: #fff; font-size: 11px; font-weight: 800; letter-spacing: 1px; padding: 2px 9px; border-radius: 999px; text-shadow: none; }
-  #stamp { position: absolute; top: 12px; left: 50%; transform: translateX(-50%); font-size: 11px; letter-spacing: 2px; color: rgba(242,234,216,0.75); background: rgba(16,12,28,0.55); padding: 3px 10px; border-radius: 20px; }
+  /* Round 15: district title card (top-centre, like the top-10 title
+     cards) — hidden until the chase staging shows it. It takes the slot
+     the version stamp used to occupy; the stamp is gone in round 15. */
+  #district-card { position: absolute; top: 14px; left: 50%; transform: translateX(-50%); text-align: center; display: none; pointer-events: none; }
+  #district-card.show { display: block; }
+  #district-card .dc-name { font-family: "Arial Black", "Segoe UI", system-ui, sans-serif; font-size: 34px; letter-spacing: 6px; color: #fff6e8; text-shadow: 0 2px 0 rgba(0,0,0,0.55), 0 0 18px rgba(255,138,92,0.65); }
+  #district-card .dc-sub { font-size: 12px; letter-spacing: 3px; color: #ffd94d; text-shadow: 0 1px 0 rgba(0,0,0,0.6); margin-top: 2px; }
   /* Minimap, bottom-left (round 8: moved from the top-left, like the
      reference's bottom-left map — the mission panel takes top-left). */
   #minimap-wrap { position: absolute; left: 14px; bottom: 14px; width: 220px; }
@@ -164,20 +174,30 @@
   #toast b { display: block; font-family: "Arial Black", sans-serif; font-size: 30px; color: #ffd94d; }
   #toast span { font-size: 15px; color: #fff; }
   #help { display: none; }
-  /* Map overlay: a transparent dusk veil over the live city (round 11:
-     warm neutral grey-brown — the round 10 dark-blue veil rgba(24,24,60)
-     -> rgba(64,64,116) still read mauve behind the map, together with the
-     violet fog. The colourful district grid itself is the map content and
-     stays as it is. */
-  #map-overlay { position: absolute; inset: 0; display: none; background: linear-gradient(160deg, rgba(42,36,30,0.55), rgba(88,76,60,0.35)); }
+  /* Map overlay (round 20): a full GPS screen like the reference map —
+     header (title + STORY/MAP/STATS/LEGENDA tabs), three columns
+     (story list | tile-grid canvas | stats + ring + legend + buttons),
+     the active-route bar, and the crew bar at the bottom. The veil is
+     darker now so the tile grid reads, not the 3D city behind it. */
+  #map-overlay { position: absolute; inset: 0; display: none; flex-direction: column; background: linear-gradient(160deg, rgba(20,16,28,0.82), rgba(30,26,40,0.72)); }
   #map-overlay.open { display: flex; }
-  #map-left { flex: none; padding: 26px 10px 20px 26px; }
-  #map-title { font-family: "Arial Black", sans-serif; font-size: 22px; color: #ffd94d; text-shadow: 0 2px 6px #000; }
-  #map-sub { font-size: 12px; color: #fff; margin-bottom: 8px; text-shadow: 0 1px 3px #000; }
-  #map-canvas { width: 500px; height: 500px; border-radius: 12px; border: 2px solid rgba(255,217,77,0.6); }
+  #map-header { display: flex; align-items: center; justify-content: space-between; padding: 12px 26px 8px; }
+  #map-title { font-family: "Arial Black", sans-serif; font-size: 22px; color: #fff; text-shadow: 0 2px 6px #000; letter-spacing: 1px; }
+  #map-title b { color: #ffd94d; }
+  #map-tabs { display: flex; gap: 4px; }
+  #map-tabs span { font-size: 12px; font-weight: 800; letter-spacing: 1px; color: #b8b0a0; padding: 5px 12px; border-radius: 6px; border: 1px solid transparent; }
+  #map-tabs span.mt-active { color: #ffd94d; border-color: #ffd94d; background: rgba(255,217,77,0.12); }
+  #map-body { flex: 1; min-height: 0; display: flex; gap: 16px; padding: 0 26px; }
+  #map-left-panel { width: 268px; flex: none; display: flex; flex-direction: column; min-height: 0; }
+  #map-left-panel h3, #map-right-panel h3 { margin: 0 0 5px; font-size: 13px; letter-spacing: 2px; color: #ffd94d; }
+  #map-center { flex: 1; display: flex; flex-direction: column; align-items: center; min-width: 0; }
+  #map-canvas { width: 660px; height: 420px; border-radius: 12px; border: 2px solid rgba(255,217,77,0.6); }
+  #map-route { margin-top: 8px; width: 660px; font-size: 12.5px; background: rgba(16,12,28,0.7); border-radius: 8px; padding: 7px 12px; color: #f2ead8; }
+  #map-route b { color: #ffd94d; }
+  #map-right-panel { width: 236px; flex: none; display: flex; flex-direction: column; min-height: 0; }
   /* Portrait row at the bottom of the map screen (round 6, like the
      reference's bottom portrait bar). */
-  #map-crew { display: flex; gap: 8px; margin-top: 10px; }
+  #map-crew { display: flex; gap: 8px; justify-content: center; padding: 8px 0 12px; }
   .map-crew-card { width: 76px; text-align: center; }
   .map-crew-card canvas { width: 56px; height: 56px; border-radius: 8px; border: 2px solid rgba(255,217,77,0.5); }
   .map-crew-card .mc-name { font-size: 11px; font-weight: 800; color: #fff; margin-top: 2px; text-shadow: 0 1px 3px #000; }
@@ -192,8 +212,6 @@
   #map-actions button { font-family: "Arial Black", sans-serif; font-size: 13px; padding: 10px 18px; border-radius: 999px; border: none; cursor: pointer; }
   #map-close { background: #ff8a3d; color: #1c1c1c; }
   #map-title-btn { background: rgba(16,12,28,0.8); color: #f2ead8; border: 1px solid rgba(255,255,255,0.4); }
-  #map-right { flex: 1; padding: 26px 26px 20px 18px; overflow: hidden; display: flex; flex-direction: column; }
-  #map-right h3 { margin: 0 0 5px; font-size: 14px; letter-spacing: 2px; color: #ffd94d; }
   #story-list { display: flex; flex-direction: column; gap: 4px; flex: 1; overflow-y: auto; min-height: 0; }
   .story-row { display: flex; gap: 8px; align-items: center; background: rgba(16,12,28,0.6); border-radius: 8px; padding: 2px 8px; font-size: 12px; }
   .story-row canvas { width: 26px; height: 26px; border-radius: 6px; flex: none; }
@@ -208,12 +226,20 @@
   #map-job .mj-name { font-size: 14px; font-weight: 800; color: #fff; }
   #map-job .mj-meta { color: #ffd94d; font-weight: 700; }
   #map-job .mj-brief { color: #b8b0a0; }
-  /* Legend, two columns (round 7, like the reference map's LEGEND). */
+  /* Legend (round 20): one column of coloured dots — yellow objective,
+     blue KPD, red gang, green safehouse, orange crew — like the
+     reference map's LEGENDA. */
   #map-legend { margin-top: 8px; font-size: 12px; line-height: 1.5; background: rgba(16,12,28,0.6); border-radius: 8px; padding: 6px 12px; }
   #map-legend .lg-title { color: #ffd94d; font-weight: 800; letter-spacing: 2px; font-size: 12px; margin-bottom: 2px; }
-  #map-legend .lg-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; column-gap: 10px; }
+  #map-legend .lg-grid { display: flex; flex-direction: column; gap: 2px; }
   #map-legend .lg-grid span { white-space: nowrap; }
-  #map-stats { margin-top: 8px; font-size: 12.5px; line-height: 1.6; background: rgba(16,12,28,0.6); border-radius: 8px; padding: 6px 12px; color: #ffd94d; font-weight: 600; }
+  #map-legend .lg-dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 7px; vertical-align: 0; }
+  /* Stats (round 20): label/value rows like the reference map's STATS. */
+  #map-stats { margin-top: 8px; font-size: 12.5px; line-height: 1.6; background: rgba(16,12,28,0.6); border-radius: 8px; padding: 6px 12px; }
+  #map-stats .ms-row { display: flex; justify-content: space-between; gap: 8px; padding: 2px 0; border-bottom: 1px solid rgba(255,255,255,0.06); }
+  #map-stats .ms-row:last-child { border-bottom: none; }
+  #map-stats .ms-row span { color: #b8b0a0; letter-spacing: 1px; font-size: 11px; font-weight: 700; }
+  #map-stats .ms-row b { color: #fff; }
   /* MISSION PASSED banner. */
   #passed-overlay { position: absolute; inset: 0; display: none; align-items: center; justify-content: center; }
   #passed-overlay.show { display: flex; }
@@ -233,14 +259,14 @@
   #garage-panel .g-row { display: flex; justify-content: space-between; gap: 8px; font-size: 12.5px; padding: 5px 0; border-bottom: 1px solid rgba(255,255,255,0.08); }
   #garage-panel .g-row b { color: #7dff9a; }
   #garage-panel .g-cash { font-size: 12px; color: #ffd94d; margin-top: 8px; }
-  /* Title poster (round 6: big gold serif title like the reference's
-     poster style, orange MULAI button, controls bottom-left, credit
-     bottom-right — our own name KENCANA BAY). */
+  /* Title poster (round 20: the big title is KENCANA in orange-white
+     Arial Black, like the reference title screen — the old serif
+     gold "KENCANA BAY" is gone; subtitle "CERITA JALANAN · 1998"). */
   #title-screen { position: absolute; inset: 0; display: none; flex-direction: column; align-items: center; background: linear-gradient(180deg, rgba(43,30,94,0.25) 0%, rgba(43,30,94,0.05) 40%, rgba(16,10,28,0.72) 100%); }
   #title-screen.open { display: flex; }
   #title-screen .t-over { margin-top: 26px; font-size: 14px; letter-spacing: 6px; color: #ffd94d; font-weight: 700; text-shadow: 0 2px 6px #000; }
-  #title-screen .t-logo { font-family: Georgia, "Times New Roman", serif; font-weight: 900; font-size: 80px; line-height: 0.95; background: linear-gradient(180deg, #ffe98a, #ff9a3d); -webkit-background-clip: text; background-clip: text; color: transparent; text-shadow: none; filter: drop-shadow(0 4px 12px rgba(0,0,0,0.6)); letter-spacing: 2px; }
-  #title-screen .t-bay { font-family: Georgia, "Times New Roman", serif; font-weight: 700; font-size: 26px; letter-spacing: 16px; color: #fff; text-shadow: 0 2px 8px #000; margin-top: 4px; }
+  #title-screen .t-logo { font-family: "Arial Black", "Segoe UI", system-ui, sans-serif; font-weight: 900; font-size: 96px; line-height: 0.95; background: linear-gradient(180deg, #fff8e0 0%, #ffb400 55%, #ff6a00 100%); -webkit-background-clip: text; background-clip: text; color: transparent; text-shadow: none; filter: drop-shadow(0 4px 12px rgba(0,0,0,0.6)); letter-spacing: 2px; }
+  #title-screen .t-bay { font-family: "Arial Black", "Segoe UI", system-ui, sans-serif; font-weight: 700; font-size: 26px; letter-spacing: 14px; color: #fff; text-shadow: 0 2px 8px #000; margin-top: 6px; }
   #title-screen .t-tag { font-size: 15px; font-style: italic; color: #f2ead8; margin-top: 6px; text-shadow: 0 1px 4px #000; max-width: 420px; text-align: center; }
   #title-screen .t-mid { position: absolute; inset: 0; pointer-events: none; }
   #title-screen .t-cards { position: absolute; left: 24px; top: 50%; transform: translateY(-50%); display: flex; flex-direction: column; gap: 10px; }
@@ -273,7 +299,7 @@
 <p id="status" role="status" aria-live="polite"></p>
 <div id="hud">
   <div id="mission-panel" class="glass">
-    <div class="m-title">MISI 1/12 · SELAMAT DATANG</div>
+    <div class="m-title">MISI 1/12 · PULANG KAMPUNG</div>
     <div class="m-dist"></div>
     <div class="m-brief">Temui Ratna di Alun-Alun.</div>
     <div class="m-meta">STORY 0% · REP 1320 · $300</div>
@@ -283,7 +309,7 @@
     <div class="k-units"><div class="k-row"><span>Tidak ada unit mengejar</span></div></div>
   </div>
   <div id="cash-line"><div class="c-day"><span class="c-daytxt">DAY 1</span><span class="c-clock">18:52</span></div><div class="c-cash">$12.480</div><div class="c-stars">☆☆☆☆☆</div><div class="c-sight"></div></div>
-  <div id="stamp">KENCANA BAY · v8 · 19 NOV 2026</div>
+  <div id="district-card"><div class="dc-name"></div><div class="dc-sub"></div></div>
   <div id="minimap-wrap">
     <canvas id="minimap" width="220" height="220"></canvas>
     <div id="loc-label">ALUN-ALUN · DAY 1 · 18:36</div>
@@ -300,21 +326,29 @@
   <div id="help">WASD jalan/kendara · E masuk/keluar mobil · J tembak · R reload · 0-5 senjata · Z/X/C kru · G garasi · M peta · T radio · P jeda</div>
 
   <div id="map-overlay">
-    <div id="map-left">
-      <div id="map-title">KENCANA BAY · CITY MAP</div>
-      <div id="map-sub">Teluk Kencana · 1998 · Tekan M untuk menutup</div>
-      <canvas id="map-canvas" width="560" height="560"></canvas>
-      <div id="map-crew"></div>
+    <div id="map-header">
+      <div id="map-title">🗺 PETA <b>KENCANA BAY</b> — GPS AKTIF</div>
+      <div id="map-tabs"><span class="mt-active">STORY</span><span>MAP</span><span>STATS</span><span>LEGENDA</span></div>
     </div>
-    <div id="map-right">
-      <h3>STORY</h3>
-      <div id="story-list"></div>
-      <div id="map-job"></div>
-      <div id="map-legend"><div class="lg-title">LEGEND</div><div class="lg-grid"><span>▲ You are here</span><span>★ Story contact</span><span>◈ Job objective</span><span>H Safehouse</span><span>✚ Weapons</span><span>◐ Respray</span><span>⚑ Street race</span><span>◆ Property</span></div></div>
-      <div id="map-stats"></div>
-      <div id="map-ring"><div id="map-ring-fill"><span>42%</span></div><div id="map-ring-txt"></div></div>
-      <div id="map-actions"><button id="map-close">TUTUP [M]</button><button id="map-title-btn">TITLE</button></div>
+    <div id="map-body">
+      <div id="map-left-panel">
+        <h3>STORY MISSIONS</h3>
+        <div id="story-list"></div>
+        <div id="map-job"></div>
+      </div>
+      <div id="map-center">
+        <canvas id="map-canvas" width="660" height="420"></canvas>
+        <div id="map-route"></div>
+      </div>
+      <div id="map-right-panel">
+        <h3>STATS</h3>
+        <div id="map-stats"></div>
+        <div id="map-ring"><div id="map-ring-fill"><span>42%</span></div><div id="map-ring-txt"></div></div>
+        <div id="map-legend"><div class="lg-title">LEGENDA</div><div class="lg-grid"><span><i class="lg-dot" style="background:#ffd94d"></i>Objective / Checkpoint</span><span><i class="lg-dot" style="background:#4a90ff"></i>KPD / Polisi</span><span><i class="lg-dot" style="background:#ff5a5a"></i>Musuh / Gang</span><span><i class="lg-dot" style="background:#7dff9a"></i>Safehouse / Garage</span><span><i class="lg-dot" style="background:#ff8a3d"></i>Crew / Kontak</span></div></div>
+        <div id="map-actions"><button id="map-close">TUTUP [M]</button><button id="map-title-btn">TITLE</button></div>
+      </div>
     </div>
+    <div id="map-crew"></div>
   </div>
 
   <div id="passed-overlay"><div class="p-box">
@@ -334,8 +368,8 @@
 
   <div id="title-screen">
     <div class="t-over">A CRIME STORY IN</div>
-    <div class="t-logo">KENCANA BAY</div>
-    <div class="t-bay">· 1998 ·</div>
+    <div class="t-logo">KENCANA</div>
+    <div class="t-bay">CERITA JALANAN · 1998</div>
     <div class="t-tag">Emas, bensin, dan pengkhianatan — seorang wheelman pulang ke Teluk Kencana.</div>
     <div class="t-mid">
       <div class="t-cards" id="t-cards"></div>
@@ -344,6 +378,7 @@
     <div class="t-buttons">
       <button id="btn-continue">▶ LANJUTKAN</button>
       <button id="btn-start">▶ MULAI</button>
+      <button id="btn-save" class="t-ghost">SAVE</button>
       <button id="btn-load" class="t-ghost">LOAD</button>
       <button id="btn-end" class="t-ghost">END GAME</button>
     </div>

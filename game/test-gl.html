@@ -1,4 +1,4 @@
-<!doctype html><meta charset="utf-8"><title>gl probe</title><body><script>
+<!doctype html><meta charset="utf-8"><title>gl probe</title><!-- Round 17: probe only, no game change — re-saved in the recorded session --><!-- round 16: probe only, no game change — the visual fixes are in game/src, not here; re-saved in the recorded session --><!-- Round 20: probe only, no game change — re-saved in the recorded session --><!-- Round 19: probe only, no game change — re-saved in the recorded session --><body><script>
 const out = {};
 try { const c = document.createElement('canvas'); const g2 = c.getContext('webgl2'); out.webgl2 = !!g2; out.webgl2renderer = g2 ? g2.getParameter(g2.RENDERER) : null; } catch (e) { out.webgl2err = String(e); }
 try { const c2 = document.createElement('canvas'); const g = c2.getContext('webgl'); out.webgl = !!g; out.webglrenderer = g ? g.getParameter(g.RENDERER) : null; } catch (e) { out.webglerr = String(e); }
