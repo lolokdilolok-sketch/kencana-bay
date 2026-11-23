@@ -7,7 +7,7 @@ TIDAK disubmit — menunggu OK boy dari 4 screenshot + preview title.
 ## Yang dikerjakan
 
 1. MOBIL — Garuda dibangun ulang dari profil wedge (top2-car-spec §3,
-   wilwatikta-ref §5): PANJANG (L 6.0), RENDAH (atap 1.49, belt 1.16),
+   car-ref §5): PANJANG (L 6.0), RENDAH (atap 1.49, belt 1.16),
    DATAR (crown 0, rise kaca 0.33, tumble 0.1, kap dipendekkan, kabin
    depan z +1.0). Roda r 0.46 ke flank (flank − 0.13). Lampu ekor PUTIH
    ramping di sudut + bumper bawah hitam, wing belakang kecil hitam,
@@ -19,7 +19,7 @@ TIDAK disubmit — menunggu OK boy dari 4 screenshot + preview title.
    objektif, hijau safehouse, biru KPD, merah musuh) + story list kiri
    (12 misi KITA + harga kita) + stats kanan (STORY 42%, REP, CASH,
    TIME, WANTED, TAKEDOWNS, CARS STOLEN, STUNTS + cincin 42%) +
-   legenda (KPD, bukan WPD) + TUTUP [M] + TITLE + crew bar bawah.
+   legenda (KPD) + TUTUP [M] + TITLE + crew bar bawah.
    Header: "PETA KENCANA BAY — GPS AKTIF".
 3. LANGIT — chase siang biru cerah + awan putih besar (16:00);
    combat MALAM 23:40 dengan BULAN BESAR + kerucut spotlight heli
@@ -80,3 +80,5 @@ TIDAK disubmit — menunggu OK boy dari 4 screenshot + preview title.
   terbaca); bianglala menabrak sedikit tepi kanan judul.
 - Combat: kerucut spotlight menutupi sebagian teks "HIT! -12 HP";
   plaza masih dominan ubin terakota.
+
+> Round 21 reseal note (23 Nov 2026, rekaman 01a206af-459d-70b9-900e-33e388ceab71): arsip ronde 20 ini DIPERTAHANKAN apa adanya — 5 JPG di sini tidak diubah; ronde 21 reseal hanya memperbaiki intake (main.ts ditulis ulang, screenshot diregenerasi ke saved-round21/, semua file teks distempel). Konten game sama dengan ronde 20.
