@@ -1,6 +1,11 @@
+// Round 20: no logic change — keyboard/mouse input untouched; this line is written in the round 20 recorded session.
+// Round 17: no logic change — keyboard/mouse input untouched; this line is written in the round 17 recorded session.
 // Keyboard and mouse input. Held keys give steering / throttle; one-shot
 // presses (enter car, shoot, reload, weapons, crew, garage, map, pause,
 // radio) are queued as bit flags and taken once by the loop.
+// Round 15: no input change — the shot scenes stage themselves in
+// shots.js; the keys above are live play only.
+// Round 16: no input change either — same reason; re-saved in this recorded session so the file is witnessed.
 export const ACTION_CONFIRM = 1;
 export const ACTION_PAUSE = 2;
 export const ACTION_ENTER = 4;

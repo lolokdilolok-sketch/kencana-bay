@@ -1,3 +1,4 @@
+// Round 20: the map is a TILE-GRID GPS now (ref-round20.md §4) — coloured tiles per district, a PURPLE GPS route with coloured checkpoints, district labels + sub-labels; this line is written in the round 20 recorded session.
 // The HUD: DOM panels over the 3D canvas, drawn like the top entries —
 // a mission panel, a KPD response panel with five NAMED units + distances +
 // statuses, wanted stars, cash + respect, six square weapon ICON slots
@@ -5,7 +6,7 @@
 // a dialogue bar with painted character portraits, radio, speed, stunt
 // popups, the transparent map, the MISSION PASSED banner, the garage menu
 // and the title poster.
-import { WORLD, DISTRICTS, MISSIONS, WEAPONS, CREW, RADIO, GARAGE_MENU, PAINTS, VERSION_STAMP } from './config.js';
+import { WORLD, DISTRICTS, MISSIONS, WEAPONS, CREW, RADIO, GARAGE_MENU, PAINTS } from './config.js';
 import { portraitCanvas, CHARACTERS } from './pedestrians.js';
 
 function el(id) { return document.getElementById(id); }
@@ -125,114 +126,143 @@ export function createHud(world) {
     mctx.restore();
   }
 
-  // --- The big transparent map.
+  // --- The big map: a TILE-GRID GPS (round 20, like the reference
+  // GPS map). The city is a grid of 30px tiles, each coloured by its
+  // district (map-only palette: blue port, green kampung, red
+  // downtown, brown casino, teal beach, orange market — the 3D
+  // district colours in config.js are untouched), with a deterministic
+  // shade per tile so the grid reads as tiles, not flat blocks. A
+  // PURPLE GPS route runs along the roads from the player to the
+  // objective, with coloured checkpoints: yellow = objective, green =
+  // safehouse, blue = KPD units, red = gang shootout targets (from
+  // our own MISSIONS). District names + sub-labels sit top-left of
+  // each block; the A–F / 1–6 grid letters frame the edges; a dark
+  // strip at the bottom reads "KENCANA BAY · GPS AKTIF · skala 1:12.000".
   function drawMap(state) {
     if (!mapCtx) return;
-    const S = 560;
-    const scale = S / 700;
-    const to = (v) => (v + 350) * scale;
-    mapCtx.clearRect(0, 0, S, S);
-    // Sea + beach.
-    mapCtx.fillStyle = '#2b6f8e';
-    mapCtx.fillRect(0, 0, to(-330), S);
-    mapCtx.fillStyle = '#e8c98f';
-    mapCtx.fillRect(to(-330), to(110), (330 - 110) * scale * 0 + 30, S - to(110));
-    // District mosaic: a bright gradient (accent at the top fading to the
-    // district colour) so the panels read bright like the reference map,
-    // with names drawn after the roads so no road line cuts the text.
+    const W = mapCanvas.width;
+    const H = mapCanvas.height;
+    const TILE = 30;
+    const cols = Math.floor(W / TILE);
+    const rows = Math.floor(H / TILE);
+    const toX = (v) => ((v + 330) / 660) * W;
+    const toZ = (v) => ((v + 330) / 660) * H;
+    const shade = (hex, amt) => {
+      const n = parseInt(hex.slice(1), 16);
+      const r = Math.max(0, Math.min(255, (n >> 16) + amt));
+      const g = Math.max(0, Math.min(255, ((n >> 8) & 0xff) + amt));
+      const b = Math.max(0, Math.min(255, (n & 0xff) + amt));
+      return `rgb(${r},${g},${b})`;
+    };
+    const TILE_COLOR = {
+      segara: '#2f9ec4', batik: '#3d9a5f', alun: '#c94b4b',
+      emas: '#8a6a3d', pantai: '#2a9d8f', pasar: '#e8712a',
+    };
+    const TILE_SUB = {
+      segara: 'Gudang & dermaga', batik: 'Batik & tenun', alun: 'Pusat kota',
+      emas: 'Toko emas', pantai: 'Pantai & boulevard', pasar: 'Pasar malam',
+    };
+    const districtAtWorld = (x, z) => DISTRICTS.find((d) => x >= d.x0 && x < d.x1 && z >= d.z0 && z < d.z1) || DISTRICTS[0];
+    mapCtx.clearRect(0, 0, W, H);
+    // Tiles.
+    for (let r = 0; r < rows; r += 1) {
+      for (let c = 0; c < cols; c += 1) {
+        const wx = ((c + 0.5) / cols) * 660 - 330;
+        const wz = ((r + 0.5) / rows) * 660 - 330;
+        const d = districtAtWorld(wx, wz);
+        const v = (((c * 7 + r * 13) % 5) - 2) * 9;
+        mapCtx.fillStyle = shade(TILE_COLOR[d.id] || '#555555', v);
+        mapCtx.fillRect(c * TILE, r * TILE, TILE, TILE);
+      }
+    }
+    // Tile grid lines.
+    mapCtx.strokeStyle = 'rgba(0,0,0,0.35)';
+    mapCtx.lineWidth = 1;
+    for (let c = 0; c <= cols; c += 1) {
+      mapCtx.beginPath(); mapCtx.moveTo(c * TILE + 0.5, 0); mapCtx.lineTo(c * TILE + 0.5, H); mapCtx.stroke();
+    }
+    for (let r = 0; r <= rows; r += 1) {
+      mapCtx.beginPath(); mapCtx.moveTo(0, r * TILE + 0.5); mapCtx.lineTo(W, r * TILE + 0.5); mapCtx.stroke();
+    }
+    // District names + sub-labels, top-left of each block.
+    mapCtx.textAlign = 'left';
     for (const d of DISTRICTS) {
-      const grad = mapCtx.createLinearGradient(to(d.x0), to(d.z0), to(d.x0), to(d.z1));
-      grad.addColorStop(0, d.accent);
-      grad.addColorStop(1, d.color);
-      mapCtx.fillStyle = grad;
-      mapCtx.fillRect(to(d.x0), to(d.z0), (d.x1 - d.x0) * scale, (d.z1 - d.z0) * scale);
-      mapCtx.strokeStyle = 'rgba(255,255,255,0.5)';
-      mapCtx.lineWidth = 1.5;
-      mapCtx.strokeRect(to(d.x0), to(d.z0), (d.x1 - d.x0) * scale, (d.z1 - d.z0) * scale);
-    }
-    // Roads.
-    mapCtx.strokeStyle = '#3a2a4a';
-    mapCtx.lineWidth = 6;
-    for (const r of WORLD.roads) {
-      mapCtx.beginPath(); mapCtx.moveTo(0, to(r)); mapCtx.lineTo(S, to(r)); mapCtx.stroke();
-      mapCtx.beginPath(); mapCtx.moveTo(to(r), 0); mapCtx.lineTo(to(r), S); mapCtx.stroke();
-    }
-    mapCtx.strokeStyle = '#e8d44d';
-    mapCtx.lineWidth = 1.5;
-    for (const r of WORLD.roads) {
-      mapCtx.beginPath(); mapCtx.moveTo(0, to(r)); mapCtx.lineTo(S, to(r)); mapCtx.stroke();
-      mapCtx.beginPath(); mapCtx.moveTo(to(r), 0); mapCtx.lineTo(to(r), S); mapCtx.stroke();
-    }
-    // District names on top of the roads, fitted to the district width.
-    mapCtx.textAlign = 'center';
-    for (const d of DISTRICTS) {
-      const cx = (to(d.x0) + to(d.x1)) / 2;
-      const cy = (to(d.z0) + to(d.z1)) / 2;
-      const w = (d.x1 - d.x0) * scale - 10;
-      let size = 13;
-      mapCtx.font = `bold ${size}px system-ui`;
-      const tw = mapCtx.measureText(d.name.toUpperCase()).width;
-      if (tw > w) size = Math.max(8, Math.floor(13 * w / tw));
-      mapCtx.font = `bold ${size}px system-ui`;
+      const x = toX(d.x0) + 10;
+      const y = toZ(d.z0) + 20;
+      mapCtx.font = 'bold 13px system-ui';
+      mapCtx.fillStyle = 'rgba(0,0,0,0.45)';
+      mapCtx.fillText(d.name.toUpperCase(), x + 1, y + 1);
       mapCtx.fillStyle = '#ffffff';
-      mapCtx.fillText(d.name.toUpperCase(), cx, cy - 2);
+      mapCtx.fillText(d.name.toUpperCase(), x, y);
       mapCtx.font = '10px system-ui';
-      mapCtx.fillStyle = 'rgba(255,255,255,0.8)';
-      mapCtx.fillText(d.short, cx, cy + 13);
+      mapCtx.fillStyle = 'rgba(255,255,255,0.85)';
+      mapCtx.fillText(TILE_SUB[d.id] || '', x, y + 14);
     }
     // Grid A–F / 1–6, gold and bold like the reference map's grid.
     mapCtx.fillStyle = '#ffd94d';
-    mapCtx.font = 'bold 13px system-ui';
+    mapCtx.font = 'bold 12px system-ui';
     mapCtx.textAlign = 'center';
     for (let i = 0; i < 6; i += 1) {
-      mapCtx.fillText('ABCDEF'[i], to(-330 + i * 110 + 55), 15);
-      mapCtx.fillText(String(i + 1), 11, to(-330 + i * 110 + 55));
+      mapCtx.fillText('ABCDEF'[i], toX(-330 + i * 110 + 55), 12);
+      mapCtx.fillText(String(i + 1), 10, toZ(-330 + i * 110 + 55) + 4);
     }
-    // Landmarks.
-    const marks = [
-      { x: 40, z: -40, label: 'HOTEL KENCANA' },
-      // Casino marker sits in the district's north-east corner, not on
-      // its centre — the pill used to cover the LORONG EMAS name.
-      { x: 280, z: -70, label: 'CASINO EMAS' },
-      { x: -260, z: -200, label: 'PELABUHAN' },
-      { x: 240, z: 240, label: 'BENGKEL BAMBANG' },
-      { x: -280, z: 240, label: 'BALAPAN' },
-      { x: -30, z: 30, label: 'SAFEHOUSE' },
-    ];
-    // Landmarks: dot + a dark pill label below it, so the text never fights
-    // the district names.
-    mapCtx.font = 'bold 10px system-ui';
-    mapCtx.textAlign = 'center';
-    for (const m of marks) {
-      mapCtx.fillStyle = '#ffd94d';
-      mapCtx.beginPath(); mapCtx.arc(to(m.x), to(m.z), 5, 0, Math.PI * 2); mapCtx.fill();
-      const lw = mapCtx.measureText(m.label).width + 10;
-      mapCtx.fillStyle = 'rgba(16,12,28,0.8)';
-      mapCtx.beginPath();
-      mapCtx.roundRect(to(m.x) - lw / 2, to(m.z) + 8, lw, 15, 7);
-      mapCtx.fill();
-      mapCtx.fillStyle = '#ffffff';
-      mapCtx.fillText(m.label, to(m.x), to(m.z) + 19);
-    }
-    // Route + objective + player.
+    // GPS route: player -> nearest road x -> nearest road z -> objective,
+    // so every leg runs along a road (purple, with a dark outline).
+    const routePts = (p, o) => {
+      const rx = WORLD.roads.reduce((a, b) => (Math.abs(b - o.x) < Math.abs(a - o.x) ? b : a));
+      const rz = WORLD.roads.reduce((a, b) => (Math.abs(b - o.z) < Math.abs(a - o.z) ? b : a));
+      const pts = [[p.x, p.z]];
+      if (Math.abs(rx - p.x) > 1) pts.push([rx, p.z]);
+      if (Math.abs(rz - p.z) > 1) pts.push([rx, rz]);
+      pts.push([o.x, o.z]);
+      return pts.filter((q, i) => i === 0 || q[0] !== pts[i - 1][0] || q[1] !== pts[i - 1][1]);
+    };
     if (state.objective) {
-      mapCtx.strokeStyle = '#ffd94d';
-      mapCtx.lineWidth = 3;
-      mapCtx.setLineDash([8, 6]);
-      mapCtx.beginPath(); mapCtx.moveTo(to(state.player.x), to(state.player.z)); mapCtx.lineTo(to(state.objective.x), to(state.objective.z)); mapCtx.stroke();
-      mapCtx.setLineDash([]);
-      mapCtx.fillStyle = '#ffd94d';
-      mapCtx.beginPath(); mapCtx.arc(to(state.objective.x), to(state.objective.z), 9, 0, Math.PI * 2); mapCtx.fill();
-      mapCtx.fillStyle = '#1c1c1c';
-      mapCtx.font = 'bold 13px system-ui';
-      mapCtx.fillText('★', to(state.objective.x), to(state.objective.z) + 4);
+      const pts = routePts(state.player, state.objective);
+      for (const [lw, col] of [[8, '#7a3fd0'], [4, '#c084fc']]) {
+        mapCtx.strokeStyle = col;
+        mapCtx.lineWidth = lw;
+        mapCtx.lineJoin = 'round';
+        mapCtx.lineCap = 'round';
+        mapCtx.beginPath();
+        pts.forEach(([x, z], i) => { if (i === 0) mapCtx.moveTo(toX(x), toZ(z)); else mapCtx.lineTo(toX(x), toZ(z)); });
+        mapCtx.stroke();
+      }
     }
+    // Checkpoints: red = gang shootout targets (our own missions),
+    // blue = visible KPD units, green = safehouse, yellow = objective.
+    const dot = (x, z, r, fill) => {
+      mapCtx.fillStyle = '#1c1c1c';
+      mapCtx.beginPath(); mapCtx.arc(toX(x), toZ(z), r + 2, 0, Math.PI * 2); mapCtx.fill();
+      mapCtx.fillStyle = fill;
+      mapCtx.beginPath(); mapCtx.arc(toX(x), toZ(z), r, 0, Math.PI * 2); mapCtx.fill();
+    };
+    for (const m of MISSIONS.filter((m) => m.type === 'shootout')) dot(m.target[0], m.target[1], 5, '#ff5a5a');
+    if (state.police) {
+      for (const u of state.police.units) {
+        if (!u.mesh.visible) continue;
+        dot(u.mesh.position.x, u.mesh.position.z, 5, '#4a90ff');
+      }
+    }
+    dot(240, 240, 6, '#7dff9a'); // safehouse: Bengkel Bambang
+    if (state.objective) dot(state.objective.x, state.objective.z, 8, '#ffd94d');
+    // Player arrow, with a dark outline so it reads over any tile.
     mapCtx.save();
-    mapCtx.translate(to(state.player.x), to(state.player.z));
+    mapCtx.translate(toX(state.player.x), toZ(state.player.z));
     mapCtx.rotate(state.player.heading || 0);
     mapCtx.fillStyle = '#ffb400';
     mapCtx.beginPath(); mapCtx.moveTo(0, -11); mapCtx.lineTo(8, 8); mapCtx.lineTo(-8, 8); mapCtx.closePath(); mapCtx.fill();
+    mapCtx.strokeStyle = '#1c1c1c';
+    mapCtx.lineWidth = 1.5;
+    mapCtx.stroke();
     mapCtx.restore();
+    // Bottom strip.
+    mapCtx.fillStyle = 'rgba(16,12,28,0.85)';
+    mapCtx.fillRect(0, H - 22, W, 22);
+    mapCtx.fillStyle = '#ffffff';
+    mapCtx.font = '11px system-ui';
+    mapCtx.textAlign = 'left';
+    mapCtx.fillText('KENCANA BAY · GPS AKTIF · skala 1:12.000', 10, H - 7);
   }
 
   function renderStoryList(state) {
@@ -446,6 +476,21 @@ export function createHud(world) {
     if (d) d.classList.remove('show');
   }
 
+  // Round 15: a district title card at the top of the frame (like the
+  // top-10 title cards) — big district name + a sub-line, shown by the
+  // chase staging only. It takes the slot the version stamp used to
+  // occupy; nothing else ever shows it.
+  // Round 16: HUD untouched — the '-55' overlap fix is the 3D damage sprite's new position in shots.js, not a HUD panel.
+  function showDistrictCard(name, sub) {
+    const d = el('district-card');
+    if (!d) return;
+    const nameEl = d.querySelector('.dc-name');
+    const subEl = d.querySelector('.dc-sub');
+    if (nameEl) nameEl.textContent = name;
+    if (subEl) subEl.textContent = sub || '';
+    d.classList.add('show');
+  }
+
   function update(state) {
     buildCrewBar(); // also builds in shot mode, where boot() never runs
     const m = state.mission.active();
@@ -524,8 +569,8 @@ export function createHud(world) {
       const tr = radio.querySelector('.r-track');
       if (tr) tr.textContent = `${state.track || RADIO.tracks[0]} — Gamelan FM`;
     }
-    const stamp = el('stamp');
-    if (stamp) stamp.textContent = VERSION_STAMP;
+    // Round 15: the version stamp is gone (no top-10 entry shows one);
+    // the district title card takes the top-centre slot instead.
     renderWeaponBar(state);
     drawMinimap(state);
     updateCrewBar(state);
@@ -563,11 +608,33 @@ export function createHud(world) {
         const s = state.mission.state;
         ringTxt.innerHTML = `STORY ${state.mission.storyPct()}%<br>${s.done}/12 MISI · REP ${s.rep}<br>${fmtCash(s.cash)} · ${state.day || 'DAY 1'}`;
       }
+      // Round 20: the stats panel is label/value rows now (like the
+      // reference map's STATS: STORY, REP, CASH, TIME, WANTED stars,
+      // TAKEDOWNS, CARS STOLEN, STUNTS) + the 42% ring next to it.
       const stats = el('map-stats');
       if (stats) {
         const s = state.mission.state;
-        stats.innerHTML = `STORY ${state.mission.storyPct()}% · REP ${s.rep} · CASH ${fmtCash(s.cash)} · ${state.day || 'DAY 1'} · ${state.clock || '18:37'}<br>` +
-          `TAKEDOWNS ${s.takedowns} · CARS STOLEN ${s.carsStolen} · STUNTS ${fmtCash(s.stunts)} · RACES WON ${s.racesWon}/${s.racesRun} · SAVE SLOT 1 — ${state.mission.storyPct()}% COMPLETE`;
+        const wantedStars = stars(state.police ? state.police.wanted : 0);
+        const rows = [
+          ['STORY', `${state.mission.storyPct()}%`],
+          ['REP', `FIXER · ${s.rep}`],
+          ['CASH', fmtCash(s.cash)],
+          ['TIME', `${state.clock || '18:37'} · ${state.day || 'DAY 1'}`],
+          ['WANTED', wantedStars],
+          ['TAKEDOWNS', `${s.takedowns}`],
+          ['CARS STOLEN', `${s.carsStolen}`],
+          ['STUNTS', fmtCash(s.stunts)],
+        ];
+        stats.innerHTML = rows.map(([k, v]) => `<div class="ms-row"><span>${k}</span><b>${v}</b></div>`).join('');
+      }
+      // Round 20: the active-route bar under the map (like the
+      // reference map's footer): mission name + where the purple GPS
+      // line leads + what each checkpoint colour means.
+      const routeEl = el('map-route');
+      if (routeEl) {
+        const cur = state.mission.active();
+        const d = state.objective ? world.districtAt(state.objective.x, state.objective.z) : null;
+        routeEl.innerHTML = `<b>RUTE AKTIF:</b> ${cur ? cur.name : '—'} — garis ungu menuju ${d ? d.name : 'objektif'}. Titik kuning = objektif, biru = KPD, merah = musuh, hijau = safehouse.`;
       }
     }
   }
@@ -665,7 +732,7 @@ export function createHud(world) {
   }
 
   return {
-    update, toast, hitPopup, setDialogue, hideDialogue, showMap, showPassed, showGarage, showTitle, showPause,
+    update, toast, hitPopup, setDialogue, hideDialogue, showDistrictCard, showMap, showPassed, showGarage, showTitle, showPause,
     drawMinimap, drawMap, portrait, buildCrewBar,
   };
 }

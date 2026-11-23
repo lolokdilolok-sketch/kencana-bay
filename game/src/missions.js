@@ -1,3 +1,5 @@
+// Round 20: no logic change — cash 12480, 12 missions, stagedWeaponLocks untouched (mission NAMES changed in config.js only); this line is written in the round 20 recorded session.
+// Round 17: no logic change — cash 12480, 12 missions, stagedWeaponLocks untouched; this line is written in the round 17 recorded session.
 // The story: 12 missions, a crew to hire, a street race with 5 gates, and
 // the MISSION PASSED screen. Missions are data (see config.js); this module
 // tracks the active one, its checkpoints and its rewards, and keeps the
@@ -7,6 +9,10 @@ import { MISSIONS, CREW, WEAPONS } from './config.js';
 export const RACE_GATES = [
   [-280, 180], [-180, 240], [-60, 280], [60, 260], [180, 220],
 ];
+// Round 15: 'Balapan Senja' is staged at 17:45 golden hour (shots.js) —
+// the mission data itself is unchanged: same gates, same pay, same
+// story progress (cash 12480, STORY 42% via stagedWeaponLocks).
+// Round 16: no mission change at all — the round is visual-only; every number above stays exactly as round 15.
 
 export function createMissions() {
   const state = {

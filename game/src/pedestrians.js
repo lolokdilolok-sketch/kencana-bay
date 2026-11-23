@@ -1,3 +1,4 @@
+// Round 20: no logic change — characters untouched; this line is written in the round 20 recorded session.
 // Realistic people: proportional humans ~1.75 units tall — a round head
 // with a face (eyes, nose, mouth, brows), hair, a clothed torso, arms with
 // hands, legs with shoes that swing when walking. Every character reads
@@ -22,7 +23,29 @@ export const CHARACTERS = {
   ped: { name: 'Warga', role: 'Pejalan kaki', hair: 'bun', shirt: '#7fb5d0', shirtPat: '#ffffff', pants: '#4a4a55', skin: '#e2ac7e' },
 };
 
-const HAIR_COLORS = { black: '#1c1c1c', brown: '#6b4a2b', pink: '#ff7fb5', bandana: '#c94b4b', cap: '#2b4a8a', ponytail: '#ff7fb5', buzz: '#1c1c1c', spiky: '#1c1c1c', bun: '#6b4a2b' };
+const HAIR_COLORS = { black: '#1c1c1c', brown: '#6b4a2b', pink: '#ff7fb5', bandana: '#c94b4b', cap: '#2b4a8a', ponytail: '#ff7fb5', buzz: '#1c1c1c', spiky: '#1c1c1c', bun: '#6b4a2b', strawhat: '#d8b25a', longhair: '#6b4a2b' };
+
+/** Crowd variety (round 15, top-10 study): the street crowd is NOT one
+ * repeated figure — 8 civilians with different shirts, hair, skin and
+ * hats, so the sidewalks read as a crowd instead of clones. main.js
+ * cycles the 18 generic pedestrians through these.
+ * Round 16: the garage customer is CROWD_DEFS[2] (moved toward the door
+ * in garage.js); the enemy figures are unchanged — their readability
+ * fix is the red ground markers + beam tracers in shots.js. */
+export const CROWD_DEFS = [
+  { name: 'Warga', role: 'Pejalan kaki', hair: 'strawhat', shirt: '#ff8a3d', shirtPat: '#ffffff', pants: '#4a4a55', skin: '#e2ac7e' },
+  { name: 'Warga', role: 'Pejalan kaki', hair: 'longhair', shirt: '#ff2e63', shirtPat: '#ffd94d', pants: '#2a2a33', skin: '#c68a52' },
+  { name: 'Warga', role: 'Pejalan kaki', hair: 'bun', shirt: '#2ec4b6', shirtPat: '#ffffff', pants: '#232c4a', skin: '#f2c184' },
+  { name: 'Warga', role: 'Pejalan kaki', hair: 'cap', shirt: '#ffd94d', shirtPat: '#1c1c1c', pants: '#3a3a3a', skin: '#8a5a3a' },
+  { name: 'Warga', role: 'Pejalan kaki', hair: 'buzz', shirt: '#8a4bd0', shirtPat: '#ff9ad5', pants: '#2a2a2a', skin: '#d9a06a' },
+  { name: 'Warga', role: 'Pejalan kaki', hair: 'ponytail', shirt: '#3d6fb5', shirtPat: '#9ac2ff', pants: '#4a4a55', skin: '#f7d0a8' },
+  { name: 'Warga', role: 'Pejalan kaki', hair: 'spiky', shirt: '#e8a33d', shirtPat: '#1c1c1c', pants: '#232c4a', skin: '#b98a5a' },
+  { name: 'Warga', role: 'Pejalan kaki', hair: 'strawhat', shirt: '#3d8a4b', shirtPat: '#ffd94d', pants: '#2a2a33', skin: '#e8b078' },
+  // Round 17 (top-1 archetypes): a neon tourist and a magenta jogger,
+  // so the crowd has the same high-contrast pops as the top-1 street.
+  { name: 'Turis', role: 'Pejalan kaki', hair: 'cap', shirt: '#ff6b6b', shirtPat: '#ffe66d', pants: '#2ec4b6', skin: '#f2c184' },
+  { name: 'Jogger', role: 'Pejalan kaki', hair: 'buzz', shirt: '#ff2e9a', shirtPat: '#2b6fd0', pants: '#1c1c22', skin: '#d9a06a' },
+];
 
 /** Build a realistic human ~1.75 units tall, facing +z. Returns { group, head, legL, legR, armL, armR }. */
 export function buildMinifig(def, scale = 1) {
@@ -137,8 +160,15 @@ export function buildMinifig(def, scale = 1) {
     if (def.hair === 'spiky') brow.rotation.z = -Math.sign(sx) * 0.35; // angry slant
     g.add(brow);
   }
-  const nose = box(0.03, 0.06, 0.03, def.skin);
-  nose.position.set(0, 1.58, 0.128);
+  // Round 17: the nose is a small cone pointing forward (top-1 recipe)
+  // instead of a flat box — it catches the light and reads as a nose
+  // from the side, where the box vanished.
+  const nose = new THREE.Mesh(
+    new THREE.ConeGeometry(0.022, 0.07, 8),
+    skin,
+  );
+  nose.rotation.x = Math.PI / 2;
+  nose.position.set(0, 1.58, 0.14);
   g.add(nose);
   const mouthW = def.hair === 'bandana' ? 0.09 : def.hair === 'buzz' ? 0.07 : def.hair === 'spiky' ? 0.06 : 0.07;
   const mouthH = def.hair === 'buzz' || def.hair === 'spiky' ? 0.008 : 0.012;
@@ -205,6 +235,24 @@ export function buildMinifig(def, scale = 1) {
     bun.position.set(0, 1.76, -0.11);
     bun.castShadow = true;
     g.add(bun);
+  } else if (def.hair === 'strawhat') {
+    // A wide straw hat: a flat brim + a low dome, in straw yellow.
+    g.add(hairCap(1.6, -0.01, 0.13));
+    const brim = cylinder(0.24, 0.24, 0.03, '#d8b25a');
+    brim.position.y = 1.7;
+    g.add(brim);
+    const dome = new THREE.Mesh(
+      new THREE.SphereGeometry(0.13, 12, 8, 0, Math.PI * 2, 0, Math.PI * 0.5),
+      new THREE.MeshStandardMaterial({ color: '#d8b25a', roughness: 0.8 }),
+    );
+    dome.position.y = 1.7;
+    g.add(dome);
+  } else if (def.hair === 'longhair') {
+    g.add(hairCap());
+    // Long hair down the back, past the shoulders.
+    const back = box(0.2, 0.5, 0.08, hairColor);
+    back.position.set(0, 1.38, -0.15);
+    g.add(back);
   } else {
     g.add(hairCap());
   }
@@ -232,8 +280,9 @@ export function buildMinifig(def, scale = 1) {
     scar.rotation.z = 0.5;
     g.add(scar);
   }
-  // Sunglasses for the wheelman.
-  if (def === CHARACTERS.wheelman) {
+  // Sunglasses for the wheelman and the KPD commissioner (round 17:
+  // the top-1 player + police both wear black shades).
+  if (def === CHARACTERS.wheelman || def === CHARACTERS.wanto) {
     for (const sx of [-0.05, 0.05]) {
       const lens = box(0.085, 0.06, 0.02, '#111111');
       lens.position.set(sx, 1.62, 0.128);

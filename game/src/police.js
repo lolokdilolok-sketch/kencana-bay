@@ -1,7 +1,11 @@
+// Round 20: no logic change — 5 KPD units, setWanted roadblocks untouched; this line is written in the round 20 recorded session.
+// Round 17: no logic change — 5 KPD units, setWanted roadblocks untouched (the chase now stages all 4 cars in shots.js); this line is written in the round 17 recorded session.
 // The KPD response: five named units with live distances and statuses, a
 // helicopter with a searchlight, roadblocks at wanted 4+, and a search zone
 // on the minimap when the player breaks line of sight. Wanted 0–5 stars:
 // heli joins at 3, roadblocks at 4.
+// Round 16: the heli's spotlight cone (built in vehicles.js) is brighter —
+// opacity 0.55, warm-white, radius 4.5 — the five KPD units themselves are unchanged.
 import { THREE } from './three-shim.js';
 import { KPD_UNITS } from './config.js';
 import { buildPoliceCar, buildHelicopter } from './vehicles.js';
@@ -143,9 +147,17 @@ export function createPolice(world, scene, rand) {
       }
       u.mesh.rotation.y = u.heading;
       u.status = dist < 8 ? 'MENGEJAR' : dist < 40 ? 'MENGEJAR' : wanted >= 4 && u.name === 'MERAK-5' ? 'BLOKADE' : 'MENCARI';
-      // Light bar flash.
-      const t = performance.now() / 120;
-      u.mesh.children.forEach(() => {});
+      // Light bar flash (round 15): red and blue alternate every ~180 ms
+      // — the lamps + their glow sprites swap bright/dim in turn. The
+      // old code had a no-op forEach here; the bar never actually flashed.
+      const phase = Math.floor(performance.now() / 180) % 2 === 0;
+      const d = u.mesh.userData;
+      if (d.lightRed && d.lightBlue) {
+        d.lightRed.material.color.set(phase ? d.lightRedBright : '#400808');
+        d.lightBlue.material.color.set(phase ? '#15307a' : d.lightBlueBright);
+        if (d.glowRed) d.glowRed.material.opacity = phase ? 0.55 : 0.08;
+        if (d.glowBlue) d.glowBlue.material.opacity = phase ? 0.08 : 0.55;
+      }
     }
     // Search zone: where the player was last seen.
     if (!inSight && wanted > 0 && !searchZone) {

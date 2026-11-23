@@ -1,3 +1,5 @@
+// Round 20: no logic change — the garage interior is untouched; the display cars just get the new round-20 wedge builder from vehicles.js; this line is written in the round 20 recorded session.
+// Round 17: no logic change — the garage interior keeps the round 16 fixes; the display cars just get the new clearcoat paint from vehicles.js; this line is written in the round 17 recorded session.
 // The enterable garage: Bengkel Bambang. A real room in the same scene, far
 // outside the city (x = -900), so the player and the Garuda teleport into it
 // through the garage door. Inside: the Garuda on a hydraulic lift, tool
@@ -6,25 +8,104 @@
 // upgrade menu (repair / respray / engine tune / armour) with prices.
 import { THREE, box, cylinder, canvasTexture } from './three-shim.js';
 import { PAINTS, GARAGE_MENU } from './config.js';
-import { buildMinifig, CHARACTERS } from './pedestrians.js';
+import { buildMinifig, CHARACTERS, CROWD_DEFS } from './pedestrians.js';
 import { buildSportsCar } from './vehicles.js';
 
 export const GARAGE_POS = { x: -900, z: 0 };
+
+/** Bright tiled concrete for the garage floor (round 15): light
+ * warm-grey tiles with darker grout, so the floor reads as a real
+ * workshop floor instead of one flat dark slab. */
+function garageFloorTexture() {
+  return canvasTexture(256, 256, (x, w, h) => {
+    x.fillStyle = '#8a8a90';
+    x.fillRect(0, 0, w, h);
+    for (let r = 0; r < 4; r += 1) {
+      for (let c = 0; c < 4; c += 1) {
+        const v = 128 + ((r * 4 + c) % 3) * 8;
+        x.fillStyle = `rgb(${v},${v},${v + 4})`;
+        x.fillRect(c * 64 + 2, r * 64 + 2, 60, 60);
+      }
+    }
+    x.strokeStyle = 'rgba(0,0,0,0.35)';
+    x.lineWidth = 3;
+    for (let i = 0; i <= 4; i += 1) {
+      x.beginPath(); x.moveTo(0, i * 64); x.lineTo(w, i * 64); x.stroke();
+      x.beginPath(); x.moveTo(i * 64, 0); x.lineTo(i * 64, h); x.stroke();
+    }
+    // A few faint stains, so the tiles are not showroom-clean.
+    x.fillStyle = 'rgba(30,30,36,0.12)';
+    for (let i = 0; i < 8; i += 1) {
+      x.beginPath(); x.arc((i * 53) % w, (i * 89) % h, 12 + (i % 3) * 6, 0, Math.PI * 2); x.fill();
+    }
+  });
+}
+
+/** A soft radial glow for the hanging lamps (round 15): one texture for
+ * the glow sprites and for the light pools on the floor under each lamp. */
+function lampGlowTexture() {
+  const c = document.createElement('canvas');
+  c.width = 64;
+  c.height = 64;
+  const g = c.getContext('2d');
+  const grad = g.createRadialGradient(32, 32, 1, 32, 32, 30);
+  grad.addColorStop(0, 'rgba(255,233,160,0.9)');
+  grad.addColorStop(0.5, 'rgba(255,220,140,0.35)');
+  grad.addColorStop(1, 'rgba(255,220,140,0)');
+  g.fillStyle = grad;
+  g.fillRect(0, 0, 64, 64);
+  return new THREE.CanvasTexture(c);
+}
 
 export function createGarage(scene) {
   const room = new THREE.Group();
   room.position.set(GARAGE_POS.x, 0, GARAGE_POS.z);
   const wallMat = new THREE.MeshStandardMaterial({ color: '#3a4a3a', roughness: 0.95 });
-  const floorMat = new THREE.MeshStandardMaterial({ color: '#55565e', roughness: 0.6, metalness: 0.2 });
+  // Round 15: a bright tiled floor (was flat dark #55565e) and a warm
+  // mid-grey ceiling (was near-black #2a2a30), so the room reads lit
+  // instead of dark above and empty below.
+  const floorTex = garageFloorTexture();
+  floorTex.wrapS = THREE.RepeatWrapping;
+  floorTex.wrapT = THREE.RepeatWrapping;
+  floorTex.repeat.set(5, 4);
+  const floorMat = new THREE.MeshStandardMaterial({ map: floorTex, roughness: 0.55, metalness: 0.15 });
   // Floor, walls, ceiling.
   const floor = new THREE.Mesh(new THREE.PlaneGeometry(30, 22), floorMat);
   floor.rotation.x = -Math.PI / 2;
   floor.receiveShadow = true;
   room.add(floor);
-  const ceil = new THREE.Mesh(new THREE.PlaneGeometry(30, 22), new THREE.MeshStandardMaterial({ color: '#2a2a30', roughness: 1 }));
+  const ceil = new THREE.Mesh(new THREE.PlaneGeometry(30, 22), new THREE.MeshStandardMaterial({ color: '#6a5f52', roughness: 1 }));
   ceil.rotation.x = Math.PI / 2;
   ceil.position.y = 8;
   room.add(ceil);
+  // Round 16: a shadow-casting roof slab above the ceiling — the dusk
+  // sun (low, from the north-west) shone straight through the ceiling
+  // plane and blew the Garuda's up-facing hood white (sun + full
+  // hemisphere + ambient ≈ 3.7x on the bonnet). The slab blocks the sun
+  // so the room is lit by its lamps + hemisphere, like a real workshop;
+  // it sits above the ceiling, so it is never visible from inside, and
+  // the garage is 900u from the city, so it never shades the streets.
+  // It is offset north-west (-18, -8): at the sun's low angle the rays
+  // that hit the car cross y 8.4 about 13-18u north-west of it.
+  const roofSlab = new THREE.Mesh(
+    new THREE.BoxGeometry(30, 0.5, 22),
+    new THREE.MeshStandardMaterial({ color: '#1c1c22', roughness: 1 }),
+  );
+  roofSlab.position.set(-18, 8.4, -8);
+  roofSlab.castShadow = true;
+  room.add(roofSlab);
+  // Round 15: ceiling light panels — bright emissive rectangles, so the
+  // ceiling reads as a lit workshop ceiling instead of a black void.
+  // Round 16: emissive 0.7 (was 0.9) — the panels + lamps washed the
+  // Garuda's gold hood white in the shot.
+  for (const px of [-8, 0, 8]) {
+    const panel = new THREE.Mesh(
+      new THREE.BoxGeometry(4, 0.12, 1.2),
+      new THREE.MeshStandardMaterial({ color: '#f2f2f2', emissive: 0xffffff, emissiveIntensity: 0.7, roughness: 0.4 }),
+    );
+    panel.position.set(px, 7.9, 0);
+    room.add(panel);
+  }
   for (const [w, d, x, z] of [[30, 0.5, 0, -11], [30, 0.5, 0, 11], [0.5, 22, -15, 0], [0.5, 22, 15, 0]]) {
     const wall = new THREE.Mesh(new THREE.BoxGeometry(w, 8, d), wallMat);
     wall.position.set(x, 4, z);
@@ -48,10 +129,14 @@ export function createGarage(scene) {
     x.fillText('BENGKEL BAMBANG', w / 2, 82);
   });
   const sign = new THREE.Mesh(
-    new THREE.PlaneGeometry(12, 3),
+    // Round 16: 8x2 at (-2.5, 6.2) — the 12-wide sign at x 0 ran past
+    // the right frame edge (the garage camera looks diagonally across
+    // the room, so the north wall's east end is ~54 deg off-axis) and
+    // the last "NG" was cut. Centred on the visible wall, whole in frame.
+    new THREE.PlaneGeometry(8, 2),
     new THREE.MeshStandardMaterial({ map: signTex, emissive: 0xffffff, emissiveMap: signTex, emissiveIntensity: 0.9, roughness: 0.6 }),
   );
-  sign.position.set(0, 6.6, -10.7);
+  sign.position.set(-2.5, 6.2, -10.7);
   room.add(sign);
   // Hydraulic lift + the Garuda on it.
   const liftBase = box(3.4, 0.3, 7, '#333a44');
@@ -63,12 +148,23 @@ export function createGarage(scene) {
   const liftPad = box(3.2, 0.25, 6.4, '#c9a227', { metal: 0.6, rough: 0.4 });
   liftPad.position.set(0, 1.35, 0);
   room.add(liftPad);
-  const displayCar = buildSportsCar('#ffb400', { driver: true });
+  // Round 15: the Garuda sits front-three-quarter to the garage camera
+  // (was rotation -0.5, side-on and small) and its headlight ground
+  // pools are off — they would float above the floor under the lifted car.
+  const displayCar = buildSportsCar('#ffb400', { driver: true, groundPool: false });
   displayCar.position.set(0, 1.5, 0);
-  displayCar.rotation.y = -0.5;
+  displayCar.rotation.y = 0.6;
+  // Round 16: the display car is matte, not glossy (metal 0 / rough 0.9,
+  // was 0.55 / 0.25) — under the garage's overhead lamps + the dusk sun
+  // shining through the roof, the glossy hood threw a broad white
+  // specular sheen across the whole bonnet. The matte finish reads as
+  // gold paint, like the roof panels (same recipe). The chase car keeps
+  // its showroom gloss (separate mesh).
+  displayCar.userData.bodyMat.metalness = 0;
+  displayCar.userData.bodyMat.roughness = 0.9;
   room.add(displayCar);
   // A second car in the back (customer's sedan, red).
-  const backCar = buildSportsCar('#d21f2b', { driver: false, length: 4.9, width: 2.1 });
+  const backCar = buildSportsCar('#d21f2b', { driver: false, length: 4.9, width: 2.1, groundPool: false });
   backCar.position.set(-10, 0, -6);
   backCar.rotation.y = 0.7;
   room.add(backCar);
@@ -147,6 +243,7 @@ export function createGarage(scene) {
     }
   }
   // Hanging lamps.
+  const glowTex = lampGlowTexture();
   for (const lx of [-6, 0, 6]) {
     const cord = cylinder(0.04, 0.04, 1.6, '#222222');
     cord.position.set(lx, 7.2, 0);
@@ -163,6 +260,26 @@ export function createGarage(scene) {
     );
     shade.position.set(lx, 6.6, 0);
     room.add(shade);
+    // Round 15: each lamp is a real light — a warm PointLight + a glow
+    // sprite + a pool on the floor, so the room is lit by its lamps and
+    // the glow is visible in the shot, not just the bare bulb.
+    // Round 16: intensity 1.0 (was 1.4), glow 2.2 (was 2.6), pool 0.3
+    // (was 0.4) — the three lamps at 1.4 washed the Garuda's hood and
+    // roof white in the shot; the room stays bright, the car keeps gold.
+    const pl = new THREE.PointLight(0xffe9a0, 1.0, 22, 1);
+    pl.position.set(lx, 6.0, 0);
+    room.add(pl);
+    const lampGlow = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTex, transparent: true, depthWrite: false }));
+    lampGlow.scale.set(2.2, 2.2, 1);
+    lampGlow.position.set(lx, 6.3, 0);
+    room.add(lampGlow);
+    const pool = new THREE.Mesh(
+      new THREE.PlaneGeometry(7, 7),
+      new THREE.MeshBasicMaterial({ map: glowTex, transparent: true, opacity: 0.3, blending: THREE.AdditiveBlending, depthWrite: false }),
+    );
+    pool.rotation.x = -Math.PI / 2;
+    pool.position.set(lx, 0.03, 0);
+    room.add(pool);
   }
   // Oil stains + floor markings.
   for (const [ox, oz] of [[-4, 4], [5, -5], [8, 5]]) {
@@ -365,8 +482,38 @@ export function createGarage(scene) {
   bambang.group.position.set(-11, 0, -7.6);
   bambang.group.rotation.y = 2.4;
   room.add(bambang.group);
+  // Round 15: a second mechanic at work beside the Garuda + a customer
+  // waiting by the door — the round 14 shot had no people in the room
+  // besides Bambang at his bench (and only his portrait in the dialogue).
+  // Round 15d: the mechanic stands on the car's LEFT side (-2.5, 2.8),
+  // not the right — at (3.4, 2.4) he stood in front of the car and
+  // blocked its nose from the closer camera. The customer waits by the
+  // north shelf (4, -7): the door itself sits behind the garage camera
+  // and the far north wall hides behind the car, so the waiting customer
+  // is staged at the visible end of the north wall instead.
+  const mech = buildMinifig(CHARACTERS.bambang, 1);
+  mech.group.position.set(-2.5, 0, 2.8);
+  mech.group.rotation.y = Math.atan2(2.5, -2.8);
+  mech.armR.rotation.x = -0.9; // leaning over the engine bay
+  room.add(mech.group);
+  // Round 16: the customer moved 3u toward the door, to open floor
+  // south-east of the lift (3.5, -4) — standing AT the door is still
+  // impossible (the door is behind the garage camera), but he no longer
+  // waits by the north shelf; he faces the car from the entrance side.
+  const customer = buildMinifig(CROWD_DEFS[2], 1);
+  customer.group.position.set(3.5, 0, -4);
+  customer.group.rotation.y = Math.atan2(-3.5, 4); // facing the car from the south-east floor
+  room.add(customer.group);
   room.visible = false;
   scene.add(room);
+
+  // Round 16: the garage's harsh overhead light (the dusk sun shines
+  // straight through the roof + three hanging lamps) washes
+  // full-strength paint white on the hood — the display car keeps a
+  // deeper gold (x0.55, close to the roof panels' x0.45) so it reads as
+  // gold, not white, under the lamps. The chase car is a separate mesh
+  // and keeps its full paint.
+  const garagePaint = (color) => new THREE.Color(color).multiplyScalar(0.55);
 
   const state = {
     inside: false,
@@ -399,7 +546,7 @@ export function createGarage(scene) {
     repaint(i) {
       state.paint = i;
       const color = PAINTS[i].color;
-      displayCar.userData.bodyMat.color.set(color);
+      displayCar.userData.bodyMat.color.copy(garagePaint(color));
       return PAINTS[i].name;
     },
     buy(i, cash) {
@@ -413,7 +560,7 @@ export function createGarage(scene) {
       if (i === 1) {
         if (cash < item.price) return { ok: false, msg: 'Uang tidak cukup.' };
         state.paint = (state.paint + 1) % PAINTS.length;
-        displayCar.userData.bodyMat.color.set(PAINTS[state.paint].color);
+        displayCar.userData.bodyMat.color.copy(garagePaint(PAINTS[state.paint].color));
         return { ok: true, cost: item.price, msg: `Cat baru: ${PAINTS[state.paint].name}. Panas hilang.` };
       }
       if (i === 2) {

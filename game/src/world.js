@@ -8,6 +8,17 @@
 // windows only (the rear darker, fewer lights), and each district has its
 // own window count, lit ratio and ground-floor treatment — so no entrance
 // repeats on all four faces of a building.
+// Round 20: downtown is CREAM now — the turquoise glass-tower chance fell
+// 0.25 -> 0.10, so the chase boulevard reads as cream boxes with dark
+// window grids like the reference, not a blue-glass wall; this line is
+// written in the round 20 recorded session.
+// Round 17 (top-1 recipe): facade styles per district (deco ribbon
+// windows, warehouse vertical lines, plaster), warm sand / pastel /
+// saturated district palettes, neon signs, striped awning segments,
+// balconies on more floors, fins on glass towers, fuller roof clutter,
+// sun-bleached roads with solid double-yellow lines, pale sidewalks,
+// fan-leaf palms in dense rows along the chase boulevard, and a 150 m
+// golden glass tower landmark.
 import { THREE, box, cylinder, canvasTexture } from './three-shim.js';
 import { WORLD, DISTRICTS, PALETTE } from './config.js';
 import { createRandom } from './random.js';
@@ -31,6 +42,63 @@ function shadeHex(hex, amt) {
   return '#' + ((r << 16) | (g << 8) | b).toString(16).padStart(6, '0');
 }
 
+/** Warm lit-window colours (round 15, top-10 study): mostly warm amber
+ * #ffc878–#ffdf9a, with a few cool blue #bfe6ff and pink #ff9ad0 for
+ * variety. The port's cool base colour keeps cool-lit glass. */
+const LIT_WARM = ['#ffc878', '#ffdf9a', '#ffd27d', '#ffcf87', '#ffb060'];
+function litWindowColor(base, f, c) {
+  if (base === '#c8d8e8') return ['#c8d8e8', '#bfe6ff', '#dff0ff'][(f + c) % 3];
+  const roll = (f * 5 + c * 7) % 10;
+  if (roll < 7) return LIT_WARM[(f + c) % LIT_WARM.length];
+  if (roll < 9) return '#bfe6ff';
+  return '#ff9ad0';
+}
+
+/** The emissive half of a facade (round 15): black except the lit
+ * windows, the shopfront glass and the door lamp, drawn with the same
+ * grid math as facadeTexture so the two canvases line up exactly. */
+function facadeEmissive(base, litColor, floors, opts = {}) {
+  const cols = opts.cols ?? 4;
+  const litChance = opts.litChance ?? 4;
+  const ground = opts.ground ?? 'shop';
+  return canvasTexture(512, 512, (x, w, h) => {
+    x.fillStyle = '#000000';
+    x.fillRect(0, 0, w, h);
+    const floorH = h / floors;
+    const winW = 76;
+    const winH = Math.min(floorH * 0.52, 110);
+    const litWin = (f, c, wx, wy) => {
+      if (((f * 7 + c * 3 + 1) % 10) < litChance) {
+        x.fillStyle = litWindowColor(litColor, f, c);
+        x.fillRect(wx, wy, winW, winH);
+      }
+    };
+    for (let f = 0; f < floors - 1; f += 1) {
+      const y0 = f * floorH;
+      for (let c = 0; c < cols; c += 1) {
+        litWin(f, c, 36 + c * ((w - 72) / cols), y0 + (floorH - winH) / 2);
+      }
+    }
+    const gy = (floors - 1) * floorH;
+    if (ground === 'shop') {
+      // Shopfront glass + the warm lamp over the entrance door.
+      x.fillStyle = '#ffe9a0';
+      x.fillRect(150, gy + 22, w - 190, floorH - 44);
+      x.fillStyle = '#ffd94d';
+      x.fillRect(62, gy + 14, 30, 10);
+    } else if (ground === 'door') {
+      x.fillStyle = '#ffd94d';
+      x.fillRect(62, gy + 14, 30, 10);
+      x.fillStyle = '#ffe9a0';
+      x.fillRect(150, gy + 30, 130, floorH - 52);
+    } else if (ground === 'plain') {
+      for (let c = 0; c < cols; c += 1) {
+        litWin(floors - 1, c, 36 + c * ((w - 72) / cols), gy + (floorH - winH) / 2);
+      }
+    }
+  });
+}
+
 /**
  * A real facade: a wall with a vertical gradient, floor bands, big windows
  * with frames, glass gradients and mullions (some lit warm, some with
@@ -44,14 +112,29 @@ function shadeHex(hex, amt) {
  */
 function facadeTexture(base, litColor, floors, opts = {}) {
   const cols = opts.cols ?? 4;
-  const litChance = opts.litChance ?? 4; // round 11: more lit windows (was 3) — they should stand out against the night-blue sky
+  const litChance = opts.litChance ?? 4; // round 17: top-1 lit rule 35–45% (was 5–7)
   const ground = opts.ground ?? 'shop';
-  return canvasTexture(512, 512, (x, w, h) => {
+  const style = opts.style ?? 'plaster'; // round 17: 'plaster' | 'deco' | 'warehouse'
+  // Round 15: the facade now returns { map, emissive } — the colour map
+  // plus the emissive map above, so lit windows glow at golden hour.
+  const map = canvasTexture(512, 512, (x, w, h) => {
     const grad = x.createLinearGradient(0, 0, 0, h);
     grad.addColorStop(0, shade(base, 18));
     grad.addColorStop(1, shade(base, -14));
     x.fillStyle = grad;
     x.fillRect(0, 0, w, h);
+    // Round 17: warehouse walls get vertical wavy lines (top-1 recipe)
+    // instead of a flat plaster wash.
+    if (style === 'warehouse') {
+      x.strokeStyle = 'rgba(0,0,0,0.22)';
+      x.lineWidth = 5;
+      for (let vx = 20; vx < w; vx += 32) {
+        x.beginPath();
+        x.moveTo(vx, 0);
+        for (let vy = 0; vy <= h; vy += 32) x.lineTo(vx + Math.sin(vy / 40) * 4, vy);
+        x.stroke();
+      }
+    }
     // Pilasters at the edges.
     x.fillStyle = 'rgba(0,0,0,0.18)';
     x.fillRect(0, 0, 14, h);
@@ -61,6 +144,38 @@ function facadeTexture(base, litColor, floors, opts = {}) {
     const winH = Math.min(floorH * 0.52, 110);
     const drawWindow = (wx, wy, f, c) => {
       const lit = ((f * 7 + c * 3 + 1) % 10) < litChance;
+      if (style === 'deco') {
+        // Round 17: ribbon windows — full-bay glass bands, 46% of the
+        // floor height, with a white band and a porthole accent below.
+        const rw = (w - 72) / cols - 10;
+        const rh = floorH * 0.46;
+        const rx = wx - (rw - winW) / 2;
+        if (lit) {
+          x.fillStyle = 'rgba(255,217,77,0.4)';
+          x.fillRect(rx - 8, wy - 8, rw + 16, rh + 16);
+        }
+        x.fillStyle = '#1c2129';
+        x.fillRect(rx - 4, wy - 4, rw + 8, rh + 8);
+        if (lit) {
+          x.fillStyle = litWindowColor(litColor, f, c);
+        } else {
+          const gg = x.createLinearGradient(rx, wy, rx, wy + rh);
+          gg.addColorStop(0, '#9db8cc');
+          gg.addColorStop(0.55, '#5a7a96');
+          gg.addColorStop(1, '#2c3e55');
+          x.fillStyle = gg;
+        }
+        x.fillRect(rx, wy, rw, rh);
+        x.fillStyle = 'rgba(20,26,34,0.85)';
+        x.fillRect(rx + rw / 2 - 2, wy, 4, rh);
+        x.fillStyle = '#f2efe6';
+        x.fillRect(rx, wy + rh + 6, rw, 8);
+        x.fillStyle = '#2c4a5e';
+        x.beginPath(); x.arc(rx + rw - 12, wy + rh + 26, 9, 0, Math.PI * 2); x.fill();
+        x.fillStyle = '#bfe6ff';
+        x.beginPath(); x.arc(rx + rw - 12, wy + rh + 26, 5, 0, Math.PI * 2); x.fill();
+        return;
+      }
       if (lit) {
         // Warm halo around a lit window, so it glows against the wall.
         // Round 11: stronger (was 0.28) — lit windows must read at dusk.
@@ -74,7 +189,7 @@ function facadeTexture(base, litColor, floors, opts = {}) {
       x.fillStyle = '#c8c2b4';
       x.fillRect(wx - 6, wy + winH, winW + 12, 5);
       if (lit) {
-        x.fillStyle = litColor;
+        x.fillStyle = litWindowColor(litColor, f, c); // round 15: warm amber variety + a few blue/pink (was one flat #ffd94d)
       } else {
         const gg = x.createLinearGradient(wx, wy, wx, wy + winH);
         gg.addColorStop(0, '#9db8cc');
@@ -178,6 +293,7 @@ function facadeTexture(base, litColor, floors, opts = {}) {
     x.fillStyle = 'rgba(0,0,0,0.35)';
     x.fillRect(0, 0, w, 10);
   });
+  return { map, emissive: facadeEmissive(base, litColor, floors, opts) };
 }
 
 /**
@@ -186,9 +302,11 @@ function facadeTexture(base, litColor, floors, opts = {}) {
  * a full grid of glass panes with bright blue reflections, floor bands,
  * and warm lit windows scattered through it.
  */
-function glassFacadeTexture(floors, litChance = 6) { // round 11: more lit glass (was 5)
+function glassFacadeTexture(floors, litChance = 5) { // round 17: top-1 glass lit 45% (was 6)
   const cols = 5;
-  return canvasTexture(512, 512, (x, w, h) => {
+  // Round 15: like facadeTexture, returns { map, emissive } — the glass
+  // towers' lit windows glow at golden hour too.
+  const map = canvasTexture(512, 512, (x, w, h) => {
     const grad = x.createLinearGradient(0, 0, 0, h);
     grad.addColorStop(0, '#3d6a9a');
     grad.addColorStop(0.5, '#2c4a72');
@@ -213,7 +331,7 @@ function glassFacadeTexture(floors, litChance = 6) { // round 11: more lit glass
         x.fillStyle = '#141a24';
         x.fillRect(wx - 4, wy - 4, winW + 8, winH + 8);
         if (lit) {
-          x.fillStyle = '#ffd94d';
+          x.fillStyle = litWindowColor('#ffd94d', f, c); // round 15: warm variety (was flat #ffd94d)
         } else {
           const gg = x.createLinearGradient(wx, wy, wx + winW, wy + winH);
           gg.addColorStop(0, '#b8d8f0');
@@ -230,6 +348,23 @@ function glassFacadeTexture(floors, litChance = 6) { // round 11: more lit glass
     x.fillStyle = 'rgba(0,0,0,0.35)';
     x.fillRect(0, 0, w, 10);
   });
+  const emissive = canvasTexture(512, 512, (x, w, h) => {
+    x.fillStyle = '#000000';
+    x.fillRect(0, 0, w, h);
+    const floorH = h / floors;
+    const winW = 72;
+    const winH = Math.min(floorH * 0.6, 110);
+    for (let f = 0; f < floors; f += 1) {
+      const y0 = f * floorH;
+      for (let c = 0; c < cols; c += 1) {
+        if (((f * 7 + c * 3 + 1) % 10) < litChance) {
+          x.fillStyle = litWindowColor('#ffd94d', f, c);
+          x.fillRect(34 + c * ((w - 68) / cols), y0 + (floorH - winH) / 2, winW, winH);
+        }
+      }
+    }
+  });
+  return { map, emissive };
 }
 
 /** A point just outside one face of a box, with the rotation a flat plane
@@ -239,6 +374,30 @@ function facePoint(dir, x, z, w, dep, out) {
   if (dir === '-x') return { x: x - w / 2 - out, z, rotY: -Math.PI / 2 };
   if (dir === '+z') return { x, z: z + dep / 2 + out, rotY: 0 };
   return { x, z: z - dep / 2 - out, rotY: Math.PI };
+}
+
+/** Pale warm pavement with joint grid + speckle (round 17, top-1
+ * recipe): the sidewalk is #d9d0c4 with a joint every 2u, not one flat
+ * grey slab. One tile covers 8u x 8u. */
+function sidewalkTexture() {
+  return canvasTexture(256, 256, (x, w, h) => {
+    x.fillStyle = PALETTE.sidewalk;
+    x.fillRect(0, 0, w, h);
+    x.fillStyle = 'rgba(255,255,255,0.08)';
+    for (let i = 0; i < 120; i += 1) {
+      x.fillRect((i * 41) % w, (i * 67) % h, 2, 2);
+    }
+    x.fillStyle = 'rgba(0,0,0,0.05)';
+    for (let i = 0; i < 60; i += 1) {
+      x.fillRect((i * 53) % w, (i * 31) % h, 3, 2);
+    }
+    x.strokeStyle = 'rgba(0,0,0,0.28)';
+    x.lineWidth = 3;
+    for (let j = 0; j <= 4; j += 1) {
+      x.beginPath(); x.moveTo(j * 64, 0); x.lineTo(j * 64, h); x.stroke();
+      x.beginPath(); x.moveTo(0, j * 64); x.lineTo(w, j * 64); x.stroke();
+    }
+  });
 }
 
 function tileTexture(base) {
@@ -279,6 +438,34 @@ function shopTexture(name, bg, fg) {
   });
 }
 
+/** A neon sign (round 17, top-1 recipe): the name in a glowing neon
+ * colour on a dark panel with a neon border — the canvas text is drawn
+ * twice (a blurred neon glow, then white at 0.6 alpha on top), and the
+ * material is unlit (toneMapped false) so the sign glows even in
+ * daylight. Names here are ours only (HOTEL KENCANA, CASINO EMAS…). */
+function neonSignTexture(name, neon, tw = 512, th = 128) {
+  return canvasTexture(tw, th, (x, w, h) => {
+    x.fillStyle = '#140f2a';
+    x.fillRect(0, 0, w, h);
+    x.strokeStyle = neon;
+    x.lineWidth = 6;
+    x.strokeRect(5, 5, w - 10, h - 10);
+    x.textAlign = 'center';
+    x.textBaseline = 'middle';
+    x.font = `900 italic ${Math.floor(h * 0.52)}px system-ui, sans-serif`;
+    x.shadowColor = neon;
+    x.shadowBlur = 18;
+    x.fillStyle = neon;
+    x.fillText(name, w / 2, h / 2 + 2);
+    x.fillText(name, w / 2, h / 2 + 2);
+    x.shadowBlur = 0;
+    x.globalAlpha = 0.6;
+    x.fillStyle = '#ffffff';
+    x.fillText(name, w / 2, h / 2 + 2);
+    x.globalAlpha = 1;
+  });
+}
+
 /** A tall vertical shop sign (round 12, like the vertical neon signs on
  * the reference's towers): the name runs bottom-to-top down the face of
  * a tall building, so the street reads busy even from a distance.
@@ -311,21 +498,25 @@ function roadTexture() {
     x.fillStyle = PALETTE.road;
     x.fillRect(0, 0, w, h);
     // Asphalt speckle, so the road is not one flat slab of grey.
-    x.fillStyle = 'rgba(255,255,255,0.05)';
-    for (let i = 0; i < 90; i += 1) {
+    // Round 17: heavier speckle on the sun-bleached asphalt.
+    x.fillStyle = 'rgba(255,255,255,0.07)';
+    for (let i = 0; i < 140; i += 1) {
       x.fillRect((i * 37) % w, (i * 53) % h, 2, 2);
     }
-    // A faint darker wheel-worn band down each lane, like real asphalt.
-    x.fillStyle = 'rgba(0,0,0,0.12)';
-    x.fillRect(0, h * 0.14, w, h * 0.1);
-    x.fillRect(0, h * 0.64, w, h * 0.1);
-    // Double dashed yellow centre line.
-    x.fillStyle = PALETTE.roadLine;
-    for (const dx of [-7, 5]) {
-      x.fillRect(w / 2 - 3 + dx, 0, 4, 40);
-      x.fillRect(w / 2 - 3 + dx, 80, 4, 40);
-      x.fillRect(w / 2 - 3 + dx, 160, 4, 40);
+    x.fillStyle = 'rgba(0,0,0,0.06)';
+    for (let i = 0; i < 90; i += 1) {
+      x.fillRect((i * 61) % w, (i * 29) % h, 3, 2);
     }
+    // Round 17: tyre tracks — two dark bands down each lane, like the
+    // top-1 sun-bleached asphalt (was faint wheel-worn bands).
+    x.fillStyle = 'rgba(0,0,0,0.18)';
+    x.fillRect(0, h * 0.12, w, h * 0.12);
+    x.fillRect(0, h * 0.62, w, h * 0.12);
+    // Round 17: SOLID double yellow centre line (top-1 recipe — the old
+    // dashed yellow read as a country road, not a city boulevard).
+    x.fillStyle = PALETTE.roadLine;
+    x.fillRect(w / 2 - 10, 0, 5, h);
+    x.fillRect(w / 2 + 5, 0, 5, h);
     // White dashed lane lines at 1/4 and 3/4 across, so each direction
     // reads as two marked lanes like the reference highway.
     x.fillStyle = 'rgba(255,255,255,0.75)';
@@ -470,21 +661,34 @@ function palm(rand) {
   trunk.rotation.z = rand.range(-0.08, 0.08);
   trunk.castShadow = true;
   g.add(trunk);
-  // Two tiers of fronds, so the crown reads full and soft instead of a
-  // thin star: 8 upright fronds on top, 8 drooping ones below, in two
-  // greens.
-  const frondMat = new THREE.MeshStandardMaterial({ color: '#3d8a4b', roughness: 0.9, flatShading: true });
-  const frondMat2 = new THREE.MeshStandardMaterial({ color: '#4b9a55', roughness: 0.9, flatShading: true });
+  // Round 17: fan leaves, not cones — 6–8 long thin dark-green leaves
+  // per tier, spread radially from the crown and drooping outward, so
+  // the palm reads as a palm instead of a pine (top-1 recipe). Each
+  // leaf is a thin box whose centre sits half a leaf out along its own
+  // direction (outward + slightly down), so it starts at the crown.
+  const frondMat = new THREE.MeshStandardMaterial({ color: '#2f7a3d', roughness: 0.9, flatShading: true });
+  const frondMat2 = new THREE.MeshStandardMaterial({ color: '#3d8a4b', roughness: 0.9, flatShading: true });
   for (let tier = 0; tier < 2; tier += 1) {
-    const n = 8;
+    const n = 7;
+    const tilt = tier === 0 ? 0.55 : 0.9; // droop below horizontal
     for (let i = 0; i < n; i += 1) {
+      const len = tier === 0 ? 4.2 : 4.8;
       const frond = new THREE.Mesh(
-        new THREE.ConeGeometry(0.55, tier === 0 ? 4.2 : 4.8, 4),
+        new THREE.BoxGeometry(0.55, 0.05, len),
         tier === 0 ? frondMat : frondMat2,
       );
-      frond.scale.set(1, 1, 0.16);
-      frond.position.y = h + (tier === 0 ? 0.7 : 0.1);
-      frond.rotation.set(Math.PI / 2 + (tier === 0 ? rand.range(0.5, 0.8) : rand.range(0.9, 1.25)), (i / n) * Math.PI * 2 + tier * 0.4, 0);
+      const ang = (i / n) * Math.PI * 2 + tier * 0.45;
+      const dx = Math.sin(ang) * Math.cos(tilt);
+      const dz = Math.cos(ang) * Math.cos(tilt);
+      const dy = -Math.sin(tilt);
+      frond.position.set(
+        dx * (len / 2),
+        h + (tier === 0 ? 0.7 : 0.1) + dy * (len / 2),
+        dz * (len / 2),
+      );
+      frond.rotation.order = 'YXZ';
+      frond.rotation.y = ang;
+      frond.rotation.x = tilt;
       frond.castShadow = true;
       g.add(frond);
     }
@@ -495,6 +699,42 @@ function palm(rand) {
   );
   nuts.position.y = h - 0.2;
   g.add(nuts);
+  return g;
+}
+
+/** A traffic light (round 15, top-10 street life): a pole, an arm over
+ * the road and a 3-lamp head — one lamp lit bright (unlit material, so
+ * it reads pure colour), the other two dim. `lit` is 0 red, 1 yellow,
+ * 2 green. */
+function trafficLight(lit = 2) {
+  const g = new THREE.Group();
+  const pole = cylinder(0.09, 0.12, 5.6, '#2a2a33');
+  pole.position.y = 2.8;
+  g.add(pole);
+  const arm = box(2.6, 0.14, 0.14, '#2a2a33', { metal: 0.5, rough: 0.4 });
+  arm.position.set(1.3, 5.5, 0);
+  g.add(arm);
+  const head = box(0.6, 1.7, 0.5, '#1c1c1c');
+  head.position.set(2.5, 4.9, 0);
+  g.add(head);
+  const lampCols = ['#ff2e2e', '#ffb400', '#2eff5a'];
+  for (let i = 0; i < 3; i += 1) {
+    const on = i === lit;
+    const lamp = new THREE.Mesh(
+      new THREE.CircleGeometry(0.2, 14),
+      new THREE.MeshBasicMaterial({ color: on ? lampCols[i] : '#333333' }),
+    );
+    lamp.position.set(2.5, 5.45 - i * 0.55, 0.26);
+    g.add(lamp);
+    if (on) {
+      const glow = new THREE.Mesh(
+        new THREE.SphereGeometry(0.34, 10, 8),
+        new THREE.MeshBasicMaterial({ color: lampCols[i], transparent: true, opacity: 0.35 }),
+      );
+      glow.position.set(2.5, 5.45 - i * 0.55, 0.26);
+      g.add(glow);
+    }
+  }
   return g;
 }
 
@@ -662,16 +902,34 @@ export function createWorld(seed = 1) {
 
   // Sidewalks: light strips with a curb step along every road, so the
   // buildings stand on pavement instead of flat grey ground.
-  const walkMat = new THREE.MeshStandardMaterial({ color: PALETTE.sidewalk, roughness: 1 });
+  // Round 17: the pale warm pavement has a joint grid (sidewalkTexture,
+  // one tile = 8u), so the sidewalks read as poured slabs.
+  const walkTexBase = sidewalkTexture();
   for (const r of WORLD.roads) {
     for (const s of [-1, 1]) {
       const off = r + s * (WORLD.roadWidth / 2 + 3);
-      const swH = new THREE.Mesh(new THREE.PlaneGeometry(WORLD.half * 2, 6), walkMat);
+      const texH = walkTexBase.clone();
+      texH.needsUpdate = true;
+      texH.wrapS = THREE.RepeatWrapping;
+      texH.wrapT = THREE.RepeatWrapping;
+      texH.repeat.set(WORLD.half * 2 / 8, 6 / 8);
+      const swH = new THREE.Mesh(
+        new THREE.PlaneGeometry(WORLD.half * 2, 6),
+        new THREE.MeshStandardMaterial({ map: texH, roughness: 1 }),
+      );
       swH.rotation.x = -Math.PI / 2;
       swH.position.set(0, 0.05, off);
       swH.receiveShadow = true;
       group.add(swH);
-      const swV = new THREE.Mesh(new THREE.PlaneGeometry(6, WORLD.half * 2), walkMat);
+      const texV = walkTexBase.clone();
+      texV.needsUpdate = true;
+      texV.wrapS = THREE.RepeatWrapping;
+      texV.wrapT = THREE.RepeatWrapping;
+      texV.repeat.set(6 / 8, WORLD.half * 2 / 8);
+      const swV = new THREE.Mesh(
+        new THREE.PlaneGeometry(6, WORLD.half * 2),
+        new THREE.MeshStandardMaterial({ map: texV, roughness: 1 }),
+      );
       swV.rotation.x = -Math.PI / 2;
       swV.position.set(off, 0.055, 0);
       swV.receiveShadow = true;
@@ -954,6 +1212,18 @@ export function createWorld(seed = 1) {
   group.add(limitSign(10, 69, -Math.PI / 2, '40', 2.5));
   group.add(limitSign(120, 69, -Math.PI / 2, '40'));
 
+  // Round 15: traffic lights at the (60, 60) intersection, in the chase
+  // frame — green for the eastbound chase lane, red for the cross
+  // traffic, so the intersection reads as a live city junction.
+  const tl1 = trafficLight(2);
+  tl1.position.set(72, 0, 51.5);
+  tl1.rotation.y = -Math.PI / 2; // arm over the road, head facing the chase camera
+  group.add(tl1);
+  const tl2 = trafficLight(0);
+  tl2.position.set(48, 0, 68.5);
+  tl2.rotation.y = Math.PI / 2;
+  group.add(tl2);
+
   // Buildings, one per block, district-flavoured.
   const blockMin = -300 + 10;
   const blockMax = 300 - 10;
@@ -984,33 +1254,43 @@ export function createWorld(seed = 1) {
         let litColor = '#ffd94d';
         let floors;
         let roofColor = '#3a3a44';
+        // Round 17: top-1 district palettes + facade styles — warm sand
+        // towers downtown (some turquoise glass), pastel kampung/beach,
+        // brick warehouses at the port, saturated market colours.
+        let style = 'plaster';
+        let towerGlass = false;
         if (d.kind === 'downtown') {
           h = rand.range(42, 102); // round 8: bigger height spread
-          base = rand.pick(['#5a6a8a', '#7a5a8a', '#4a7a8a']);
+          base = rand.pick(['#f3d9b8', '#e8c7a0', '#ffe1c4', '#d9c2a6', '#f6e7d0']);
+          if (rand.chance(0.10)) { base = rand.pick(['#a8e0d8', '#9fd8d0']); towerGlass = true; }
           floors = Math.max(4, Math.floor(h / 9));
+          roofColor = '#7d7b80';
+          style = 'deco';
         } else if (d.kind === 'casino') {
           h = rand.range(24, 58);
           base = '#8a6a2a';
           litColor = '#ffd94d';
           floors = Math.max(4, Math.floor(h / 9));
+          style = 'deco';
         } else if (d.kind === 'kampung') {
           h = rand.range(7, 13);
-          base = rand.pick(['#c98a5b', '#b57a4b', '#d0a06a']);
+          base = rand.pick(['#f3d9b8', '#e8c7a0', '#ffd9ac', '#f6e7d0']);
           floors = 2;
           roofColor = '#a34a2b';
         } else if (d.kind === 'port') {
           h = rand.range(10, 18);
-          base = '#7d8a94';
+          base = rand.pick(['#b5654a', '#6c8ea4', '#9aa38f', '#c9a66b']);
           litColor = '#c8d8e8';
           floors = 2;
           roofColor = '#4a5560';
+          style = 'warehouse';
         } else if (d.kind === 'market') {
           h = rand.range(8, 14);
-          base = '#b56a4b';
+          base = rand.pick(['#ffb703', '#fb8500', '#e76f51', '#2a9d8f', '#f4a261', '#ffd6a5']);
           floors = 2;
         } else {
           h = rand.range(12, 30);
-          base = '#e88ca0';
+          base = rand.pick(['#ffe1c4', '#f6e7d0', '#ffd9ac', '#e8c7a0']);
           floors = 3;
         }
         // Round 12: a slight per-building shade variation on the district
@@ -1025,21 +1305,26 @@ export function createWorld(seed = 1) {
         const front = Math.abs(nearRx - x) < Math.abs(nearRz - z)
           ? (nearRx > x ? '+x' : '-x')
           : (nearRz > z ? '+z' : '-z');
-        const frontTex = facadeTexture(bBase, litColor, floors, spec);
-        const sideTex = facadeTexture(bBase, litColor, floors, { ...spec, ground: 'plain' });
-        const rearTex = facadeTexture(bBase, litColor, floors, { ...spec, ground: 'plain', litChance: 1 });
+        const frontTex = facadeTexture(bBase, litColor, floors, { ...spec, style });
+        const sideTex = facadeTexture(bBase, litColor, floors, { ...spec, ground: 'plain', style });
+        const rearTex = facadeTexture(bBase, litColor, floors, { ...spec, ground: 'plain', litChance: 1, style });
         // The tallest downtown towers get blue-glass curtain walls
         // (round 7, like the reference's glass skyscrapers): the street
         // face keeps its entrance + shopfront, the side and rear faces
         // are glass. Round 8: the glass threshold drops to 50u, so more
-        // towers read as glass.
-        const glass = d.kind === 'downtown' && h >= 50;
+        // towers read as glass. Round 17: turquoise-picked towers are
+        // glass too, whatever their height.
+        const glass = (d.kind === 'downtown' && h >= 50) || towerGlass;
         const glassFront = frontTex;
-        const glassSide = glass ? glassFacadeTexture(floors, 6) : sideTex;
+        const glassSide = glass ? glassFacadeTexture(floors, 5) : sideTex;
         const glassRear = glass ? glassFacadeTexture(floors, 2) : rearTex;
-        const frontMat = new THREE.MeshStandardMaterial({ map: glassFront, roughness: 0.85 });
-        const sideMat = new THREE.MeshStandardMaterial({ map: glassSide, roughness: 0.85 });
-        const rearMat = new THREE.MeshStandardMaterial({ map: glassRear, roughness: 0.85 });
+        // Round 15: every facade material carries its emissive map, so
+        // lit windows + shopfronts glow at golden hour (emissive white ×
+        // the emissive canvas, intensity 0.85).
+        const facadeMat = (t) => new THREE.MeshStandardMaterial({ map: t.map, emissiveMap: t.emissive, emissive: 0xffffff, emissiveIntensity: 0.85, roughness: 0.85 });
+        const frontMat = facadeMat(glassFront);
+        const sideMat = facadeMat(glassSide);
+        const rearMat = facadeMat(glassRear);
         const roofMat = new THREE.MeshStandardMaterial({ color: roofColor, roughness: 0.9 });
         const faceMats = { '+x': sideMat, '-x': sideMat, '+z': sideMat, '-z': sideMat };
         faceMats[front] = frontMat;
@@ -1068,14 +1353,38 @@ export function createWorld(seed = 1) {
         const cornice = box(w + 0.8, 0.6, dep + 0.8, '#2a2a33');
         cornice.position.set(x, h + 0.3, z);
         group.add(cornice);
-        // Entrance canopy in the district accent (pink/blue/gold awnings
-        // like the reference), not plain dark.
-        const canopyFp = facePoint(front, x, z, w, dep, 0.9);
-        const canopy = (front === '+x' || front === '-x')
-          ? box(1.8, 0.18, 5, d.accent)
-          : box(5, 0.18, 1.8, d.accent);
-        canopy.position.set(canopyFp.x, 3.4, canopyFp.z);
-        group.add(canopy);
+        // Entrance awnings (round 17, top-1 recipe): canvas awnings in
+        // 6 bright colours, split per ~6 m along the front, two colours
+        // alternating, 25% of the segments left empty, tilted slightly
+        // outward — so the ground floor reads as a row of shops.
+        {
+          const xFront = front === '+x' || front === '-x';
+          const faceW = xFront ? dep : w;
+          const nSeg = Math.max(1, Math.round(faceW / 6));
+          const segW = faceW / nSeg;
+          const awnCols = ['#ef476f', '#2ec4b6', '#ffd166', '#f7ede2', '#ff9f68', '#118ab2'];
+          const cA = awnCols[Math.floor(rand.range(0, 6))];
+          const cB = awnCols[Math.floor(rand.range(0, 6))];
+          for (let si = 0; si < nSeg; si += 1) {
+            if (rand.chance(0.25)) continue;
+            const segMat = new THREE.MeshStandardMaterial({ color: si % 2 ? cB : cA, roughness: 0.8 });
+            const seg = new THREE.Mesh(
+              new THREE.BoxGeometry(xFront ? 1.8 : segW - 0.3, 0.18, xFront ? segW - 0.3 : 1.8),
+              segMat,
+            );
+            const along = -faceW / 2 + (si + 0.5) * segW;
+            const fp = facePoint(front, x, z, w, dep, 0.9);
+            if (xFront) {
+              seg.position.set(fp.x, 3.4, z + along);
+              seg.rotation.z = front === '+x' ? -0.22 : 0.22;
+            } else {
+              seg.position.set(x + along, 3.4, fp.z);
+              seg.rotation.x = front === '+z' ? 0.22 : -0.22;
+            }
+            seg.castShadow = true;
+            group.add(seg);
+          }
+        }
         // Setback top floor + antenna on the tallest towers, with a red
         // aircraft-warning beacon on the very tallest (round 8).
         if (h > 40) {
@@ -1117,15 +1426,25 @@ export function createWorld(seed = 1) {
         }
         // Rooftop clutter on mid-height buildings too (round 12: was
         // only h > 30, now h > 15), so the skyline reads lived-in, not
-        // flat — a water tank + AC unit on most roofs, an antenna on the
-        // taller mid-rises (the h > 40 setback + antenna block below stays).
+        // flat. Round 17: 1–3 AC boxes per roof, a water tank on 60%,
+        // an antenna on 35% (top-1 recipe).
         if (h > 15 && rand.chance(0.55)) {
-          const ac = box(2.4, 1.2, 2.0, '#9aa0a8');
-          ac.position.set(x + rand.range(-6, 6), h + 0.6, z + rand.range(-5, 5));
-          group.add(ac);
-          const tank = cylinder(1.1, 1.1, 2.2, '#c9c9c9');
-          tank.position.set(x + rand.range(-6, 6), h + 1.1, z + rand.range(-5, 5));
-          group.add(tank);
+          const nAc = 1 + Math.floor(rand.range(0, 3));
+          for (let ai = 0; ai < nAc; ai += 1) {
+            const ac = box(1.6, 1.0, 1.0, '#9aa0a8');
+            ac.position.set(x + rand.range(-6, 6), h + 0.5, z + rand.range(-5, 5));
+            group.add(ac);
+          }
+          if (rand.chance(0.6)) {
+            const tank = cylinder(1.1, 1.1, 2.2, rand.pick(['#2e86ab', '#f7ede2', '#9aa3a8']));
+            tank.position.set(x + rand.range(-6, 6), h + 1.1, z + rand.range(-5, 5));
+            group.add(tank);
+          }
+          if (rand.chance(0.35)) {
+            const ant = cylinder(0.06, 0.12, 7, '#888888');
+            ant.position.set(x + rand.range(-6, 6), h + 3.5, z + rand.range(-5, 5));
+            group.add(ant);
+          }
         }
         if (h > 25 && h <= 40 && rand.chance(0.4)) {
           const ant = cylinder(0.06, 0.1, 6, '#888888');
@@ -1139,11 +1458,16 @@ export function createWorld(seed = 1) {
         // street-facing side only. Round 12: more of them (was 35%, now
         // 60%) and on mid-height buildings too (was h < 30, now < 42),
         // so the street reads as a real shopping street, not blank walls.
-        if (rand.chance(0.6) && h < 42) {
+        // Round 17: 75% and up to 60 m tall — the top-1 ground floor is
+        // never a blank wall.
+        if (rand.chance(0.75) && h < 60) {
           const name = shopNames[shopIdx++ % shopNames.length];
+          const shopTex = shopTexture(name, d.accent, '#1c1c1c');
           const shop = new THREE.Mesh(
             new THREE.PlaneGeometry(w * 0.9, 4.4),
-            new THREE.MeshStandardMaterial({ map: shopTexture(name, d.accent, '#1c1c1c'), roughness: 0.8 }),
+            // Round 15: the shop sign glows a little at dusk (its own
+            // texture as emissive map), so the ground floor reads lit.
+            new THREE.MeshStandardMaterial({ map: shopTex, emissiveMap: shopTex, emissive: 0xffffff, emissiveIntensity: 0.45, roughness: 0.8 }),
           );
           const shopFp = facePoint(front, x, z, w, dep, 0.06);
           shop.position.set(shopFp.x, 2.2, shopFp.z);
@@ -1172,8 +1496,17 @@ export function createWorld(seed = 1) {
           // Round 14: the in-frame sign is much bigger (4.5x16, 64px
           // font on a 128x512 canvas) so its letters are ~2u tall in
           // the world and read from the chase camera.
+          // Round 19: SHORTER + LOWER (4.5x12 at y min(h*0.4, 10),
+          // spans y 4..16) — the 4.5x16 at y 20 (top y 28) was cut by
+          // the chase frame's top edge in every shot since round 13:
+          // the frame top is only ~y 17.6 at 34u out, so a sign top
+          // above ~y 17 is cut. (The HOTEL fallback sign in world.js
+          // never even renders when this tower sign exists — lowering
+          // the HOTEL sign alone, as first tried in round 19, fixed
+          // nothing; THIS is the cut yellow banner at the chase
+          // frame's top-right corner.)
           const signW = chaseSign ? 4.5 : 2.4;
-          const signH = chaseSign ? 16 : 9.6;
+          const signH = chaseSign ? 12 : 9.6;
           const vsign = new THREE.Mesh(
             new THREE.PlaneGeometry(signW, signH),
             new THREE.MeshStandardMaterial({ map: verticalSignTexture(vname, d.accent, chaseSign ? 64 : 26, chaseSign ? 128 : 64, chaseSign ? 512 : 256), roughness: 0.7, emissive: 0x221100, emissiveIntensity: chaseSign ? 0.7 : 0.4 }),
@@ -1184,33 +1517,55 @@ export function createWorld(seed = 1) {
           const off = (signFace === '+z' || signFace === '+x') ? -1 : 1;
           vsign.position.set(
             vfp.x + (isXFace ? 0 : off * w * 0.28),
-            chaseSign ? Math.min(h * 0.4, 20) : h * 0.62,
+            chaseSign ? Math.min(h * 0.4, 10) : h * 0.62,
             vfp.z + (isXFace ? off * dep * 0.28 : 0),
           );
           vsign.rotation.y = vfp.rotY;
           group.add(vsign);
           if (chaseSign) chaseVSignDone = true;
         }
-        // Balconies with railings on downtown towers, on the street side.
+        // Balconies with railings on taller buildings, on the street
+        // side. Round 17: deco buildings get one per floor, the rest
+        // every second floor (capped at 5, so the skyline stays cheap),
+        // with railing colours picked per building (top-1 recipe).
         if (h > 30) {
           const xFront = front === '+x' || front === '-x';
           const faceW = xFront ? dep : w; // length of the street-facing wall
-          for (let f = 1; f < 4; f += 1) {
-            const by = f * (h / 4);
+          const step = style === 'deco' ? 1 : 2;
+          const railCols = ['#f2efe6', '#2a3d45', '#8a5a33', '#ffffff'];
+          const railCol = railCols[Math.floor(rand.range(0, railCols.length))];
+          const nBalc = Math.min(5, Math.floor((floors - 1) / step));
+          for (let bi = 0; bi < nBalc; bi += 1) {
+            const by = ((bi + 1) / (nBalc + 1)) * h;
             const fp = facePoint(front, x, z, w, dep, 0.8);
             const balc = xFront ? box(1.6, 0.25, faceW * 0.7, '#d8d8d8') : box(faceW * 0.7, 0.25, 1.6, '#d8d8d8');
             balc.position.set(fp.x, by, fp.z);
             group.add(balc);
             const railFp = facePoint(front, x, z, w, dep, 1.55);
-            const rail = xFront ? box(0.08, 0.9, faceW * 0.7, '#3a3f46') : box(faceW * 0.7, 0.9, 0.08, '#3a3f46');
+            const rail = xFront ? box(0.08, 0.9, faceW * 0.7, railCol) : box(faceW * 0.7, 0.9, 0.08, railCol);
             rail.position.set(railFp.x, by + 0.55, railFp.z);
             group.add(rail);
             for (const sx of [-1, 1]) {
-              const side = xFront ? box(1.6, 0.9, 0.08, '#3a3f46') : box(0.08, 0.9, 1.6, '#3a3f46');
+              const side = xFront ? box(1.6, 0.9, 0.08, railCol) : box(0.08, 0.9, 1.6, railCol);
               const sideFp = facePoint(front, x + (xFront ? 0 : sx * faceW * 0.35), z + (xFront ? sx * faceW * 0.35 : 0), w, dep, 0.8);
               side.position.set(sideFp.x, by + 0.55, sideFp.z);
               group.add(side);
             }
+          }
+        }
+        // Round 17: vertical fins on glass towers over 30 m (top-1
+        // recipe) — thin white blades every 4 m down the front face.
+        if (glass && h > 30) {
+          const xFront = front === '+x' || front === '-x';
+          const faceW = xFront ? dep : w;
+          const nFin = Math.max(2, Math.floor(faceW / 4));
+          for (let fi = 0; fi < nFin; fi += 1) {
+            const along = -faceW / 2 + 2 + fi * 4;
+            const fin = box(xFront ? 0.15 : 0.3, h * 0.9, xFront ? 0.3 : 0.15, '#e9e4da');
+            const fp = facePoint(front, x, z, w, dep, 0.1);
+            if (xFront) fin.position.set(fp.x, h * 0.45, z + along);
+            else fin.position.set(x + along, h * 0.45, fp.z);
+            group.add(fin);
           }
         }
       }
@@ -1226,12 +1581,18 @@ export function createWorld(seed = 1) {
   // Round 14: the sign is 8x26 with an 80px font on a 128x512 canvas,
   // so its letters are ~4.1u tall and read at ~24px from 104u away
   // (the round 13 sign's 1.2u letters read ~6px — unreadable).
+  // Round 19: the sign is 8x22 at y 15 (spans y 4..26) — the old
+  // 8x26 at y 20 (top y 33) would be cut by the frame's top edge if
+  // it ever renders. (Note: this fallback only renders when no
+  // downtown tower sign was placed in the chase wedge; the banner
+  // actually cut in the chase shots is the tower sign above, fixed
+  // separately in round 19.)
   if (!chaseVSignDone) {
     const hotelVSign = new THREE.Mesh(
-      new THREE.PlaneGeometry(8, 26),
+      new THREE.PlaneGeometry(8, 22),
       new THREE.MeshStandardMaterial({ map: verticalSignTexture('HOTEL', '#ffd94d', 80, 128, 512), roughness: 0.7, emissive: 0x221100, emissiveIntensity: 0.7 }),
     );
-    hotelVSign.position.set(40, 20, -27.9);
+    hotelVSign.position.set(40, 15, -27.9);
     group.add(hotelVSign);
     chaseVSignDone = true;
   }
@@ -1243,26 +1604,44 @@ export function createWorld(seed = 1) {
   // but the gantry truss beam at (20, 49) crossed its middle in the
   // frame — moved west to (-15, 48), clear of the gantry post, the
   // palms at (0, 51) and (40, 51), the police cars and the turn
-  // arrow. Projected centre (~500, 160), letters ~37px. The panel
-  // spans y 3..18 on a short base, clear of the version stamp at the
-  // top of the frame.
+  // arrow. Projected centre (~500, 160), letters ~37px. Round 16:
+  // the panel is now 4x12 at (-8, 8.5, 72), spans y 2.5..14.5 — the
+  // 4x15 panel's top (y 18) was cut by the frame top.
+  // Round 15b: the totem moved to the SOUTH kerb (-15, 72) — on the
+  // north kerb it stood dead-centre behind the "PANTAI KIDUL" district
+  // title card, and the two signs collided at the top of the frame.
+  // Now it reads on the right side of the chase frame, angled toward
+  // the camera (rotY -PI/2 - 0.35, face west-north), clear of the
+  // gantry, the palms and the south-side pedestrians.
+  // Round 16: the totem is SHORTER + LOWER + further east (was 4x15 at
+  // (-15, 10.5, 72), top y 18 — the top edge was cut by the frame; the
+  // chase camera at (-47.6, 3.5, 64) looks slightly down, so the frame
+  // top at 34u is ~y 17.6). Now 4x12 at (-8, 8.5, 72), top y 14.5,
+  // ~15 deg elevation — the whole panel + its base fit in the frame,
+  // clear of the gantry, the palms and the south-side pedestrians.
   const totemTex = verticalSignTexture('ALUN-ALUN', '#ffd94d', 72, 128, 512);
   const totem = new THREE.Mesh(
-    new THREE.PlaneGeometry(4, 15),
+    new THREE.PlaneGeometry(4, 12),
     new THREE.MeshStandardMaterial({ map: totemTex, roughness: 0.7, emissive: 0x221100, emissiveIntensity: 0.7 }),
   );
-  totem.position.set(-15, 10.5, 48);
-  totem.rotation.y = -Math.PI / 2 + 0.35;
+  totem.position.set(-8, 8.5, 72);
+  totem.rotation.y = -Math.PI / 2 - 0.35;
   group.add(totem);
   const totemBase = box(1.2, 2.2, 1.2, '#2a2a33');
-  totemBase.position.set(-15, 1.1, 48);
+  totemBase.position.set(-8, 1.1, 72);
   group.add(totemBase);
 
   // Landmarks. Signs sit on the +z face, so the +z face is the front:
   // entrance + shopfront there, windows only on the sides, darker rear.
-  const hotelFront = new THREE.MeshStandardMaterial({ map: facadeTexture('#7a8ab0', '#ffe98a', 9, { cols: 5, litChance: 3, ground: 'shop' }), roughness: 0.7 });
-  const hotelSide = new THREE.MeshStandardMaterial({ map: facadeTexture('#7a8ab0', '#ffe98a', 9, { cols: 5, litChance: 3, ground: 'plain' }), roughness: 0.7 });
-  const hotelRear = new THREE.MeshStandardMaterial({ map: facadeTexture('#7a8ab0', '#ffe98a', 9, { cols: 5, litChance: 1, ground: 'plain' }), roughness: 0.7 });
+  // Round 15: landmark facades use the same { map, emissive } pair as the
+  // generated buildings — one texture object per face, reused by its material.
+  const landmarkMat = (t, rough = 0.7) => new THREE.MeshStandardMaterial({ map: t.map, emissiveMap: t.emissive, emissive: 0xffffff, emissiveIntensity: 0.85, roughness: rough });
+  const hotelFrontTex = facadeTexture('#7a8ab0', '#ffe98a', 9, { cols: 5, litChance: 3, ground: 'shop' });
+  const hotelSideTex = facadeTexture('#7a8ab0', '#ffe98a', 9, { cols: 5, litChance: 3, ground: 'plain' });
+  const hotelRearTex = facadeTexture('#7a8ab0', '#ffe98a', 9, { cols: 5, litChance: 1, ground: 'plain' });
+  const hotelFront = landmarkMat(hotelFrontTex);
+  const hotelSide = landmarkMat(hotelSideTex);
+  const hotelRear = landmarkMat(hotelRearTex);
   const hotelRoof = new THREE.MeshStandardMaterial({ color: '#2a2a33', roughness: 0.9 });
   const hotel = new THREE.Mesh(
     new THREE.BoxGeometry(30, 80, 24),
@@ -1272,18 +1651,23 @@ export function createWorld(seed = 1) {
   hotel.castShadow = true;
   group.add(hotel);
   addCollider(40, -40, 16, 13);
+  // Round 17: a real neon sign (top-1 recipe) — glowing teal on a dark
+  // panel, unlit so it reads in daylight too.
   const hotelSign = new THREE.Mesh(
     new THREE.PlaneGeometry(26, 4),
-    new THREE.MeshStandardMaterial({ map: shopTexture('HOTEL KENCANA', '#ffd94d', '#1c1c1c'), roughness: 0.7, emissive: 0x554411, emissiveIntensity: 0.5 }),
+    new THREE.MeshBasicMaterial({ map: neonSignTexture('HOTEL KENCANA', '#19d3c5'), toneMapped: false }),
   );
   hotelSign.position.set(40, 76, -27.5);
   group.add(hotelSign);
   neonSigns.push(hotelSign);
 
   // Casino Emas (Lorong Emas) with neon.
-  const casinoFront = new THREE.MeshStandardMaterial({ map: facadeTexture('#8a6a2a', '#ffd94d', 4, { cols: 4, litChance: 4, ground: 'shop' }), roughness: 0.7 });
-  const casinoSide = new THREE.MeshStandardMaterial({ map: facadeTexture('#8a6a2a', '#ffd94d', 4, { cols: 4, litChance: 4, ground: 'plain' }), roughness: 0.7 });
-  const casinoRear = new THREE.MeshStandardMaterial({ map: facadeTexture('#8a6a2a', '#ffd94d', 4, { cols: 4, litChance: 1, ground: 'plain' }), roughness: 0.7 });
+  const casinoFrontTex = facadeTexture('#8a6a2a', '#ffd94d', 4, { cols: 4, litChance: 4, ground: 'shop' });
+  const casinoSideTex = facadeTexture('#8a6a2a', '#ffd94d', 4, { cols: 4, litChance: 4, ground: 'plain' });
+  const casinoRearTex = facadeTexture('#8a6a2a', '#ffd94d', 4, { cols: 4, litChance: 1, ground: 'plain' });
+  const casinoFront = landmarkMat(casinoFrontTex);
+  const casinoSide = landmarkMat(casinoSideTex);
+  const casinoRear = landmarkMat(casinoRearTex);
   const casinoRoof = new THREE.MeshStandardMaterial({ color: '#2a2a33', roughness: 0.9 });
   const casino = new THREE.Mesh(
     new THREE.BoxGeometry(34, 30, 26),
@@ -1293,9 +1677,11 @@ export function createWorld(seed = 1) {
   casino.castShadow = true;
   group.add(casino);
   addCollider(240, -40, 18, 14);
+  // Round 17: a real neon sign (top-1 recipe) — glowing red-pink on a
+  // dark panel, unlit so it reads in daylight too.
   const casinoSign = new THREE.Mesh(
     new THREE.PlaneGeometry(30, 5),
-    new THREE.MeshStandardMaterial({ map: shopTexture('CASINO EMAS', '#ff2e63', '#ffffff'), roughness: 0.6, emissive: 0x881133, emissiveIntensity: 0.9 }),
+    new THREE.MeshBasicMaterial({ map: neonSignTexture('CASINO EMAS', '#ff5a5f', 512, 96), toneMapped: false }),
   );
   casinoSign.position.set(240, 32, -26.5);
   group.add(casinoSign);
@@ -1311,18 +1697,77 @@ export function createWorld(seed = 1) {
   );
   casinoVSign.position.set(228, 7.5, -26.9);
   group.add(casinoVSign);
+  // Round 19: a warm terracotta-tiled FORECOURT in front of the
+  // casino (x 196..252, z -34..10), so the combat shot's shootout
+  // happens on paved tiles, not on the bare brown-grey ground plane
+  // that dominated the middle of every combat shot. At y 0.04 it sits
+  // under the roads/sidewalks (0.06) and the zebra (0.08), above the
+  // bare ground (-0.05). The flower planter, bench and lamp in
+  // shots.js stageCombat stand on it.
+  const foreTex = tileTexture('#b98a5a');
+  foreTex.wrapS = THREE.RepeatWrapping;
+  foreTex.wrapT = THREE.RepeatWrapping;
+  foreTex.repeat.set(7, 5.5);
+  const forecourt = new THREE.Mesh(
+    new THREE.PlaneGeometry(56, 44),
+    new THREE.MeshStandardMaterial({ map: foreTex, roughness: 0.95 }),
+  );
+  forecourt.rotation.x = -Math.PI / 2;
+  forecourt.position.set(224, 0.04, -12);
+  forecourt.receiveShadow = true;
+  group.add(forecourt);
+
+  // Round 17 (P1, top-1 recipe): Menara Kencana — a 150 m golden glass
+  // tower with a crown, a mast and a neon name, the skyline landmark
+  // the map shot orbits around. It stands clear of every road and
+  // generated block at (200, -240).
+  {
+    const towerTex = glassFacadeTexture(20, 5);
+    const towerMat = new THREE.MeshStandardMaterial({
+      map: towerTex.map, emissiveMap: towerTex.emissive, emissive: 0xffffff,
+      emissiveIntensity: 0.85, roughness: 0.25, metalness: 0.3,
+    });
+    const tower = new THREE.Mesh(new THREE.BoxGeometry(26, 150, 26), towerMat);
+    tower.position.set(200, 75, -240);
+    tower.castShadow = true;
+    group.add(tower);
+    addCollider(200, -240, 14, 14);
+    const crown = box(28, 24, 28, '#ffd27a', { metal: 0.3, rough: 0.3 });
+    crown.position.set(200, 162, -240);
+    group.add(crown);
+    const mast = cylinder(0.3, 0.5, 32, '#888888');
+    mast.position.set(200, 190, -240);
+    group.add(mast);
+    const towerBeacon = new THREE.Mesh(
+      new THREE.SphereGeometry(0.6, 8, 6),
+      new THREE.MeshBasicMaterial({ color: '#ff2e2e' }),
+    );
+    towerBeacon.position.set(200, 207, -240);
+    group.add(towerBeacon);
+    const towerSign = new THREE.Mesh(
+      new THREE.PlaneGeometry(24, 4),
+      new THREE.MeshBasicMaterial({ map: neonSignTexture('MENARA KENCANA', '#ffc247'), toneMapped: false }),
+    );
+    towerSign.position.set(200, 140, -226.9);
+    group.add(towerSign);
+    neonSigns.push(towerSign);
+  }
 
   // Round 14: a big STOP sign at the casino forecourt crossing, for
   // the combat shot — the zebra crossing is staged at x 222-232,
-  // z -15..-5, and the sign at (219, -18) sits at its south-west
-  // corner facing the combat camera. Projected octagon (413, 221)-
-  // (417, 316), letters ~17px.
-  group.add(stopSign(219, -18, -Math.PI / 2 + 0.2, 2.6));
+  // z -15..-5, and the sign at (221, -20) sits at its south-west
+  // corner facing the combat camera. Round 16: moved 2u east + 2u
+  // south (was 219, -18) — at (219, -18) it sat directly behind the
+  // '-55' damage sprite and the two overlapped in the frame.
+  group.add(stopSign(221, -20, -Math.PI / 2 + 0.2, 2.6));
 
   // Mansion (Alun-Alun) — a house, so the front gets a door, not a shopfront.
-  const mansionFront = new THREE.MeshStandardMaterial({ map: facadeTexture('#e8dcc0', '#ffe98a', 2, { cols: 4, litChance: 3, ground: 'door' }), roughness: 0.85 });
-  const mansionSide = new THREE.MeshStandardMaterial({ map: facadeTexture('#e8dcc0', '#ffe98a', 2, { cols: 4, litChance: 3, ground: 'plain' }), roughness: 0.85 });
-  const mansionRear = new THREE.MeshStandardMaterial({ map: facadeTexture('#e8dcc0', '#ffe98a', 2, { cols: 4, litChance: 1, ground: 'plain' }), roughness: 0.85 });
+  const mansionFrontTex = facadeTexture('#e8dcc0', '#ffe98a', 2, { cols: 4, litChance: 3, ground: 'door' });
+  const mansionSideTex = facadeTexture('#e8dcc0', '#ffe98a', 2, { cols: 4, litChance: 3, ground: 'plain' });
+  const mansionRearTex = facadeTexture('#e8dcc0', '#ffe98a', 2, { cols: 4, litChance: 1, ground: 'plain' });
+  const mansionFront = landmarkMat(mansionFrontTex, 0.85);
+  const mansionSide = landmarkMat(mansionSideTex, 0.85);
+  const mansionRear = landmarkMat(mansionRearTex, 0.85);
   const mansion = new THREE.Mesh(
     new THREE.BoxGeometry(26, 12, 20),
     [mansionSide, mansionSide, mansionFront, mansionFront, mansionFront, mansionRear],
@@ -1485,7 +1930,54 @@ export function createWorld(seed = 1) {
       group.add(p2);
     }
   }
-  // A few more palms scattered along the other roads and the beach.
+  // Round 17: a denser palm row inside the chase frame (every 20u,
+  // both sidewalks of the z = 60 boulevard, x -80..140) — the top-1
+  // chase shot has palms lining both sides of the road, not one every
+  // 40u. The 40u rows above stay for the rest of the city.
+  for (let v = -80; v <= 140; v += 20) {
+    if (nearRoad(v)) continue;
+    if (Math.abs(v + 40) < 16) continue; // keep the player start clear
+    for (const s of [-9, 9]) {
+      const p = palm(rand);
+      p.position.set(v, 0, 60 + s);
+      group.add(p);
+    }
+  }
+  // Round 17: street furniture on the chase sidewalks — red hydrants on
+  // the south kerb, bins on the north kerb — so the sidewalks are never
+  // empty concrete. Kept clear of the gantry posts, the totem and the
+  // player start.
+  for (const hx of [-100, -40, 80, 170]) {
+    const hyd = new THREE.Group();
+    const hydBody = cylinder(0.25, 0.3, 0.7, '#c91f2b');
+    hydBody.position.y = 0.35;
+    hyd.add(hydBody);
+    const hydTop = new THREE.Mesh(
+      new THREE.SphereGeometry(0.2, 10, 8),
+      new THREE.MeshStandardMaterial({ color: '#c91f2b', roughness: 0.6 }),
+    );
+    hydTop.position.y = 0.75;
+    hyd.add(hydTop);
+    for (const sx of [-1, 1]) {
+      const cap = cylinder(0.09, 0.09, 0.12, '#8a8f96');
+      cap.rotation.z = Math.PI / 2;
+      cap.position.set(sx * 0.28, 0.45, 0);
+      hyd.add(cap);
+    }
+    hyd.position.set(hx, 0, 71.5);
+    group.add(hyd);
+  }
+  for (const bx of [-70, -10, 50, 110]) {
+    const bin = new THREE.Group();
+    const binBody = cylinder(0.4, 0.36, 0.9, '#2a4a3a');
+    binBody.position.y = 0.45;
+    bin.add(binBody);
+    const lid = cylinder(0.42, 0.42, 0.08, '#1c2a22');
+    lid.position.y = 0.94;
+    bin.add(lid);
+    bin.position.set(bx, 0, 48.5);
+    group.add(bin);
+  }
   for (let i = 0; i < 36; i += 1) {
     const road = rand.pick(WORLD.roads);
     const along = rand.range(-300, 300);

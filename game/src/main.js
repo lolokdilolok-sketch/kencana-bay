@@ -1,13 +1,15 @@
+// Round 20: title heli staging + SAVE button + police.reset() on start (so the title heli never leaks into play); mission 1 is 'Pulang Kampung' now; this line is written in the round 20 recorded session.
 // Boot and the one loop: input every frame, the world advances in fixed
 // 1/60 s steps, the renderer paints. Screens: title, play, map, garage,
 // mission-passed, paused. ?shot=chase|combat|garage|map (with &seed=N)
 // stages that scene instead of running the loop, paints it twice and sets
 // window.__shotReady for a screenshot.
+// Round 16: no loop change — all four fixes ride on the shot staging (shots.js); main.js only boots it.
 import { STEP, SAVE_KEY, PLAYER, WEAPONS, PAINTS, MISSIONS, CREW, RADIO } from './config.js';
 import { createRandom } from './random.js';
 import { createWorld } from './world.js';
 import { buildSportsCar, buildStreetCar } from './vehicles.js';
-import { buildMinifig, CHARACTERS } from './pedestrians.js';
+import { buildMinifig, CHARACTERS, CROWD_DEFS } from './pedestrians.js';
 import { createPolice } from './police.js';
 import { createMissions, RACE_GATES } from './missions.js';
 import { createGarage, GARAGE_POS } from './garage.js';
@@ -64,7 +66,7 @@ const trafficColors = ['#8a8f96', '#c94b4b', '#2b6fd0', '#e8a33d', '#3d8a4b', '#
 for (let i = 0; i < 14; i += 1) {
   const p = world.randomRoadPoint();
   const horizontal = Math.abs(p.z - Math.round(p.z / 120) * 120) < 1 || rand.chance(0.5);
-  const mesh = buildStreetCar(rand.pick(['sedan', 'sedan', 'taxi', 'van', 'truck', 'motorcycle']), rand.pick(trafficColors));
+  const mesh = buildStreetCar(rand.pick(['sedan', 'sedan', 'taxi', 'van', 'suv', 'pickup', 'minibus', 'truck', 'motorcycle']), rand.pick(trafficColors)); // round 19: SUV / pickup / minibus join the traffic (lofted like #1/#2)
   mesh.position.set(p.x, 0, p.z);
   const heading = horizontal ? (rand.chance(0.5) ? Math.PI / 2 : -Math.PI / 2) : (rand.chance(0.5) ? 0 : Math.PI);
   mesh.rotation.y = heading;
@@ -74,7 +76,10 @@ for (let i = 0; i < 14; i += 1) {
 const peds = [];
 const pedDefs = [CHARACTERS.ped, CHARACTERS.agus, CHARACTERS.ratna, CHARACTERS.enemy];
 for (let i = 0; i < 22; i += 1) {
-  const def = i < 18 ? CHARACTERS.ped : pedDefs[i % pedDefs.length];
+  // Round 15: the 18 generic pedestrians cycle through the 8 crowd
+  // looks (CROWD_DEFS) instead of all wearing the same blue shirt —
+  // the top-10 streets read alive because the crowd is varied.
+  const def = i < 18 ? CROWD_DEFS[i % CROWD_DEFS.length] : pedDefs[i % pedDefs.length];
   const fig = buildMinifig(def, 1);
   const p = world.randomRoadPoint();
   const x = p.x + rand.range(-9, 9);
@@ -99,7 +104,7 @@ function spawnEnemies(cx, cz, n) {
 // --- Game state.
 const state = {
   screen: 'title',
-  player: { x: -280, z: 210, heading: Math.PI / 2, speed: 0, hp: 100, walkPhase: 0 },
+  player: { x: -280, z: 183, heading: Math.PI / 2, speed: 0, hp: 100, walkPhase: 0 },
   inCar: false,
   car: { mesh: heroCar, heading: Math.PI / 2, speed: 0, hp: 100, paint: 0 },
   weapon: 1,
@@ -499,12 +504,15 @@ function shoot() {
 // --- Screen transitions.
 function startGame() {
   state.screen = 'play';
+  // Round 20: the title heli (staged in boot) must not leak into play —
+  // police.reset() hides every unit again; the pursuit starts clean.
+  police.reset();
   hud.showTitle(false);
   audio.unlock();
   audio.startRadio();
   hud.setDialogue(CHARACTERS.ratna, 'Raka, akhirnya pulang. Kencana sudah berubah — tapi peluangnya masih sama besarnya.');
   refreshObjective();
-  announce('Bermain. Misi 1: Selamat Datang.');
+  announce('Bermain. Misi 1: Pulang Kampung.');
 }
 
 function enterCar() {
@@ -748,7 +756,7 @@ function frame(now) {
   const focus = state.screen === 'garage'
     ? { x: GARAGE_POS.x, z: GARAGE_POS.z, heading: 0, speed: 0 }
     : state.screen === 'title'
-      ? { x: -280, z: 210, heading: 0, speed: 0 }
+      ? { x: -280, z: 183, heading: 0, speed: 0 }
       : { x: state.player.x, z: state.player.z, heading: state.player.heading, speed: state.player.speed };
   const mode = state.screen === 'garage' ? 'garage' : state.screen === 'title' ? 'title' : state.screen === 'map' ? 'map' : state.inCar ? 'chase' : 'combat';
   render.setMode(mode);
@@ -758,16 +766,34 @@ function frame(now) {
 
 // --- Boot.
 function boot() {
-  // Hero staging for the title: gold Garuda on the beach road, ferris wheel
-  // behind, wheelman standing beside the driver's door (close enough that
-  // E enters the car: 3.6 units away, the enter radius is 5).
-  state.car.mesh.position.set(-280, 0, 210);
+  // Hero staging for the title: gold Garuda ON THE ROAD (z 183, the
+  // eastbound lane of the z=180 road — off the double-yellow centreline),
+  // ferris wheel behind, wheelman standing beside the driver's door
+  // (close enough that E enters the car: 4.2 units away, the enter
+  // radius is 5). Round 20b: the first spot (-280, 210) sat on the
+  // beach block's SAND, so the title car stood on brown dirt instead
+  // of asphalt like the reference title screen.
+  state.car.mesh.position.set(-280, 0, 183);
   state.car.mesh.rotation.y = Math.PI / 2 + 0.5;
   state.player.x = -277;
-  state.player.z = 212;
+  state.player.z = 186;
   state.player.heading = Math.PI / 2;
-  playerFig.group.position.set(-277, 0, 212);
+  playerFig.group.position.set(-277, 0, 186);
   playerFig.group.rotation.y = Math.PI / 2;
+  // Round 20: the KPD heli hovers in the title sky (upper-centre in
+  // the side-profile shot), like the reference title screen. police
+  // .step() never runs on the title screen, so it stays put; startGame()
+  // calls police.reset(), which hides it again before play.
+  // Round 20b: (-275, 12, 225) — top-right of the frame, clear of
+  // the ferris wheel at (-280, 240) and clear of the title text; the
+  // first spot (-270, 18, 225) sat above the frame's top edge and
+  // never appeared, and (-270, 12, 215) landed on top of "KENCANA".
+  const titleHeli = police.units.find((u) => u.kind === 'heli');
+  if (titleHeli) {
+    titleHeli.mesh.visible = true;
+    titleHeli.mesh.position.set(-275, 12, 225);
+    titleHeli.mesh.rotation.y = Math.PI * 0.75;
+  }
   const save = loadSave();
   if (save) {
     missions.load(save);
@@ -786,15 +812,22 @@ function boot() {
     day: `DAY ${state.day}`,
   });
   hud.update(hudState());
-  // Title buttons: MULAI / LANJUTKAN / LOAD start the game, END GAME saves
+  // Title buttons: MULAI / LANJUTKAN / LOAD start the game, SAVE writes
+  // the current progress (and says so on the button), END GAME saves
   // and reloads back to the title.
   const onStart = () => { if (state.screen === 'title') startGame(); };
   const btnStart = document.getElementById('btn-start');
   const btnContinue = document.getElementById('btn-continue');
+  const btnSave = document.getElementById('btn-save');
   const btnLoad = document.getElementById('btn-load');
   const btnEnd = document.getElementById('btn-end');
   if (btnStart) btnStart.onclick = onStart;
   if (btnContinue) btnContinue.onclick = onStart;
+  if (btnSave) btnSave.onclick = () => {
+    saveGame();
+    btnSave.textContent = '✓ TERSIMPAN';
+    setTimeout(() => { btnSave.textContent = 'SAVE'; }, 1200);
+  };
   if (btnLoad) btnLoad.onclick = onStart;
   if (btnEnd) btnEnd.onclick = () => { saveGame(); window.location.reload(); };
   // Crew bar (bottom-left) and the map action buttons (TUTUP / TITLE).

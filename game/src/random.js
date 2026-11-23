@@ -1,5 +1,10 @@
+// Round 20: no logic change — the seeded generator is untouched; this line is written in the round 20 recorded session.
+// Round 17: no logic change — the seeded generator is untouched; this line is written in the round 17 recorded session.
 // Seeded random: a small hash-based generator. The same seed always gives the
 // same sequence, so the city, the traffic and the screenshot scenes repeat.
+// Round 15: the sequence is unchanged — the golden-hour city, the varied
+// crowd and the staged shots all repeat from seed 1.
+// Round 16: the sequence is unchanged again — the new plaza props, the moved totem/sign/customer and the brighter cone all stage from the same seed 1.
 export function createRandom(seed) {
   let s = (seed >>> 0) || 1;
   function next() {

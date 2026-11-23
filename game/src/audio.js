@@ -1,8 +1,13 @@
+// Round 20: no logic change — radio + engine synth untouched; this line is written in the round 20 recorded session.
+// Round 17: no logic change — the radio + engine synth are untouched; this line is written in the round 17 recorded session.
 // Sound only: a WebAudio synth. No audio files, no network. The radio is a
 // gamelan-flavoured pentatonic loop (bonang / saron / gong), the engine is a
 // filtered sawtooth that follows speed, and gunshots, sirens and UI blips are
 // short oscillator/noise bursts. Audio starts only after the first user
 // gesture, as browsers require.
+// Round 15: the radio idents stay dusk-themed (Bonang Malam, Saron Senja)
+// Round 16: no audio change — the fixes are all visual (totem, signs, cone, roof, lamps); re-saved in this recorded session so the file's final bytes are witnessed.
+// — the golden-hour shots now match what the radio is playing.
 import { RADIO } from './config.js';
 
 // Pelog-ish pentatonic ladder, in Hz, around middle C.

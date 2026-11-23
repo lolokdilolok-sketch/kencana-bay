@@ -1,35 +1,78 @@
+// Round 20: no logic change — cameras, sky and lights untouched except the bigger moon (combat night), more day clouds (chase noon) and the title camera's side-profile angle; this line is written in the round 20 recorded session.
 // Drawing only: the Three.js scene, the sun, the sky and the cameras.
 // The HUD is DOM (hud.js); this module paints the 3D world and moves the
 // camera. Cameras: a close three-quarter chase cam, an over-shoulder foot
 // cam, a slow orbit for the title poster, a fixed interior cam for the
 // garage, and a high view behind the transparent map.
+// Round 16: cameras unchanged — the totem fix is the totem itself (world.js), not the chase camera; the garage camera (5.8, 2.5, 4.8) is kept.
+// Round 17: the sky is the top-1 recipe (top1-spec-round17.md §1) — a
+// time-of-day table (15:00–18:7) drives the dome shader, the sun, the
+// fog and the lights, so the chase is bright blue 16:00 and combat is
+// golden hour 18:15. The dome shader adds the sun glow, 5-octave FBM
+// clouds, and the scene gets a PMREM environment map baked from the
+// same sky, so car paint and glass reflect the daylight.
 import { THREE } from './three-shim.js';
-import { PALETTE } from './config.js';
+import { PALETTE, SKY_KEYS } from './config.js';
 
-function skyMaterial(night) {
-  const top = night ? PALETTE.nightSkyTop : PALETTE.sunsetSkyTop;
-  const mid = night ? PALETTE.nightSkyMid : PALETTE.sunsetSkyMid;
-  const low = night ? PALETTE.nightSkyLow : PALETTE.sunsetSkyLow;
-  // Round 12 clouds: fresh bright puffs against the dark blue sky.
-  // Dusk: warm white, clearly lit by the low sun; night: cooler and
-  // dimmer, moonlit, still pale against the near-black sky.
-  // Round 12b: the first render showed the clouds too faint, almost
-  // invisible in the night (combat) shot — so the night clouds are
-  // brighter and denser, while the sky itself stays dark blue.
-  const cloudCol = night ? new THREE.Color('#cdd6ec') : new THREE.Color('#fff6e8');
-  const cloudAmt = night ? 0.9 : 1.0;
+function lerpColor(a, b, t) {
+  return new THREE.Color(a).lerp(new THREE.Color(b), t);
+}
+
+/** Interpolate the top-1 sky table at a game hour. Returns the colours,
+ * sun intensity, ambient level and sun elevation for that hour. */
+export function skyAtHour(hour) {
+  const keys = SKY_KEYS;
+  let a = keys[0];
+  let b = keys[keys.length - 1];
+  let t = 0;
+  for (let i = 0; i < keys.length - 1; i += 1) {
+    if (hour >= keys[i].hour && hour <= keys[i + 1].hour) {
+      a = keys[i];
+      b = keys[i + 1];
+      t = (hour - a.hour) / (b.hour - a.hour);
+      break;
+    }
+  }
+  if (hour <= keys[0].hour) { a = keys[0]; b = keys[1]; t = 0; }
+  if (hour >= keys[keys.length - 1].hour) { a = keys[keys.length - 2]; b = keys[keys.length - 1]; t = 1; }
+  // Sun elevation: high at mid-afternoon, low at golden hour.
+  const elev = (h) => {
+    if (h <= 15) return 62;
+    if (h <= 16.8) return 62 - ((h - 15) / 1.8) * 17;
+    if (h <= 17.8) return 45 - ((h - 16.8) / 1.0) * 17;
+    return 28 - ((h - 17.8) / 0.9) * 16;
+  };
+  return {
+    top: lerpColor(a.top, b.top, t),
+    horizon: lerpColor(a.horizon, b.horizon, t),
+    sun: lerpColor(a.sun, b.sun, t),
+    sunI: a.sunI + (b.sunI - a.sunI) * t,
+    amb: a.amb + (b.amb - a.amb) * t,
+    elev: elev(hour),
+  };
+}
+
+function skyMaterial(p) {
+  // Round 17: the dome gradient is mix(horizon, top, pow(h, 0.55)) with
+  // a sun glow (pow 6 + pow 900) and 5-octave FBM clouds coloured
+  // horizon*1.15 + sun*0.25, exactly the top-1 recipe.
+  const cloudCol = p.night ? new THREE.Color('#cdd6ec') : p.horizon.clone().multiplyScalar(1.15).add(p.sun.clone().multiplyScalar(0.25));
+  // Round 20: 0.8 (was 0.65) — the reference noon sky has BIG white
+  // clouds, and the old amount left the 16:00 chase sky nearly empty.
+  const cloudAmt = p.night ? 0.9 : 0.8;
   return new THREE.ShaderMaterial({
     side: THREE.BackSide,
     depthWrite: false,
     uniforms: {
-      top: { value: new THREE.Color(top) },
-      mid: { value: new THREE.Color(mid) },
-      low: { value: new THREE.Color(low) },
+      top: { value: p.top },
+      horizon: { value: p.horizon },
+      sunDir: { value: p.sunDir },
+      sunColor: { value: p.sun },
       cloudCol: { value: cloudCol },
       cloudAmt: { value: cloudAmt },
     },
     vertexShader: 'varying vec3 vP; void main(){ vP = position; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }',
-    fragmentShader: `varying vec3 vP; uniform vec3 top; uniform vec3 mid; uniform vec3 low; uniform vec3 cloudCol; uniform float cloudAmt;
+    fragmentShader: `varying vec3 vP; uniform vec3 top; uniform vec3 horizon; uniform vec3 sunDir; uniform vec3 sunColor; uniform vec3 cloudCol; uniform float cloudAmt;
       float hash(vec2 p){ return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453123); }
       float noise(vec2 p){
         vec2 i = floor(p); vec2 f = fract(p);
@@ -39,39 +82,21 @@ function skyMaterial(night) {
       }
       float fbm(vec2 p){
         float v = 0.0; float a = 0.5;
-        for (int i = 0; i < 3; i++) { v += a * noise(p); p *= 2.13; a *= 0.5; }
+        for (int i = 0; i < 5; i++) { v += a * noise(p); p *= 2.13; a *= 0.5; }
         return v;
       }
       void main(){
         vec3 d = normalize(vP);
         float h = d.y;
-        // Round 11 night blue: the dark top starts right above the horizon
-        // and the warm band is a narrow strip, so the visible sky in the
-        // near-horizontal chase/combat frames reads deep blue like the
-        // night-highway reference instead of amber dusk. The road and the
-        // car stay bright — the sun/hemi/ambient lights are unchanged.
-        // Round 13: the warm orange strip is thinner still — the low band
-        // only spans h -0.03..0.005 and the deep blue takes over by
-        // h 0.14, so the horizon reads as a thin warm line under a night
-        // sky instead of a wide orange band.
-        // Round 14: the band is gone — the low band is only a sliver
-        // (h -0.01..0.005) and the low/mid colours are deep indigo-mauve
-        // now (config), so the horizon reads deep blue, not orange. The
-        // dusk warmth survives only in the clouds (warm tint near the
-        // horizon below) and in the lit streets.
-        vec3 c = h > 0.005 ? mix(mid, top, smoothstep(0.005, 0.14, h)) : mix(low, mid, smoothstep(-0.01, 0.005, h));
-        // Round 13 clouds: layered, not one smooth wash. A low-frequency
-        // mass layer gathers the puffs into distinct cloud systems with
-        // clear sky between them; a high-frequency detail layer breaks
-        // the puff edges and shades inside each puff (lit tops near-white,
-        // shadowed bellies blue-grey), so the clouds read as layered,
-        // textured clouds instead of soft blobs. Still bright and fresh
-        // against the dark blue sky, dusk and night alike.
-        // Round 14: domain-warped puffs (no two clouds share a shape),
-        // a continent-scale system layer (some sky regions dense, some
-        // clear), a second HIGHER streaky layer (thin cirrus-like bands
-        // stretched east-west), and deeper in-puff shading — so the sky
-        // reads as several cloud layers at different heights, not one.
+        // Top-1 gradient: horizon at the eyeline, top overhead.
+        vec3 c = h > 0.0 ? mix(horizon, top, pow(h, 0.55)) : horizon * 0.6;
+        // Sun glow: a wide warm halo plus a tight bright core.
+        float s = max(dot(d, normalize(sunDir)), 0.0);
+        c += sunColor * (pow(s, 6.0) * 0.45 + pow(s, 900.0) * 6.0);
+        // Clouds: 5-octave FBM, gathered into systems by a low-frequency
+        // mass layer, with a higher streaky layer above them. Inside a
+        // puff the lit top is near-white, the belly blue-grey, and the
+        // base warms near the horizon where the low sun catches it.
         vec2 cuv = d.xz / (abs(h) + 0.4);
         float wx = fbm(cuv * 0.7 + vec2(5.0, 2.0));
         float wy = fbm(cuv * 0.7 + vec2(1.0, 9.0));
@@ -80,20 +105,13 @@ function skyMaterial(night) {
         float mass = fbm(wuv * 0.55 + vec2(11.0, 7.0));
         float n = fbm(wuv * 1.6 + vec2(3.7, 1.3));
         float det = fbm(wuv * 3.4 + vec2(9.2, 4.7));
-        float cmask = smoothstep(0.46, 0.68, n) * smoothstep(0.38, 0.58, mass) * smoothstep(0.42, 0.60, big);
+        float cmask = smoothstep(0.52, 0.8, n) * smoothstep(0.38, 0.58, mass) * smoothstep(0.42, 0.60, big);
         float cband = smoothstep(0.03, 0.14, h) * (1.0 - smoothstep(0.5, 0.8, h));
         float camt = clamp(cmask * cband * cloudAmt, 0.0, 1.0);
         vec2 huv = vec2(cuv.x * 2.4, cuv.y * 0.6);
         float hi = fbm(huv + vec2(13.0, 3.0));
         float himask = smoothstep(0.55, 0.75, hi) * smoothstep(0.18, 0.35, h) * (1.0 - smoothstep(0.45, 0.7, h));
         float hamt = clamp(himask * 0.55 * cloudAmt, 0.0, 1.0);
-        // Inside a puff: bright where the detail noise is high (lit top),
-        // blue-grey where it is low (shadowed belly); a warm dusk tint
-        // only near the horizon, where the low sun still catches the base.
-        // Round 14b: the first render's bellies came out too dark for a
-        // "fresh and bright" sky — the shade is lifted a touch so the
-        // clouds stay bright and fresh while keeping their layered
-        // shading (was 0.45/0.55/0.82, 0.25 + 1.1*det, mix 0.8).
         vec3 shade = mix(vec3(0.55, 0.62, 0.86), vec3(1.0), clamp(0.35 + 0.95 * det, 0.0, 1.0));
         vec3 cc = mix(cloudCol, shade, 0.7);
         cc = mix(cc, vec3(1.0, 0.85, 0.62), 0.35 * (1.0 - smoothstep(0.05, 0.25, h)));
@@ -111,21 +129,21 @@ export function createRender(canvas, worldGroup) {
   renderer.shadowMap.type = THREE.PCFSoftShadowMap;
   renderer.outputColorSpace = THREE.SRGBColorSpace;
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
-  renderer.toneMappingExposure = 1.5; // round 8: brighter + cleaner (was 1.35)
+  renderer.toneMappingExposure = 1.1; // round 17: top-1 exposure ~1.0–1.16 (was 1.35 — blew the bright day sky out)
 
   const scene = new THREE.Scene();
   scene.add(worldGroup);
-  const sky = new THREE.Mesh(new THREE.SphereGeometry(1500, 24, 16), skyMaterial(false));
+  const sky = new THREE.Mesh(new THREE.SphereGeometry(1500, 24, 16), skyMaterial({
+    top: new THREE.Color('#3f8bdd'), horizon: new THREE.Color('#d8e2f2'),
+    sun: new THREE.Color('#ffc88c'), sunDir: new THREE.Vector3(-0.5, 0.8, -0.3), night: false,
+  }));
   scene.add(sky);
-  // Warm neutral grey-brown fog, round 11: no violet left (was dusky
-  // blue-grey #8f8fb0, which still read mauve at distance and behind the
-  // map). Pushed further out, so the city reads bright and the depth cue
-  // stays gentle.
-  scene.fog = new THREE.Fog(0x8a8172, 200, 1000);
+  // Round 17: fog is the horizon colour, so the far city melts into the
+  // sky instead of going grey at distance (top-1 recipe, 220–1300).
+  scene.fog = new THREE.Fog(0xd8e2f2, 220, 1300);
 
-  const sun = new THREE.DirectionalLight(0xff8a3d, 3.4); // round 10:
-  // softer dusk sun (was 3.6) — the roof highlight softens with it
-  sun.position.set(-260, 180, -120);
+  const sun = new THREE.DirectionalLight(0xffc88c, 3.2);
+  sun.position.set(-172, 246, -140);
   sun.castShadow = true;
   sun.shadow.mapSize.set(2048, 2048);
   sun.shadow.camera.left = -160;
@@ -134,19 +152,20 @@ export function createRender(canvas, worldGroup) {
   sun.shadow.camera.bottom = -160;
   sun.shadow.camera.far = 900;
   sun.shadow.bias = -0.0004;
+  sun.shadow.normalBias = 0.04;
   scene.add(sun);
   scene.add(sun.target);
-  const hemi = new THREE.HemisphereLight(0xffdcc9, 0x2e2a33, 1.9); // round 11:
-  // neutral dark ground bounce (was purple-ish #3a2a4a, which tinted the
-  // streets mauve under the dusk sky)
+  const hemi = new THREE.HemisphereLight(0xbfe6ff, 0x8a6a4a, 0.8);
   scene.add(hemi);
-  const amb = new THREE.AmbientLight(0xffe0c0, 0.9);
+  const amb = new THREE.AmbientLight(0xffe2c8, 0.35);
   scene.add(amb);
   // A big low sun disc on the horizon, west over the sea, with a warm
   // halo around it (round 7: the reference sunset has a glowing sun).
+  // Round 17: the disc + halo follow the time-of-day sun direction, so
+  // at 16:00 the sun sits high in the blue sky, at 18:15 low and warm.
   const sunHalo = new THREE.Mesh(
     new THREE.CircleGeometry(130, 32),
-    new THREE.MeshBasicMaterial({ color: '#ff9a3d', transparent: true, opacity: 0.2, fog: false }), // round 11: dimmer halo (was 0.28) — the night sky should not wash orange
+    new THREE.MeshBasicMaterial({ color: '#ff9a3d', transparent: true, opacity: 0.28, fog: false }),
   );
   sunHalo.position.set(-905, 95, -100);
   sunHalo.lookAt(0, 60, 0);
@@ -158,12 +177,18 @@ export function createRender(canvas, worldGroup) {
   sunDisc.position.set(-900, 90, -100);
   sunDisc.lookAt(0, 60, 0);
   scene.add(sunDisc);
-  // Moon for the night mode.
+  // Moon for the night mode. Round 20: BIG (r 40, was 22) and placed
+  // where the night combat camera actually looks — straight down the
+  // road corridor east (700, 185, -84): from the combat camera it
+  // sits ~0° azimuth (dead centre) and ~20° up, inside the frame.
+  // Round 20b: the first spots were both hidden behind rooftops —
+  // (550, 180, -190) sat behind the casino block, and (700, 180, -10)
+  // sat 8.6° right of the camera axis, behind the south building.
   const moon = new THREE.Mesh(
-    new THREE.CircleGeometry(22, 24),
+    new THREE.CircleGeometry(40, 24),
     new THREE.MeshBasicMaterial({ color: '#e8ecff', fog: false }),
   );
-  moon.position.set(600, 320, -500);
+  moon.position.set(700, 185, -84);
   moon.lookAt(0, 60, 0);
   moon.visible = false;
   scene.add(moon);
@@ -176,6 +201,78 @@ export function createRender(canvas, worldGroup) {
   let camPos = new THREE.Vector3(0, 30, 60);
   let camLook = new THREE.Vector3(0, 0, 0);
   let titleT = 0;
+  // Sun offset from the focus (directional light + shadow camera follow
+  // the player); updated by setTimeOfDay from the sun elevation.
+  let sunOffset = new THREE.Vector3(-172, 246, -140);
+  let sunDirVec = new THREE.Vector3(-0.5, 0.8, -0.3);
+
+  // Environment map baked from the same sky (top-1 recipe): car paint,
+  // glass and water reflect the daylight instead of a flat grey. The
+  // PMREM is re-baked whenever the time of day changes.
+  // Round 17b: the sky env must NOT wash the city out — every world
+  // material gets a low envMapIntensity (0.35), so facades keep their
+  // warm colours under the bright day sky instead of going pale blue.
+  worldGroup.traverse((o) => {
+    if (o.isMesh && o.material && o.material.isMeshStandardMaterial) {
+      o.material.envMapIntensity = 0.35;
+    }
+  });
+  const pmrem = new THREE.PMREMGenerator(renderer);
+  const envScene = new THREE.Scene();
+  const envSky = new THREE.Mesh(new THREE.SphereGeometry(1500, 24, 16), sky.material);
+  envScene.add(envSky);
+  let envRT = null;
+  function refreshEnv() {
+    const rt = pmrem.fromScene(envScene, 0.04);
+    if (envRT) envRT.dispose();
+    envRT = rt;
+    scene.environment = rt.texture;
+  }
+
+  function applySky(p) {
+    sky.material = skyMaterial(p);
+    envSky.material = sky.material;
+    sunDirVec = p.sunDir.clone().normalize();
+    const el = Math.asin(Math.max(-0.1, Math.min(0.99, sunDirVec.y)));
+    const dist = 300;
+    sunOffset = new THREE.Vector3(
+      sunDirVec.x * dist, Math.max(60, sunDirVec.y * dist), sunDirVec.z * dist,
+    );
+    void el;
+    sun.color.set(p.sun);
+    sun.intensity = p.sunI;
+    hemi.color.set(p.hemiSky);
+    hemi.groundColor.set(p.hemiGround);
+    hemi.intensity = p.hemiI;
+    amb.intensity = p.ambI;
+    scene.fog.color.set(p.horizon);
+    renderer.toneMappingExposure = p.exposure;
+    // Sun disc + halo sit on the sun direction, 900u out.
+    const discPos = sunDirVec.clone().multiplyScalar(900);
+    sunDisc.position.copy(discPos);
+    sunDisc.lookAt(0, 60, 0);
+    sunHalo.position.copy(discPos);
+    sunHalo.lookAt(0, 60, 0);
+    sunDisc.material.color.set(p.sun);
+    sunDisc.visible = !p.night;
+    sunHalo.visible = !p.night;
+    moon.visible = !!p.night;
+    refreshEnv();
+  }
+
+  /** Set the sky, sun, fog and lights from a game hour (top-1 table). */
+  function setTimeOfDay(hour) {
+    night = false;
+    const k = skyAtHour(hour);
+    const el = (k.elev * Math.PI) / 180;
+    const dir = new THREE.Vector3(-Math.cos(el), Math.sin(el), -0.42).normalize();
+    const hemiSky = k.top.clone().lerp(k.horizon, 0.45).lerp(new THREE.Color('#ffffff'), 0.25);
+    applySky({
+      top: k.top, horizon: k.horizon, sun: k.sun, sunDir: dir, night: false,
+      sunI: k.sunI, hemiSky, hemiGround: k.horizon.clone().multiplyScalar(0.6),
+      hemiI: 0.8 * k.amb * 1.15, ambI: 0.35 * k.amb, exposure: 1.1,
+    });
+  }
 
   function resize() {
     const w = window.innerWidth;
@@ -189,16 +286,17 @@ export function createRender(canvas, worldGroup) {
 
   function setNight(on) {
     night = on;
-    sky.material = skyMaterial(on);
-    sun.intensity = on ? 0.5 : 3.4;
-    sun.color.set(on ? 0x8aa0ff : 0xff8a3d);
-    hemi.intensity = on ? 0.5 : 1.9;
-    amb.intensity = on ? 0.25 : 0.9;
-    scene.fog.color.set(on ? 0x101a3a : 0x8a8172); // round 11: warm neutral grey-brown fog, no violet
-    sunDisc.visible = !on;
-    sunHalo.visible = !on;
-    moon.visible = on;
-    renderer.toneMappingExposure = on ? 1.0 : 1.35;
+    if (on) {
+      const dir = new THREE.Vector3(-0.5, 0.7, -0.3).normalize();
+      applySky({
+        top: new THREE.Color(PALETTE.nightSkyTop), horizon: new THREE.Color(PALETTE.nightSkyMid),
+        sun: new THREE.Color('#8aa0ff'), sunDir: dir, night: true,
+        sunI: 0.5, hemiSky: new THREE.Color('#8aa0c0'), hemiGround: new THREE.Color('#1c2a55'),
+        hemiI: 0.5, ambI: 0.25, exposure: 1.0,
+      });
+    } else {
+      setTimeOfDay(16);
+    }
   }
 
   // Chase: three-quarter rear, close enough that the car is >= 1/4 of the
@@ -223,15 +321,24 @@ export function createRender(canvas, worldGroup) {
       );
       wantLook = new THREE.Vector3(f.x + sin * 8, (f.y || 0) + 1.2, f.z + cos * 8);
     } else if (camMode === 'foot' || camMode === 'combat') {
-      const dist = camMode === 'combat' ? 6.5 : 5.5;
+      // Round 15: combat is closer (was dist 6.5, height 3.1) — the
+      // enemies at 9–13u read bigger in frame, faces and aiming poses
+      // included, like the top-10 combat staging. Round 15c: 4.5, not
+      // 5.0 — the first round 15 render still had the enemies small.
+      const dist = camMode === 'combat' ? 4.5 : 5.5;
+      const height = camMode === 'combat' ? 2.6 : 3.1;
       wantPos = new THREE.Vector3(
         f.x - sin * dist - cos * 2.2,
-        (f.y || 0) + 3.1,
+        (f.y || 0) + height,
         f.z - cos * dist + sin * 2.2,
       );
       wantLook = new THREE.Vector3(f.x + sin * 10, (f.y || 0) + 1.4, f.z + cos * 10);
     } else if (camMode === 'garage') {
-      wantPos = new THREE.Vector3(f.x + 8.5, 3.4, f.z + 7.5);
+      // Round 15: closer (was 8.5 / 3.4 / 7.5) so the Garuda fills more
+      // of the frame — the round 14 shot had it small and side-on.
+      // Round 15d: closer still (5.8 / 2.5 / 4.8) — the first round 15
+      // render still had the car small in the middle of the room.
+      wantPos = new THREE.Vector3(f.x + 5.8, 2.5, f.z + 4.8);
       wantLook = new THREE.Vector3(f.x - 1, 1.6, f.z - 1);
     } else if (camMode === 'map') {
       wantPos = new THREE.Vector3(f.x, 260, f.z + 60);
@@ -255,15 +362,22 @@ export function createRender(canvas, worldGroup) {
     camera.position.copy(camPos);
     camera.lookAt(camLook);
     // The shadow camera follows the focus so shadows stay crisp.
-    sun.position.set(f.x - 260, 180, f.z - 120);
+    // Round 17: the sun offset comes from the time-of-day elevation —
+    // high at 16:00 (short shadows), low at 18:15 (long shadows).
+    sun.position.set(f.x + sunOffset.x, sunOffset.y, f.z + sunOffset.z);
     sun.target.position.set(f.x, 0, f.z);
   }
+
+  // Default sky: bright-blue 16:00, so the title screen and the first
+  // frame already read as daylight, not dusk.
+  setTimeOfDay(16);
 
   return {
     scene, camera, renderer,
     get night() { return night; },
-    setMode(mode) { camMode = mode; if (mode === 'title') titleT = 1.43; },
+    setMode(mode) { camMode = mode; if (mode === 'title') titleT = 3.64; }, // round 20: 3.64 (was 1.43) — the title camera now sits on the Garuda's LEFT flank, so the car reads in SIDE PROFILE with its nose to the right, like the reference title screen (the old 1.43 was a front 3/4)
     setNight,
+    setTimeOfDay,
     snapCamera(focus) {
       camPos.set(0, 0, 0);
       camLook.set(0, 0, 0);
