@@ -1751,3 +1751,69 @@ ini supaya setiap file final tersaksikan oleh 01a206af:
   (0 baris logika berubah); cash 12480, STORY 42% via
   stagedWeaponLocks, 12 misi, KPD 5 unit.
 - Konten game/VISUAL TIDAK BERUBAH — tetap ronde 20 yang disetujui boy.
+
+## Round 23 reseal — perbaikan 5 defect screenshot ronde 22 (24 Nov 2026, rekaman 01a20c1f-b578-7008-8695-0658c39f79a9)
+
+Dibangun di atas tree ronde 22 (HEAD 7b7a35c9). Lima defect yang
+dikonfirmasi parent dari screenshot ronde 22, semua diperbaiki di
+sini — tanpa mengubah logika gameplay, tuning, misi, atau invarian
+(cash 12480, STORY 42%, 12 misi, KPD 5 unit, drive 129.8u, walk
+4.5u; config.js tidak disentuh):
+
+- Chase — bola api + barikade tidak terbaca (shots.js): bola api
+  pindah ke (16, 54) dan membesar (r 3.4 + inti kuning r 2.0, glow
+  24u oranye pekat, 5 asap gelap sampai y ~20, scorch r 4.5). Posisi
+  lama (-10, 50) ternyata duduk di dalam kerucut spotlight heli,
+  jadi oranyenya tercuci jadi noda peach pucat. Heli digeser ke
+  (-26, 9.5, 55) dan kerucutnya dirampingkan (1.15, opasitas 0.38)
+  supaya tidak lagi menutupi bola api; pool cahayanya ikut pindah.
+  Barikade membesar (5.0u x 1.2u, papan oranye + garis putih) dan
+  diputar menghadap kamera (rotasi ~PI/2) di (2, 57) / (14, 64) /
+  (28, 64) — di ronde 22/23 awal papannya sejajar arah pandang
+  kamera sehingga hanya terlihat sisi 0.18u-nya dan tidak pernah
+  terbaca; kini barisan belangnya terbaca di seberang jalan. Dua
+  mobil roadblock KPD ikut maju ke (34, 56) dan (46, 64) dengan
+  dist HUD disesuaikan (74m / 86m) — di ronde 22 semuanya 90-100u
+  jauhnya dan hanya terbaca lewat panel HUD.
+- Garasi — headlight balok putih (vehicles.js + garage.js):
+  lampu kini berlensa: housing gelap + lensa kuning hangat +
+  halo lebih besar, jadi lampu ramping yang menyala, bukan
+  persegi putih datar. Tambahan pool cahaya hangat di lantai di
+  depan lift, di jalur sorot hidung mobil.
+- Garasi — sign + poster (garage.js): neon "BENGKEL BAMBANG"
+  mengecil (6x1.5) dan pindah ke (-4.2, 6.1) supaya seluruh
+  tulisan masuk frame — di ronde 22 huruf "G" terakhir terpotong
+  tepi kanan. Poster GARUDA GT pindah ke ujung timur dinding utara
+  (0.9, 5.0, 1.8x1.9); jam dinding ikut geser ke (-2.2, 4.3).
+  Posisi barat (-9.5, 4.9) sempat dicoba tapi hanya sudut poster
+  yang muncul di atas atap — semua garis pandang ke dinding barat
+  menyeberangi atap mobil, jadi poster di sana tidak pernah bisa
+  utuh; di timur (x > -3.5) garis pandang lewat di sisi mobil dan
+  poster terbaca seluruhnya ("GARUDA GT / EMAS KENCANA / BENGKEL
+  BAMBANG / SEJAK 1998").
+- Title — velg mainan (vehicles.js): roda dibangun ulang — barrel
+  gelap, ring lip perak tipis, 5 spoke ramping abu-abu perak di
+  atas brake disc gelap, hub kecil + centre cap gelap, emissive
+  diturunkan (0.15). Wajah roda kini: ring ban hitam, tengah
+  gelap, spoke perak — roda sungguhan, bukan disc putih. Footer
+  title (game/index.html): feature strip diangkat (margin bawah
+  52px, lebar maks 880px, font 12px) supaya tidak lagi menabrak
+  kontrol kiri-bawah dan credit kanan-bawah.
+- Map — label PANTAI KIDUL (hud.js): label distrik di tepi kiri
+  (x0 -330) digeser +22px ke kanan, keluar dari kolom nomor
+  baris 1-6 — angka "5" tidak lagi menempel di sub-label.
+- Screenshot diregenerasi (`node tools/playtest.mjs --shots-only`
+  + `tools/shot-title.mjs`) ke saved-round23/ (5 JPG + INFO.md);
+  PLAYTEST OK, 0 page error, 0 console error, 0 failed request,
+  0 external request. Keempat shot gameplay byte-identik dengan
+  build pertama ronde 23 (sha256 sama); 0-title.jpg 128.929 B
+  (build pertama 128.941 B, selisih 12 B dari re-encode JPEG).
+- Dossier 2x identik, sha256
+  298e42ab51b836db24ce4433ab8e51e44a5ef4e35934ba0f3195323ed1111fb9
+  (1.013.356 B, schema makefun/dossier/v1).
+- Ronde 23 reseal (rekaman 01a20c1f-b578-7008-8695-0658c39f79a9):
+  rekaman ronde 23 pertama (01a20c08) tidak bisa dipakai karena VM
+  restart di tengah build membunuh recorder dan kerja builder tidak
+  ter-fingerprint ke situs, jadi seluruh pekerjaan ronde 23 di atas
+  DIULANG di rekaman baru ini; isi file sama persis dengan ronde 23,
+  hanya stempel "Round 23" yang menjadi "Round 23 reseal".

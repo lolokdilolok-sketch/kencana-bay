@@ -1,10 +1,10 @@
-// Round 22 reseal — preflight entrypoint for Kencana Bay (gta6-01).
-// Written from scratch in the reseal recorded session 01a206af, header
-// updated in the round 22 reseal recorded session 01a2092d-3178-7290-b1e2-da8c5e84af71: copies game/ +
+// Round 23 reseal — preflight entrypoint for Kencana Bay (gta6-01).
+// Header written in the round 23 reseal recorded session 01a20c1f-b578-7008-8695-0658c39f79a9: copies game/ +
 // screenshots/ into the output dir, verifies every copy byte for byte,
 // writes dossier.json with buildDossier, prints the preflight line.
-// The round 22 dossier covers the rebuilt Garuda caps, the re-staged
-// chase/combat/garage shots and the map label fix.
+// The round 23 dossier covers the chase fireball + roadblock readability,
+// the lit garage headlights, the re-placed garage signs, the real title
+// wheels, the fixed title footer and the spaced map label.
 import { createHash } from 'node:crypto';
 import { cpSync, existsSync, mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
 import { dirname, join, relative } from 'node:path';
