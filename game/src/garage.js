@@ -1,4 +1,4 @@
-// Round 22 reseal — garage staging: posters + a second tool board on the north/west walls, a second row of hanging lamps with glow, more floor props (crates + drum) so the upper walls and foreground floor stop reading empty; this line is written in the round 22 reseal recorded session (01a2092d-3178-7290-b1e2-da8c5e84af71).
+// Round 23 reseal — garage staging: neon sign smaller + moved west so the whole "BENGKEL BAMBANG" fits in frame, GARUDA GT poster moved west + up clear of the car, warm headlight pool on the floor ahead of the lift; this line is written in the round 23 reseal recorded session (01a20c1f-b578-7008-8695-0658c39f79a9).
 // Round 20: no logic change — the garage interior is untouched; the display cars just get the new round-20 wedge builder from vehicles.js; this line is written in the round 20 recorded session.
 // Round 17: no logic change — the garage interior keeps the round 16 fixes; the display cars just get the new clearcoat paint from vehicles.js; this line is written in the round 17 recorded session.
 // The enterable garage: Bengkel Bambang. A real room in the same scene, far
@@ -130,14 +130,16 @@ export function createGarage(scene) {
     x.fillText('BENGKEL BAMBANG', w / 2, 82);
   });
   const sign = new THREE.Mesh(
-    // Round 16: 8x2 at (-2.5, 6.2) — the 12-wide sign at x 0 ran past
-    // the right frame edge (the garage camera looks diagonally across
-    // the room, so the north wall's east end is ~54 deg off-axis) and
-    // the last "NG" was cut. Centred on the visible wall, whole in frame.
-    new THREE.PlaneGeometry(8, 2),
+    // Round 23: 6x1.5 at (-4.2, 6.1) — the round-16 8x2 sign at
+    // (-2.5, 6.2) still ran past the right frame edge (the garage
+    // camera looks diagonally across the room, so the north wall's
+    // east end is ~54 deg off-axis) and the final "G" was cut. Two
+    // units narrower + centred further west, the whole
+    // "BENGKEL BAMBANG" sits inside the frame with margin.
+    new THREE.PlaneGeometry(6, 1.5),
     new THREE.MeshStandardMaterial({ map: signTex, emissive: 0xffffff, emissiveMap: signTex, emissiveIntensity: 0.9, roughness: 0.6 }),
   );
-  sign.position.set(-2.5, 6.2, -10.7);
+  sign.position.set(-4.2, 6.1, -10.7);
   room.add(sign);
   // Hydraulic lift + the Garuda on it.
   const liftBase = box(3.4, 0.3, 7, '#333a44');
@@ -164,6 +166,19 @@ export function createGarage(scene) {
   displayCar.userData.bodyMat.metalness = 0;
   displayCar.userData.bodyMat.roughness = 0.9;
   room.add(displayCar);
+  // Round 23: a warm pool of headlight on the floor ahead of the
+  // lift — the rebuilt headlights (vehicles.js) now glow, and the
+  // beam lands here: the Garuda's nose points south-east
+  // (rotation 0.6), so the pool sits at (2.6, 4.3), 2.5u ahead of
+  // the nose tip, clear of the lift pad, the bay lines and the mat.
+  // It sells the lamps as ON, not just bright boxes.
+  const headPool = new THREE.Mesh(
+    new THREE.PlaneGeometry(4.5, 4.5),
+    new THREE.MeshBasicMaterial({ map: lampGlowTexture(), transparent: true, opacity: 0.55, blending: THREE.AdditiveBlending, depthWrite: false }),
+  );
+  headPool.rotation.x = -Math.PI / 2;
+  headPool.position.set(2.6, 0.03, 4.3);
+  room.add(headPool);
   // A second car in the back (customer's sedan, red).
   const backCar = buildSportsCar('#d21f2b', { driver: false, length: 4.9, width: 2.1, groundPool: false });
   backCar.position.set(-10, 0, -6);
@@ -228,7 +243,7 @@ export function createGarage(scene) {
   minHand.position.set(-0.05, 0.16, 0.06);
   minHand.rotation.z = 0.5;
   clock.add(minHand);
-  clock.position.set(0, 4.4, -10.65);
+  clock.position.set(-2.2, 4.3, -10.65);
   room.add(clock);
   // Tyre stacks.
   for (const [tx, tz, n] of [[12.5, -8, 4], [12.5, 8, 3], [-12.5, 8, 3]]) {
@@ -266,15 +281,24 @@ export function createGarage(scene) {
     x.fillText('BENGKEL BAMBANG', w / 2, 200);
     x.fillText('SEJAK 1998', w / 2, 226);
   });
-  for (const [px, tex] of [
-    [-6.8, posterTexture('GARUDA GT', 'EMAS KENCANA', '#c9a227', '#1c1c1c')],
-    [6.5, posterTexture('TUNE UP', 'MESIN · CAT · ARMOUR', '#8a2b2b', '#f2f2f2')],
+  // Round 23: the GARUDA GT poster moves to the EAST end of the
+  // north wall (0.9, 5.0, 1.8x1.9) — at (-6.8, 4.2) its right half
+  // hid behind the Garuda's tail, and at (-9.5, 4.9) only its top
+  // corner peeked over the roof: every sightline to the west wall
+  // crosses the car's roof, so a poster there can never read whole.
+  // East of x -3.5 the sightline passes east of the car entirely,
+  // so this spot reads whole, clear of the sign (ends x -1.2), the
+  // clock (moved west, below) and the shelf (top 2.6, poster bottom
+  // 4.05). The clock moves to (-2.2, 4.3) to make room.
+  for (const [px, py, pw, ph, tex] of [
+    [0.9, 5.0, 1.8, 1.9, posterTexture('GARUDA GT', 'EMAS KENCANA', '#c9a227', '#1c1c1c')],
+    [6.5, 4.2, 3.0, 3.75, posterTexture('TUNE UP', 'MESIN · CAT · ARMOUR', '#8a2b2b', '#f2f2f2')],
   ]) {
     const poster = new THREE.Mesh(
-      new THREE.PlaneGeometry(3.0, 3.75),
+      new THREE.PlaneGeometry(pw, ph),
       new THREE.MeshStandardMaterial({ map: tex, roughness: 0.8 }),
     );
-    poster.position.set(px, 4.2, -10.7);
+    poster.position.set(px, py, -10.7);
     room.add(poster);
   }
   // Round 22: a second TOOL BOARD on the west wall (the first pegboard

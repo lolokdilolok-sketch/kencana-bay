@@ -1,4 +1,4 @@
-// Round 22 reseal — Garuda front + rear caps rebuilt (white full-width tail bar, gold ducktail, bigger silver wheels out to the flanks, slimmer glass, sharper lower nose, thin corner headlights); this line is written in the round 22 reseal recorded session (01a2092d-3178-7290-b1e2-da8c5e84af71).
+// Round 23 reseal — Garuda headlights rebuilt as lit lamps (dark housing + warm lens + bigger halo) and wheels rebuilt as real alloy wheels (dark barrel, silver lip ring, five slim spokes, small hub); this line is written in the round 23 reseal recorded session (01a20c1f-b578-7008-8695-0658c39f79a9).
 // Every vehicle is built from boxes and one lofted body: the Garuda GT is a
 // low, wide sports car with a closed glass cabin and a human driver visible
 // inside; traffic, taxis and KPD cars are real-looking sedans and vans with
@@ -81,10 +81,14 @@ function textTexture(text, fg, size = 56) {
   });
 }
 
-/** An alloy wheel: tyre, dark rim disc, five spokes and a hub. Round 17:
- * top-1 wheels — a dark tyre (0x18181a), a silver 5-spoke rim (0xd8dbe2,
- * metalness 0.95) and a dark arch well, so the wheel reads as a real
- * alloy wheel instead of a grey disc. */
+/** An alloy wheel: tyre, dark rim disc, five spokes and a hub. Round 23:
+ * a REAL wheel, not a white disc — the round-22 wheel was one big
+ * near-white emissive cylinder (0.72r) + disc (0.56r) + thick bright
+ * spokes, so from the side (title shot) the whole face read as a
+ * single toy-white disc. Now the face is a dark barrel with a thin
+ * silver lip ring, five SLIM silver spokes over a dark brake disc,
+ * and a small hub with a dark centre cap — black tyre ring, dark
+ * middle, silver spokes: a wheel. */
 function wheel(r = 0.46) {
   const g = new THREE.Group();
   const tire = new THREE.Mesh(
@@ -94,57 +98,63 @@ function wheel(r = 0.46) {
   tire.rotation.z = Math.PI / 2;
   tire.castShadow = true;
   g.add(tire);
-  // Round 19: one shared rim material with keepEnv 1.2 — the R18 rim
-  // was metalness 0.95 capped at env 0.4, so it rendered nearly black
-  // and the wheels read as black discs with a gold ring in the garage.
-  // Round 22d: emissive '#e8ebf0' × 0.35 — the v3 title wheels were
-  // STILL dark discs: the title flank gets no direct sun and a
-  // diffuse-only rim goes dark there, whatever the metalness. A small
-  // emissive lifts the shaded face to light grey in every scene; the
-  // sun-lit chase side just reads a touch brighter. Spokes share this
-  // material now (was a separate box() metal material).
-  const rimMat = new THREE.MeshStandardMaterial({ color: '#e8ebf0', roughness: 0.45, metalness: 0.25, emissive: '#e8ebf0', emissiveIntensity: 0.35 });
+  // Round 23: a mid-grey silver (was near-white #e8ebf0, emissive
+  // 0.35) with only a small emissive lift (0.15) — enough to keep the
+  // shaded title flank from going black, not enough to blow the face
+  // out to white. The shared rimMat still carries keepEnv 1.2.
+  const rimMat = new THREE.MeshStandardMaterial({ color: '#c9ced8', roughness: 0.4, metalness: 0.3, emissive: '#c9ced8', emissiveIntensity: 0.15 });
   rimMat.userData.keepEnv = 1.2;
-  // Round 22: a BIGGER bright rim (0.72r, was 0.66r) + a wider disc
-  // (0.56r, was 0.5r) — the old rim was a small silver dot inside a
-  // big black tyre, so the wheels read as dark discs from the chase
-  // camera. The spokes below are thicker for the same reason.
-  const rim = new THREE.Mesh(
-    new THREE.CylinderGeometry(r * 0.72, r * 0.72, 0.34, 24),
-    rimMat,
+  // Round 23: the bright face is GONE — a dark barrel (0.62r) sits
+  // inside the tyre, and the silver lives only in a thin lip ring at
+  // the rim edge + five slim spokes, so the wheel face reads dark
+  // with silver structure instead of one solid white disc.
+  const barrel = new THREE.Mesh(
+    new THREE.CylinderGeometry(r * 0.62, r * 0.62, 0.30, 24),
+    new THREE.MeshStandardMaterial({ color: '#232326', roughness: 0.9 }),
   );
-  rim.rotation.z = Math.PI / 2;
-  g.add(rim);
-  const disc = new THREE.Mesh(
-    new THREE.CylinderGeometry(r * 0.56, r * 0.56, 0.05, 16),
-    rimMat,
-  );
-  disc.rotation.z = Math.PI / 2;
-  g.add(disc);
+  barrel.rotation.z = Math.PI / 2;
+  g.add(barrel);
   // Red brake caliper at the top of the disc, visible through the spokes.
-  const caliper = box(0.1, r * 0.4, 0.12, '#c94b4b');
-  caliper.position.set(0, r * 0.35, 0);
+  const caliper = box(0.09, r * 0.35, 0.12, '#c94b4b');
+  caliper.position.set(0, r * 0.32, 0);
   g.add(caliper);
-  for (const fx of [-0.18, 0.18]) {
+  for (const fx of [-0.17, 0.17]) {
+    const lip = new THREE.Mesh(new THREE.TorusGeometry(r * 0.64, 0.04, 8, 28), rimMat);
+    lip.rotation.y = Math.PI / 2;
+    lip.position.x = fx;
+    g.add(lip);
+    const brake = new THREE.Mesh(
+      new THREE.CylinderGeometry(r * 0.48, r * 0.48, 0.04, 20),
+      new THREE.MeshStandardMaterial({ color: '#333338', roughness: 0.6, metalness: 0.5 }),
+    );
+    brake.rotation.z = Math.PI / 2;
+    brake.position.x = fx * 0.9;
+    g.add(brake);
     for (let i = 0; i < 5; i += 1) {
       const a = (i / 5) * Math.PI * 2;
-      // Round 22: thicker spokes (0.07 wide, 1.15r long, was 0.05 /
-      // 1.05r) — the old hairline spokes vanished at screenshot
-      // distance and the wheel read as a plain dark disc.
-      // Round 22d: spokes use the shared rimMat (emissive lift) so
-      // they read silver on the shaded title flank too.
-      const spoke = new THREE.Mesh(new THREE.BoxGeometry(0.07, r * 1.15, 0.14), rimMat);
-      spoke.position.set(fx, Math.cos(a) * r * 0.32, Math.sin(a) * r * 0.32);
+      // Round 23: slim spokes (0.06 wide, 1.0r long) — the round-22
+      // 0.07 x 1.15r bright spokes merged with the bright rim into a
+      // solid white face. Slim + mid-grey, they read as five separate
+      // spokes over the dark brake disc.
+      const spoke = new THREE.Mesh(new THREE.BoxGeometry(0.06, r * 1.0, 0.12), rimMat);
+      spoke.position.set(fx, Math.cos(a) * r * 0.30, Math.sin(a) * r * 0.30);
       spoke.rotation.x = a;
       g.add(spoke);
     }
     const hub = new THREE.Mesh(
-      new THREE.CylinderGeometry(r * 0.2, r * 0.2, 0.05, 12),
+      new THREE.CylinderGeometry(r * 0.16, r * 0.16, 0.05, 12),
       rimMat,
     );
     hub.rotation.z = Math.PI / 2;
     hub.position.x = fx;
     g.add(hub);
+    const cap = new THREE.Mesh(
+      new THREE.CylinderGeometry(r * 0.08, r * 0.08, 0.06, 10),
+      new THREE.MeshStandardMaterial({ color: '#1c1c1c', roughness: 0.6 }),
+    );
+    cap.rotation.z = Math.PI / 2;
+    cap.position.x = fx + (fx > 0 ? 0.01 : -0.01);
+    g.add(cap);
   }
   return g;
 }
@@ -325,23 +335,30 @@ export function buildSportsCar(color, opts = {}) {
     indicator.position.set(sx * (flankAt(L * 0.3) + 0.01), 0.95, L * 0.3);
     g.add(indicator);
   }
-  // Headlights: THIN corner slits (round 22 — 0.42 x 0.12, top-2
-  // recipe) on the lowered nose, with glow sprites. The round-20
-  // sphere lenses (scaled balls) read as two big white ovals on the
-  // bulbous nose in the garage shot; flat boxes sit flush in the
-  // nose face instead. They sit at the corners (x ±0.72, just under
-  // the nose top line 0.62 at the tip).
+  // Round 23: a headlight is a LAMP, not a white slab — the round-22
+  // thin boxes (0.42 x 0.12, pale #fff6d5, no housing) read as one
+  // flat white rectangle on the garage nose. Now each corner gets a
+  // dark housing set into the nose, a warm lens sitting proud of it,
+  // and a bigger warm halo, so the light reads as a slim glowing
+  // lamp with a lit edge even from the garage's front three-quarter.
   for (const sx of [-0.72, 0.72]) {
-    const lens = new THREE.Mesh(
-      new THREE.BoxGeometry(0.42, 0.12, 0.08),
-      new THREE.MeshBasicMaterial({ color: '#fff6d5' }),
+    const housing = new THREE.Mesh(
+      new THREE.BoxGeometry(0.58, 0.18, 0.06),
+      new THREE.MeshStandardMaterial({ color: '#141416', roughness: 0.5, metalness: 0.4 }),
     );
-    lens.position.set(sx, 0.55, L / 2 - 0.02);
+    housing.position.set(sx, 0.55, L / 2 - 0.01);
+    housing.rotation.y = -sx * 0.22;
+    g.add(housing);
+    const lens = new THREE.Mesh(
+      new THREE.BoxGeometry(0.48, 0.10, 0.06),
+      new THREE.MeshBasicMaterial({ color: '#ffe9a8' }),
+    );
+    lens.position.set(sx, 0.55, L / 2 + 0.03);
     lens.rotation.y = -sx * 0.22;
     g.add(lens);
-    const halo = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTexture(), transparent: true, opacity: 0.55, depthWrite: false }));
-    halo.scale.set(1.0, 1.0, 1);
-    halo.position.set(sx, 0.55, L / 2 + 0.25);
+    const halo = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTexture(), color: '#ffe9a8', transparent: true, opacity: 0.75, depthWrite: false }));
+    halo.scale.set(1.6, 1.6, 1);
+    halo.position.set(sx, 0.55, L / 2 + 0.3);
     g.add(halo);
   }
   // Round 15: the headlight beams pool on the asphalt ahead (additive

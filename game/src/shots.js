@@ -1,4 +1,4 @@
-// Round 22 reseal — chase: heli BIGGER + closer with a visible spotlight cone + light pool on the road, KPD roadblock + distant fireball; combat: enemies bigger/closer, plaza filled, HIT text bigger; garage: camera closer via render.js; this line is written in the round 22 reseal recorded session (01a2092d-3178-7290-b1e2-da8c5e84af71).
+// Round 23 reseal — chase: fireball BIGGER + moved east clear of the heli cone (hot core, taller dark smoke, bigger scorch), barricades BIGGER + closer, roadblock KPD cars closer; heli shifted west so its cone stops veiling the fire; this line is written in the round 23 reseal recorded session (01a20c1f-b578-7008-8695-0658c39f79a9).
 // The four screenshot scenes. Each one stages a real, playable situation
 // from a fixed seed — a busy noon chase, a NIGHT shootout, the garage
 // interior, and the map after a played session — then the page paints it
@@ -127,81 +127,123 @@ function stageChase(ctx) {
   const cars = ctx.police.units.filter((u) => u.kind === 'car' && u.mesh.visible);
   if (cars[0]) { cars[0].mesh.position.set(-8, 0, 50); cars[0].mesh.rotation.y = Math.PI / 2; cars[0].dist = 28; cars[0].status = 'MENGEJAR'; }
   if (cars[1]) { cars[1].mesh.position.set(-18, 0, 56); cars[1].mesh.rotation.y = Math.PI / 2; cars[1].dist = 22; cars[1].status = 'MENGEJAR'; }
-  // Round 22: the two far KPD cars form a ROADBLOCK across the road
+  // Round 23: the two far KPD cars form a ROADBLOCK across the road
   // ahead (top-2 chase composition) — parked diagonally across the
-  // lanes at (52, 56) and (62, 64), 90-100u ahead of the player, with
-  // striped barricades between them (below). The first two cars keep
-  // chasing from behind the player.
-  if (cars[2]) { cars[2].mesh.position.set(52, 0, 56); cars[2].mesh.rotation.y = Math.PI / 2 + 0.55; cars[2].dist = 92; cars[2].status = 'ROADBLOCK'; }
-  if (cars[3]) { cars[3].mesh.position.set(62, 0, 64); cars[3].mesh.rotation.y = Math.PI / 2 - 0.5; cars[3].dist = 102; cars[3].status = 'ROADBLOCK'; }
-  // Round 22: striped roadblock barricades on the road between the
-  // two roadblock cars — white boards with orange stripes + dark legs,
-  // 3u wide so they read at ~100u from the chase camera.
+  // lanes at (34, 56) and (46, 64), 74-86u ahead of the player, with
+  // striped barricades between them (below). The round-22 spots
+  // (52, 56) / (62, 64) were 90-100u out and read as specks; this
+  // close the cars' white bodies + light bars read in the frame.
+  // The first two cars keep chasing from behind the player.
+  if (cars[2]) { cars[2].mesh.position.set(34, 0, 56); cars[2].mesh.rotation.y = Math.PI / 2 + 0.55; cars[2].dist = 74; cars[2].status = 'ROADBLOCK'; }
+  if (cars[3]) { cars[3].mesh.position.set(46, 0, 64); cars[3].mesh.rotation.y = Math.PI / 2 - 0.5; cars[3].dist = 86; cars[3].status = 'ROADBLOCK'; }
+  // Round 23: striped roadblock barricades on the road between the
+  // two roadblock cars — ORANGE boards with white stripes + dark
+  // legs, 5.0u wide and 1.2u tall so they read at 40-70u from the
+  // chase camera. The round-22 boards (3u white at 47-67) hid behind
+  // the box truck and the traffic and were invisible in the shot.
+  // Round 23b: the first zigzag spots (18, 60) / (29, 57) / (39, 61)
+  // STILL hid — the (18, 60) board sat dead behind the box truck at
+  // (-12, 60), same lane. The boards now stagger across the road at
+  // (2, 57) / (14, 64) / (28, 64), clear of the truck's lane, the
+  // fireball at (16, 54) and both roadblock cars. Round 23c: orange-dominant + one board NEAR (2, 57, 42u
+  // from the camera) — white boards blended into the white KPD cars
+  // and the pale road at distance; orange reads on dark asphalt.
   const barricadeAt = (x, z, rot) => {
     const b = new THREE.Group();
     const board = new THREE.Mesh(
-      new THREE.BoxGeometry(3.0, 0.7, 0.18),
-      new THREE.MeshStandardMaterial({ color: '#f2f2f2', roughness: 0.7 }),
+      new THREE.BoxGeometry(5.0, 1.2, 0.18),
+      new THREE.MeshStandardMaterial({ color: '#e84a12', roughness: 0.7 }),
     );
-    board.position.y = 0.75;
+    board.position.y = 1.05;
     board.castShadow = true;
     b.add(board);
     for (let i = 0; i < 3; i += 1) {
       const stripe = new THREE.Mesh(
-        new THREE.BoxGeometry(0.85, 0.72, 0.2),
-        new THREE.MeshStandardMaterial({ color: '#e87a1a', roughness: 0.7 }),
+        new THREE.BoxGeometry(1.5, 1.22, 0.2),
+        new THREE.MeshStandardMaterial({ color: '#f2f2f2', roughness: 0.7 }),
       );
-      stripe.position.set(-1.0 + i * 1.0, 0.75, 0);
+      stripe.position.set(-1.65 + i * 1.65, 1.05, 0);
       stripe.rotation.z = 0.5;
       b.add(stripe);
     }
-    for (const lx of [-1.2, 1.2]) {
+    for (const lx of [-2.1, 2.1]) {
       const leg = new THREE.Mesh(
-        new THREE.BoxGeometry(0.18, 0.75, 0.8),
+        new THREE.BoxGeometry(0.22, 1.05, 0.9),
         new THREE.MeshStandardMaterial({ color: '#2a2a33', roughness: 0.8 }),
       );
-      leg.position.set(lx, 0.37, 0);
+      leg.position.set(lx, 0.52, 0);
       b.add(leg);
     }
     b.position.set(x, 0, z);
     b.rotation.y = rot;
     ctx.render.scene.add(b);
   };
-  barricadeAt(47, 60, 0.15);
-  barricadeAt(57, 58, -0.1);
-  barricadeAt(67, 61, 0.1);
-  // Round 22e: moved to (-10, 50) — the v4 spot (55, 50) failed too:
-  // the ball hid behind the white box truck (-12, 60) and the smoke
-  // behind the ALUN-ALUN gantry board (20, 60). (-10, 50) is on the
-  // north sidewalk 40u from the camera, framed BETWEEN the palms at
-  // (-20, 51) and (0, 51), clear of the gantry (30u east), the STOP
-  // sign (-30, 51) and every HUD panel. Closer, so the ball is back
-  // to r 2.6 and the glow to 12u (20u would wash out half the frame
-  // at this range).
+  // Round 23d: the boards face the CAMERA (rotation ~PI/2) — the
+  // round-22/23 boards ran east-west (rotation ~0), so from the
+  // east-looking chase camera they showed only their 0.18u edge and
+  // were invisible in every render. Turned across the road, the 5.0u
+  // orange face + white stripes point straight at the camera.
+  // Round 23 fix-up: the near board moves to the SOUTH lane (2, 64)
+  // — at (2, 57) / (2, 54) it sat dead behind the box truck at
+  // (-12, 60) and the north lane is walled by the KPD car at
+  // (-18, 56); the south lane reads (the (14, 64) / (28, 64) boards
+  // show as white zigzags there), so the near board joins their row.
+  // Round 23 fix-up 2: (6, 64) — 4u east along the south lane: at
+  // (2, 64) the board still read as part of the truck's edge; spaced
+  // 8u west of the (14, 64) board it stands as its own board in the
+  // roadblock row, clear of the truck and the motorcycle at (-18, 66).
+  barricadeAt(6, 64, Math.PI / 2 + 0.15);
+  barricadeAt(14, 64, Math.PI / 2 - 0.1);
+  barricadeAt(28, 64, Math.PI / 2 + 0.1);
+  // Round 23: the fireball moves to (10, 52) and grows — the round-22
+  // ball at (-10, 50) sat inside the heli's white spotlight cone, so
+  // the orange + its glow washed out to a pale peach smudge and the
+  // ball itself never read. Now it sits 40u east of the heli, on the
+  // north lane edge between the palm (0, 51) and the gantry (20, 60),
+  // clear of every traffic car. The ball is r 3.4 with a hot yellow
+  // core, a deeper-orange 18u glow, a 5-puff dark smoke column and a
+  // wider scorch — a burning wreck the camera cannot miss.
+  // Round 23c: (16, 54) — at (10, 52) the ball still sat under the
+  // cone's wide right edge and read muted; 6u further east + 2u
+  // south puts it clear of the cone's footprint, in front of the
+  // gantry board's lower edge, with the glow strengthened to 24u.
+  // Round 23 fix-up: (12, 54) — 4u west: at (16, 54) the white box
+  // truck at (-12, 60) hid the dome's lower half; shifted west the
+  // dome peeks out left of the truck. One shift only — if the render
+  // is not clearly better, leave it.
+  // Round 23 fix-up 2: REVERTED to (16, 54) — the west shift read
+  // worse (visible orange halved, the dome slid further behind the
+  // truck); at (16, 54) the dome + smoke already read clearly.
   const fireball = new THREE.Mesh(
-    new THREE.SphereGeometry(2.6, 14, 10),
+    new THREE.SphereGeometry(3.4, 16, 12),
     new THREE.MeshBasicMaterial({ color: '#ff7a1a' }),
   );
-  fireball.position.set(-10, 2.2, 50);
+  fireball.position.set(16, 2.6, 54);
   ctx.render.scene.add(fireball);
-  const fireGlow = new THREE.Sprite(new THREE.SpriteMaterial({ map: heliPoolTexture(), color: '#ff9a3d', transparent: true, opacity: 0.85, depthWrite: false }));
-  fireGlow.scale.set(12, 12, 1);
-  fireGlow.position.set(-10, 2.8, 50);
+  const fireCore = new THREE.Mesh(
+    new THREE.SphereGeometry(2.0, 14, 10),
+    new THREE.MeshBasicMaterial({ color: '#ffd23d' }),
+  );
+  fireCore.position.set(16, 2.6, 54);
+  ctx.render.scene.add(fireCore);
+  const fireGlow = new THREE.Sprite(new THREE.SpriteMaterial({ map: heliPoolTexture(), color: '#ff6a00', transparent: true, opacity: 0.95, depthWrite: false }));
+  fireGlow.scale.set(24, 24, 1);
+  fireGlow.position.set(16, 3.2, 54);
   ctx.render.scene.add(fireGlow);
-  for (let i = 0; i < 3; i += 1) {
+  for (let i = 0; i < 5; i += 1) {
     const puff = new THREE.Mesh(
-      new THREE.SphereGeometry(2.0 - i * 0.2, 10, 8),
-      new THREE.MeshStandardMaterial({ color: '#66666e', roughness: 1, transparent: true, opacity: 0.85 }),
+      new THREE.SphereGeometry(2.4 - i * 0.2, 10, 8),
+      new THREE.MeshStandardMaterial({ color: '#33333a', roughness: 1, transparent: true, opacity: 0.9 }),
     );
-    puff.position.set(-10 + i * 0.9, 7 + i * 2.5, 50 - i * 0.6);
+    puff.position.set(16 + i * 1.1, 7.5 + i * 2.6, 54 - i * 0.5);
     ctx.render.scene.add(puff);
   }
   const scorch = new THREE.Mesh(
-    new THREE.CircleGeometry(3.4, 16),
+    new THREE.CircleGeometry(4.5, 16),
     new THREE.MeshBasicMaterial({ color: '#1c1c1c', transparent: true, opacity: 0.8 }),
   );
   scorch.rotation.x = -Math.PI / 2;
-  scorch.position.set(-10, 0.08, 50);
+  scorch.position.set(16, 0.08, 54);
   ctx.render.scene.add(scorch);
   // Helicopter above and ahead, spotlight on the road — staged low and
   // to the north side (round 15c: x -2, y 6.5, z 50 — over the road it
@@ -213,15 +255,22 @@ function stageChase(ctx) {
   // whole against the hotel towers instead of the bright sky.
   const heli = ctx.police.units.find((u) => u.kind === 'heli');
   if (heli) {
-    // Round 22: BIGGER + CLOSER + OVER THE ROAD (was -14, 11, 48,
-    // scale 1.35) — at (-14, 11, 48) the heli hovered over the north
-    // sidewalk and its cone (0.35 opacity, white on bright-blue sky)
-    // was invisible, so the chase shot had NO spotlight cone at all:
-    // the signature top-10 chase element was missing. Now at
-    // (-24, 10, 55), scale 1.5, over the road's north lane, with the
-    // cone widened + brightened (opacity 0.55) and the light pool ON
-    // the asphalt under it — the cone lands on the road in frame.
-    heli.mesh.position.set(-24, 10, 55);
+    // Round 23: shifted west + up (-30, 12, 53, was -24, 10, 55) —
+    // at (-24, 10, 55) the heli's white cone hung directly over the
+    // fireball and veiled it to a pale smudge. Six units west puts the
+    // cone + the heli body clear of the fireball at (10, 52); the
+    // cone still lands on the road in frame, and the light pool
+    // moves with it. Round 23b: (-26, 9.5, 55) — at (-30, 12, 53)
+    // only the skids + tail showed, the body cut by the top edge.
+    // Four east + 2.5 down puts the whole heli back in frame, still
+    // 36u west of the fireball.
+    // Round 23 fix-up: (-24, 9, 55) — back to the round-22 x, 1u
+    // lower: at (-26, 9.5, 55) the rotor disc's top edge sat under
+    // the title card and the body read as a dark blob; the cone is
+    // back to the round-22 width + opacity (1.4 / 0.48, was 1.15 /
+    // 0.38) so the beam + the light pool read again. The fireball
+    // is 36u east, so the wider cone still cannot veil it.
+    heli.mesh.position.set(-24, 9, 55);
     heli.mesh.rotation.y = Math.PI;
     heli.mesh.scale.set(1.5, 1.5, 1.5);
     heli.dist = 26;
@@ -232,6 +281,13 @@ function stageChase(ctx) {
       // Round 22b: opacity 0.48 (was 0.55) — the first render's cone
       // was a solid white funnel that whitened out the district card's
       // gold sub-line; it still reads as a searchlight at 0.48.
+      // Round 23c: narrower (1.15, was 1.4) + fainter (0.38) — the
+      // wide cone's right edge hung over the fireball and washed it
+      // out even after the fireball moved east. A slimmer cone still
+      // reads as a searchlight and stops veiling the road ahead.
+      // Round 23 fix-up: back to 0.48 — the 0.38 cone was nearly
+      // invisible against the noon sky; the fireball is 36u east now,
+      // so the wider cone cannot veil it.
       cone.material.opacity = 0.48;
     }
     // Round 15: a pool of light on the asphalt under the heli, where
@@ -239,7 +295,10 @@ function stageChase(ctx) {
     // as a pool on the road from the chase camera. Round 16: 14u,
     // opacity 0.7 (was 13u / 0.55) — the pool must read as a lit patch
     // against the bright dusk asphalt, not a faint smudge. Round 22:
-    // 18u, on the road under the heli at (-24, 55).
+    // 18u, on the road under the heli at (-24, 55). Round 23: under
+    // the shifted heli at (-30, 53). Round 23b: under the heli's
+    // final spot (-26, 55). Round 23 fix-up: under the heli's
+    // round-22 spot (-24, 55).
     const pool = new THREE.Mesh(
       new THREE.PlaneGeometry(18, 18),
       new THREE.MeshBasicMaterial({ map: heliPoolTexture(), transparent: true, opacity: 0.7, blending: THREE.AdditiveBlending, depthWrite: false }),

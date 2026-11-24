@@ -1,4 +1,4 @@
-// Round 22 reseal — the map's district labels + grid letters now draw AFTER the GPS route (they used to sit under it, so the purple route + the "5" row number crossed out "PANTAI KIDUL" at the left edge); this line is written in the round 22 reseal recorded session (01a2092d-3178-7290-b1e2-da8c5e84af71).
+// Round 23 reseal — the map's left-edge district labels shift right (+22px) so they clear the 1–6 row-number column; this line is written in the round 23 reseal recorded session (01a20c1f-b578-7008-8695-0658c39f79a9).
 // Round 20: the map is a TILE-GRID GPS now (ref-round20.md §4) — coloured tiles per district, a PURPLE GPS route with coloured checkpoints, district labels + sub-labels; this line is written in the round 20 recorded session.
 // The HUD: DOM panels over the 3D canvas, drawn like the top entries —
 // a mission panel, a KPD response panel with five NAMED units + distances +
@@ -244,7 +244,12 @@ export function createHud(world) {
     // text must never sit under the purple GPS line again.
     mapCtx.textAlign = 'left';
     for (const d of DISTRICTS) {
-      const x = toX(d.x0) + 10;
+      // Round 23: left-edge districts (x0 -330: PELABUHAN SEGARA,
+      // PANTAI KIDUL) start 22px further right — at +10 the label
+      // sat in the same column as the 1–6 row numbers, and the "5"
+      // crowded the "PANTAI KIDUL" sub-label's left edge. At +32
+      // the name + sub-label clear the number column entirely.
+      const x = toX(d.x0) + 10 + (d.x0 === -330 ? 22 : 0);
       const y = toZ(d.z0) + 20;
       mapCtx.font = 'bold 13px system-ui';
       mapCtx.fillStyle = 'rgba(0,0,0,0.45)';
