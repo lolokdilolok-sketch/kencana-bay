@@ -1,4 +1,5 @@
 <!doctype html>
+<!-- Round 23 reseal — title footer fixed: the feature strip is lifted clear of the absolute bottom-left controls + bottom-right credit lines (it used to overlap both); this line is written in the round 23 reseal recorded session (01a20c1f-b578-7008-8695-0658c39f79a9) -->
 <!-- Round 22 reseal — HIT popup much bigger (46px, was 26px) so it reads in the combat shot; this line is written in the round 22 reseal recorded session (01a2092d-3178-7290-b1e2-da8c5e84af71) -->
 <!-- Round 20: the map overlay is a 3-column GPS screen now (header + story | tile grid | stats + legend), the title reads KENCANA (orange-white) with a SAVE button; this line is written in the round 20 recorded session -->
 <!-- Round 19: no markup change — the rebuilt vehicles and new staging are all in game/src; this line is written in the round 19 recorded session -->
@@ -282,7 +283,13 @@
   #btn-start { background: #ff8a3d; color: #1c1c1c; }
   #btn-continue { background: #2b6fd0; color: #fff; }
   #title-screen .t-ghost { background: rgba(16,12,28,0.8); color: #f2ead8; border: 1px solid rgba(255,255,255,0.4); }
-  #title-screen .t-strip { margin: 14px 0 20px; font-size: 12.5px; letter-spacing: 1.5px; color: #ffd94d; font-weight: 700; text-shadow: 0 1px 4px #000; }
+  /* Round 23: the strip lifts clear of the absolute footers — it
+     used to sit at margin-bottom 20px, so its long centred line ran
+     UNDER .t-controls (bottom-left) and .t-foot (bottom-right) and
+     all three overlapped. Now it ends 52px above the bottom (the
+     footers occupy the bottom ~25px), is capped at 880px wide, and
+     is one point smaller so it stays on one line. */
+  #title-screen .t-strip { margin: 14px 0 52px; max-width: 880px; text-align: center; font-size: 12px; letter-spacing: 1px; color: #ffd94d; font-weight: 700; text-shadow: 0 1px 4px #000; }
   #title-screen .t-foot { position: absolute; right: 24px; bottom: 14px; font-size: 11px; color: rgba(242,234,216,0.6); text-align: right; line-height: 1.5; }
   #title-screen .t-controls { position: absolute; left: 24px; bottom: 14px; font-size: 11px; color: rgba(242,234,216,0.7); text-shadow: 0 1px 3px #000; }
   /* Pause screen. */
